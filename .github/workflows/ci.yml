@@ -49,12 +49,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Needs the shared vectors submodule and read access to the private engine
-      # for the cargo git dependency. WARREN_CI_TOKEN is a PAT with read access
-      # to both warren-vectors and warren-sdk-rs.
+      # for the cargo git dependency. VECTORS_TOKEN must be a PAT with read access
+      # to BOTH warren-vectors and warren-sdk-rs.
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          token: ${{ secrets.WARREN_CI_TOKEN }}
+          token: ${{ secrets.VECTORS_TOKEN }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: subosito/flutter-action@v2
         with:
@@ -62,7 +62,7 @@ jobs:
           flutter-version: 3.44.2
           channel: stable
       - name: authenticate cargo for the private engine dependency
-        run: git config --global url."https://x-access-token:${{ secrets.WARREN_CI_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - run: flutter pub get
       - name: build the native engine
         run: cargo build --release
@@ -77,14 +77,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.WARREN_CI_TOKEN }}
+          token: ${{ secrets.VECTORS_TOKEN }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: subosito/flutter-action@v2
         with:
           # Pinned to the fvm-pinned version (.fvmrc) for reproducible CI.
           flutter-version: 3.44.2
           channel: stable
-      - run: git config --global url."https://x-access-token:${{ secrets.WARREN_CI_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - run: flutter pub get
       - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
       - run: flutter_rust_bridge_codegen generate
