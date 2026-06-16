@@ -65,3 +65,24 @@ final class WarrenUnsupportedError extends WarrenError {
   /// Creates an unsupported-capability error.
   const WarrenUnsupportedError({required super.code, required super.message});
 }
+
+/// Builds the [WarrenError] subtype for a category [kind], with a caller-chosen
+/// [code] and redacted [message].
+///
+/// Every engine boundary (in-process bridge, desktop daemon, mobile extension)
+/// reports the same five categories; this picks the subtype so each boundary
+/// does not reimplement the mapping. An unknown kind falls back to
+/// [WarrenTunnelError].
+WarrenError warrenErrorOfKind(
+  String kind, {
+  required String code,
+  required String message,
+}) =>
+    switch (kind) {
+      'identity' => WarrenIdentityError(code: code, message: message),
+      'api' => WarrenApiError(code: code, message: message),
+      'discovery' => WarrenDiscoveryError(code: code, message: message),
+      'tunnel' => WarrenTunnelError(code: code, message: message),
+      'privilege' => WarrenPrivilegeError(code: code, message: message),
+      _ => WarrenTunnelError(code: code, message: message),
+    };

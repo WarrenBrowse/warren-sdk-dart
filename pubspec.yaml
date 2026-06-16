@@ -12,6 +12,7 @@ workspace:
   - packages/warren_sdk_platform_interface
   - packages/warren_sdk_ffi
   - packages/warren_sdk_desktop
+  - packages/warren_sdk_mobile
   - packages/warren_sdk_riverpod
 
 # Melos is used only as a task runner (analyze/test/format/codegen across

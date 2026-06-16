@@ -1,0 +1,24 @@
+name: warren_sdk_mobile
+description: >-
+  Mobile system-VPN (Mode B) support for the Warren SDK. Drives a platform
+  network extension (Android VpnService, iOS/macOS NEPacketTunnelProvider) that
+  embeds the Warren engine, over Flutter platform channels.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+  warren_sdk_platform_interface:
+    path: ../warren_sdk_platform_interface
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter

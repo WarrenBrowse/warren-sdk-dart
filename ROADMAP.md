@@ -74,10 +74,14 @@ The first vertical slice, mirroring how the Rust engine started with identity.
 
 ## P5: Mobile System VPN (Mode B)
 
-- [ ] `warren_sdk_android`: `VpnService` foreground + JNI to the engine.
-- [ ] `warren_sdk_ios` / `warren_sdk_macos`: `NEPacketTunnelProvider` + engine C
-      ABI; control via `NETunnelProviderManager`, status over the app group.
-- [ ] Per-platform real-device validation against a real exit.
+- [x] App-side control (`warren_sdk_mobile`): `MobileVpnController` over method
+      and event channels, with state/error mapping, unit-tested with mocked
+      channels. See `MOBILE.md`.
+- [ ] Android `VpnService` foreground + JNI to the engine.
+- [ ] iOS / macOS `NEPacketTunnelProvider` + engine C ABI; control via
+      `NETunnelProviderManager`, status over the app group.
+- [ ] Per-platform real-device validation against a real exit (needs devices and
+      `flutter build`; gated, validated on device).
 
 ## P6: Port forwarding and advanced features
 

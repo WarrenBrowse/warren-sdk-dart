@@ -88,15 +88,8 @@ ConnectionState _toConnectionState(DaemonConnectionState state) =>
         ),
     };
 
-WarrenError _toError(ErrorEvent event) => switch (event.kind) {
-      'identity' =>
-        WarrenIdentityError(code: 'identity/daemon', message: event.message),
-      'api' => WarrenApiError(code: 'api/daemon', message: event.message),
-      'discovery' =>
-        WarrenDiscoveryError(code: 'discovery/daemon', message: event.message),
-      'tunnel' =>
-        WarrenTunnelError(code: 'tunnel/daemon', message: event.message),
-      'privilege' =>
-        WarrenPrivilegeError(code: 'privilege/daemon', message: event.message),
-      _ => WarrenTunnelError(code: 'daemon/unknown', message: event.message),
-    };
+WarrenError _toError(ErrorEvent event) => warrenErrorOfKind(
+      event.kind,
+      code: '${event.kind}/daemon',
+      message: event.message,
+    );
