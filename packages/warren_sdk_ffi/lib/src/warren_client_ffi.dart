@@ -2,6 +2,7 @@ import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
 
 import 'engine_mapping.dart';
 import 'rust/api/client.dart' as rust;
+import 'rust/api/datapath.dart' as rust_session;
 import 'rust/api/error.dart';
 
 /// A live engine client handle backed by the in-process Rust client.
@@ -40,11 +41,27 @@ class FfiClientHandle implements WarrenClientHandle {
     ExitInfo exit,
     ConnectMode mode,
     ConnectOptions options,
-  ) async =>
-      throw const WarrenUnsupportedError(
-        code: 'datapath/not-yet',
-        message: 'The proxy datapath lands in roadmap P3.',
-      );
+  ) =>
+      _mapped(() async {
+        if (mode == ConnectMode.systemVpn) {
+          throw const WarrenUnsupportedError(
+            code: 'mode/system-vpn-not-yet',
+            message: 'System-VPN mode lands in roadmap P4 (desktop) and P5 '
+                '(mobile). Use ConnectMode.proxy.',
+          );
+        }
+        final session = await _client.connectProxy(
+          exitPubkeyHex: exit.id,
+          socks5Listen: options.socks5Listen,
+          httpListen: options.httpListen,
+        );
+        final socks5 = await session.socks5Endpoint();
+        final http = await session.httpEndpoint();
+        return FfiSessionHandle(
+          session,
+          ProxyEndpoints(socks5: socks5, http: http),
+        );
+      });
 
   @override
   Future<void> dispose() async {
@@ -60,4 +77,28 @@ class FfiClientHandle implements WarrenClientHandle {
       throw mapEngineError(error);
     }
   }
+}
+
+/// A live proxy session backed by the in-process engine.
+///
+/// The connection-state stream is a broadcast view over the engine's transition
+/// stream, so the latest state reaches every listener.
+class FfiSessionHandle implements WarrenSessionHandle {
+  /// Wraps an opaque engine session and its resolved local endpoints.
+  FfiSessionHandle(this._session, this._endpoints);
+
+  final rust_session.WarrenSessionFrb _session;
+  final ProxyEndpoints _endpoints;
+
+  late final Stream<ConnectionState> _states =
+      _session.states().map(mapConnectionState).asBroadcastStream();
+
+  @override
+  ProxyEndpoints? get endpoints => _endpoints;
+
+  @override
+  Stream<ConnectionState> get states => _states;
+
+  @override
+  Future<void> disconnect() => _session.disconnect();
 }

@@ -11,8 +11,10 @@ use warren_sdk::api::dto::RegisterAccountRequest;
 use warren_sdk::api::ClientError;
 use warren_sdk::discovery::Relay;
 use warren_sdk::identity::WarrenIdentity;
+use warren_sdk::net::ProxyConfig;
 use warren_sdk::{DefaultClient, SdkError, WarrenClient};
 
+use crate::api::datapath::WarrenSessionFrb;
 use crate::api::error::{WarrenErrorKind, WarrenFfiError};
 
 fn err(kind: WarrenErrorKind, message: impl Into<String>) -> WarrenFfiError {
@@ -119,11 +121,63 @@ impl WarrenClientFrb {
         let selector = self.inner.fetch_exits().await.map_err(map_sdk_error)?;
         Ok(selector.relays().iter().map(relay_to_dto).collect())
     }
+
+    /// Opens a self-healing multihop proxy to the exit whose Ed25519 identity is
+    /// `exit_pubkey_hex` (the `id` from [`list_exits`]), binding the local
+    /// listeners. Proxy mode always uses multihop, which real exits require.
+    ///
+    /// Connect failures after this returns surface as connection state on the
+    /// session, not as an error here.
+    pub async fn connect_proxy(
+        &self,
+        exit_pubkey_hex: String,
+        socks5_listen: String,
+        http_listen: Option<String>,
+    ) -> Result<WarrenSessionFrb, WarrenFfiError> {
+        let target: [u8; 32] = hex::decode(&exit_pubkey_hex)
+            .ok()
+            .and_then(|bytes| bytes.try_into().ok())
+            .ok_or_else(|| err(WarrenErrorKind::Discovery, "invalid exit id"))?;
+
+        let exits = self
+            .inner
+            .fetch_multihop_directory()
+            .await
+            .map_err(map_sdk_error)?;
+        let exit = exits
+            .into_iter()
+            .find(|candidate| candidate.exit_ed25519_pubkey == target)
+            .ok_or_else(|| err(WarrenErrorKind::Discovery, "exit not in multihop directory"))?;
+
+        let cfg = ProxyConfig {
+            socks5: socks5_listen
+                .parse()
+                .map_err(|_| err(WarrenErrorKind::Tunnel, "invalid socks5 listen address"))?,
+            http: match http_listen {
+                Some(addr) => Some(
+                    addr.parse()
+                        .map_err(|_| err(WarrenErrorKind::Tunnel, "invalid http listen address"))?,
+                ),
+                None => None,
+            },
+            dns_server: None,
+        };
+
+        let handle = self
+            .inner
+            .start_proxy_multihop_supervised(&exit, &cfg)
+            .await
+            .map_err(map_sdk_error)?;
+        Ok(WarrenSessionFrb::new(handle))
+    }
 }
 
 fn relay_to_dto(relay: &Relay) -> ExitInfoDto {
     ExitInfoDto {
-        id: relay.exit_id().to_string(),
+        // The Ed25519 endpoint key is the canonical exit identity shared with
+        // the multihop directory, so `connect` can cross-reference an exit the
+        // app selected here against the directory entry it must dial.
+        id: hex::encode(relay.endpoint_id()),
         country: relay.location().country_code().to_owned(),
         city: relay.location().city().to_owned(),
         supports_ipv6: relay.ipv6_egress(),

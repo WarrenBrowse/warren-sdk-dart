@@ -1,6 +1,7 @@
 import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
 import 'rust/api/client.dart' show ExitInfoDto;
+import 'rust/api/datapath.dart' show ConnectionStateDto;
 import 'rust/api/error.dart';
 
 /// Maps the typed engine error to the sealed public [WarrenError].
@@ -27,6 +28,20 @@ WarrenError mapEngineError(WarrenFfiError error) => switch (error.kind) {
       WarrenErrorKind.privilege => WarrenPrivilegeError(
           code: 'privilege/engine',
           message: error.message,
+        ),
+    };
+
+/// Maps an engine connection-state to the sealed public [ConnectionState].
+///
+/// The engine never emits [Disconnected]; that state is the app's own concept
+/// after it tears a session down.
+ConnectionState mapConnectionState(ConnectionStateDto state) => switch (state) {
+      ConnectionStateDto.connecting => const Connecting(),
+      ConnectionStateDto.connected => const Connected(),
+      ConnectionStateDto.reconnecting => const Reconnecting(),
+      ConnectionStateDto.failed => const ConnectionFailed(
+          code: 'tunnel/failed',
+          message: 'the connection failed and will not be retried',
         ),
     };
 

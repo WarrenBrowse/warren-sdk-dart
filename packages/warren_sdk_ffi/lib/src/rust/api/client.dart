@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'datapath.dart';
 import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
@@ -13,6 +14,17 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 abstract class WarrenClientFrb implements RustOpaqueInterface {
   /// The SS58 `wb...` address of the bound identity.
   Future<String> address();
+
+  /// Opens a self-healing multihop proxy to the exit whose Ed25519 identity is
+  /// `exit_pubkey_hex` (the `id` from [`list_exits`]), binding the local
+  /// listeners. Proxy mode always uses multihop, which real exits require.
+  ///
+  /// Connect failures after this returns surface as connection state on the
+  /// session, not as an error here.
+  Future<WarrenSessionFrb> connectProxy(
+      {required String exitPubkeyHex,
+      required String socks5Listen,
+      String? httpListen});
 
   /// Builds a client from a mnemonic and the account API configuration.
   ///

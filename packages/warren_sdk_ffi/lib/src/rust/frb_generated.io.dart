@@ -4,6 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/client.dart';
+import 'api/datapath.dart';
 import 'api/error.dart';
 import 'api/identity.dart';
 import 'dart:async';
@@ -25,6 +26,10 @@ abstract class WarrenRustBridgeApiImplPlatform
       get rust_arc_decrement_strong_count_WarrenClientFrbPtr => wire
           ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrbPtr;
 
+  CrossPlatformFinalizerArg
+      get rust_arc_decrement_strong_count_WarrenSessionFrbPtr => wire
+          ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrbPtr;
+
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);
 
@@ -34,14 +39,33 @@ abstract class WarrenRustBridgeApiImplPlatform
           dynamic raw);
 
   @protected
+  WarrenSessionFrb
+      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          dynamic raw);
+
+  @protected
   WarrenClientFrb
       dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          dynamic raw);
+
+  @protected
+  WarrenSessionFrb
+      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           dynamic raw);
 
   @protected
   WarrenClientFrb
       dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
           dynamic raw);
+
+  @protected
+  WarrenSessionFrb
+      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          dynamic raw);
+
+  @protected
+  RustStreamSink<ConnectionStateDto>
+      dco_decode_StreamSink_connection_state_dto_Sse(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -51,6 +75,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   double dco_decode_box_autoadd_f_64(dynamic raw);
+
+  @protected
+  ConnectionStateDto dco_decode_connection_state_dto(dynamic raw);
 
   @protected
   ExitInfoDto dco_decode_exit_info_dto(dynamic raw);
@@ -106,13 +133,33 @@ abstract class WarrenRustBridgeApiImplPlatform
           SseDeserializer deserializer);
 
   @protected
+  WarrenSessionFrb
+      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          SseDeserializer deserializer);
+
+  @protected
   WarrenClientFrb
       sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
           SseDeserializer deserializer);
 
   @protected
+  WarrenSessionFrb
+      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          SseDeserializer deserializer);
+
+  @protected
   WarrenClientFrb
       sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          SseDeserializer deserializer);
+
+  @protected
+  WarrenSessionFrb
+      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          SseDeserializer deserializer);
+
+  @protected
+  RustStreamSink<ConnectionStateDto>
+      sse_decode_StreamSink_connection_state_dto_Sse(
           SseDeserializer deserializer);
 
   @protected
@@ -123,6 +170,10 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   double sse_decode_box_autoadd_f_64(SseDeserializer deserializer);
+
+  @protected
+  ConnectionStateDto sse_decode_connection_state_dto(
+      SseDeserializer deserializer);
 
   @protected
   ExitInfoDto sse_decode_exit_info_dto(SseDeserializer deserializer);
@@ -180,13 +231,32 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   void
+      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          WarrenSessionFrb self, SseSerializer serializer);
+
+  @protected
+  void
       sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
           WarrenClientFrb self, SseSerializer serializer);
 
   @protected
   void
+      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          WarrenSessionFrb self, SseSerializer serializer);
+
+  @protected
+  void
       sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
           WarrenClientFrb self, SseSerializer serializer);
+
+  @protected
+  void
+      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+          WarrenSessionFrb self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_StreamSink_connection_state_dto_Sse(
+      RustStreamSink<ConnectionStateDto> self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -196,6 +266,10 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_connection_state_dto(
+      ConnectionStateDto self, SseSerializer serializer);
 
   @protected
   void sse_encode_exit_info_dto(ExitInfoDto self, SseSerializer serializer);
@@ -291,5 +365,37 @@ class WarrenRustBridgeWire implements BaseWire {
           'frbgen_warren_sdk_ffi_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb');
   late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb =
       _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrbPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+      rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrbPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+          'frbgen_warren_sdk_ffi_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb');
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrbPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+      rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrbPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+          'frbgen_warren_sdk_ffi_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb');
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrbPtr
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 }

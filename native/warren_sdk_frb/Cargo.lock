@@ -2556,6 +2556,7 @@ dependencies = [
  "anyhow",
  "flutter_rust_bridge",
  "hex",
+ "tokio",
  "warren-sdk",
 ]
 

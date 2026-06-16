@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warren_sdk_ffi/src/engine_mapping.dart';
 import 'package:warren_sdk_ffi/src/rust/api/client.dart';
+import 'package:warren_sdk_ffi/src/rust/api/datapath.dart';
 import 'package:warren_sdk_ffi/src/rust/api/error.dart';
 import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
@@ -65,6 +66,27 @@ void main() {
         supportsPortForwarding: true,
       );
       expect(exitInfoFromDto(dto).load, isNull);
+    });
+  });
+
+  group('mapConnectionState', () {
+    test('maps each engine state to its sealed subtype', () {
+      expect(
+        mapConnectionState(ConnectionStateDto.connecting),
+        const Connecting(),
+      );
+      expect(
+        mapConnectionState(ConnectionStateDto.connected),
+        const Connected(),
+      );
+      expect(
+        mapConnectionState(ConnectionStateDto.reconnecting),
+        const Reconnecting(),
+      );
+      expect(
+        mapConnectionState(ConnectionStateDto.failed),
+        isA<ConnectionFailed>().having((s) => s.code, 'code', 'tunnel/failed'),
+      );
     });
   });
 }

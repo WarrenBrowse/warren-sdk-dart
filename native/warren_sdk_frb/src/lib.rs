@@ -14,3 +14,12 @@ pub mod api;
 // Checked in so the crate builds without the codegen toolchain present.
 #[cfg(not(frb_expand))]
 mod frb_generated;
+
+// During the codegen expand pass the real generated module is excluded, so the
+// concrete `StreamSink` it defines is missing. Provide just that type (via the
+// same flutter_rust_bridge macro) so the streaming API still type-checks while
+// cargo-expand runs. Never compiled into a normal build.
+#[cfg(frb_expand)]
+mod frb_generated {
+    flutter_rust_bridge::frb_generated_stream_sink!(default_stream_sink_codec = DcoCodec);
+}

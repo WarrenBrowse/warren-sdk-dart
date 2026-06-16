@@ -47,13 +47,16 @@ The first vertical slice, mirroring how the Rust engine started with identity.
 
 ## P3: Proxy datapath (Mode A, the default mode)
 
-- [ ] FRB wrap of `connect(proxy)` returning a session handle, plus a
-      connection-state `Stream`.
-- [ ] Facade `WarrenSession` with `socks5Endpoint`, `httpEndpoint`, `states`,
+- [x] FRB wrap of `connect(proxy)` returning an opaque session handle, plus a
+      connection-state `Stream` (broadcast, current-state-first).
+- [x] Facade `WarrenSession` with `endpoints` (SOCKS5/HTTP), `states`,
       `disconnect`.
-- [ ] Multihop support surfaced (mandatory on real exits).
-- [ ] DNS-over-tunnel exposed.
-- [ ] End-to-end validation against a real exit (confirmed egress).
+- [x] Multihop support surfaced: proxy mode always uses the supervised multihop
+      datapath, which real exits require.
+- [x] DNS-over-tunnel: the engine resolves at the exit gateway by default
+      (`ProxyConfig.dns_server = None`).
+- [~] End-to-end validation against a real exit (confirmed egress):
+      `test/connect_live_test.dart`, env-gated. Not yet run here.
 
 ## P4: Desktop System VPN (Mode B, privileged)
 
