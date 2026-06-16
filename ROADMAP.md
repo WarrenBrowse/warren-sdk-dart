@@ -73,12 +73,16 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       `warren-tun`, serving the IPC protocol over a Unix socket; one session per
       connection, with graceful SIGINT/SIGTERM teardown so a stop always restores
       the host network. Socket restricted to the invoking user.
-- [x] macOS system-VPN TUN datapath live-validated end-to-end against a real
-      exit: `test/daemon_tun_rooted_live_test.dart` brings the tunnel up
-      (`utun` + `ifconfig` + `route` split-default + `pfctl` killswitch), reaches
-      `Connected`, and fully restores routing + pf on teardown. Engine v0.0.5
-      adds the macOS routing layer (physical-gateway discovery works behind an
-      active VPN; fail-safe revert on partial setup).
+- [x] macOS system-VPN TUN control path live-validated against a real exit:
+      `test/daemon_tun_rooted_live_test.dart` opens `utun`, applies `ifconfig` +
+      `route` split-default + `pfctl` killswitch, reaches `Connected`, and fully
+      restores routing + pf on teardown (route back to physical, egress works,
+      no leftovers). Engine v0.0.5 adds the macOS routing layer (physical-gateway
+      discovery via `netstat` works behind an active VPN; fail-safe revert).
+- [ ] macOS TUN raw-IP DATA egress: the test probes egress through the tunnel and
+      currently finds none (traffic is captured but not carried), so it marks that
+      check skipped. The engine's experimental raw-IP datapath (utun framing /
+      pump / exit handling of TUN-sourced packets) needs packet-level debugging.
 - [ ] Wire `DaemonClient` into a `WarrenSdkPlatform` implementation (system-VPN
       connect path) for `_linux` / `_windows` / `_macos`.
 - [ ] Privilege bootstrap per OS (polkit / launchd helper / Windows service +
