@@ -41,9 +41,10 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       `listExits`, `selectExit`, backed by an `FfiClientHandle`.
 - [x] Error mapping: typed engine error (`WarrenFfiError`) to sealed Dart
       `WarrenError`, redacted, unit-tested per category.
-- [~] Live happy-path tests gated on a subscribed test account + real exit:
-      `test/account_live_test.dart`, skipped unless `WARREN_MNEMONIC`,
-      `WARREN_API_BASE` and `WARREN_SERVER_PIN` are set. Not yet run here.
+- [x] Live happy-path validated against the real test backend
+      (`api.warrenbrowse.com`): `test/account_live_test.dart` passes (create,
+      subscription, listExits). Run with `WARREN_MNEMONIC`, `WARREN_API_BASE`,
+      `WARREN_SERVER_PIN` set.
 
 ## P3: Proxy datapath (Mode A, the default mode)
 
@@ -55,8 +56,9 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       datapath, which real exits require.
 - [x] DNS-over-tunnel: the engine resolves at the exit gateway by default
       (`ProxyConfig.dns_server = None`).
-- [~] End-to-end validation against a real exit (confirmed egress):
-      `test/connect_live_test.dart`, env-gated. Not yet run here.
+- [x] End-to-end validation against a real exit: `test/connect_live_test.dart`
+      passes, establishing a real multihop proxy session that reaches `Connected`
+      (env-gated, same vars as P2).
 
 ## P4: Desktop System VPN (Mode B, privileged)
 

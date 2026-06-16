@@ -1,4 +1,6 @@
 # Dart / Flutter
+# fvm pins the Flutter version in .fvmrc (committed); the local SDK cache is not.
+.fvm/
 .dart_tool/
 .packages
 build/
