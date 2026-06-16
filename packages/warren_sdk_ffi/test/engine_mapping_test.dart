@@ -1,0 +1,70 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:warren_sdk_ffi/src/engine_mapping.dart';
+import 'package:warren_sdk_ffi/src/rust/api/client.dart';
+import 'package:warren_sdk_ffi/src/rust/api/error.dart';
+import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
+
+/// Unit tests for the bridge-to-public mapping. These need no native engine:
+/// the engine error and exit DTO are plain generated data classes.
+void main() {
+  group('mapEngineError keeps the message and picks the right subtype', () {
+    final cases = <WarrenErrorKind, ({Type type, String code})>{
+      WarrenErrorKind.identity: (
+        type: WarrenIdentityError,
+        code: 'identity/engine'
+      ),
+      WarrenErrorKind.api: (type: WarrenApiError, code: 'api/engine'),
+      WarrenErrorKind.discovery: (
+        type: WarrenDiscoveryError,
+        code: 'discovery/engine'
+      ),
+      WarrenErrorKind.tunnel: (type: WarrenTunnelError, code: 'tunnel/engine'),
+      WarrenErrorKind.privilege: (
+        type: WarrenPrivilegeError,
+        code: 'privilege/engine'
+      ),
+    };
+
+    cases.forEach((kind, expected) {
+      test('$kind', () {
+        final mapped = mapEngineError(
+          WarrenFfiError(kind: kind, message: 'redacted detail'),
+        );
+        expect(mapped.runtimeType, expected.type);
+        expect(mapped.code, expected.code);
+        expect(mapped.message, 'redacted detail');
+      });
+    });
+  });
+
+  group('exitInfoFromDto', () {
+    test('maps every field', () {
+      const dto = ExitInfoDto(
+        id: 'exit-1',
+        country: 'RO',
+        city: 'Bucharest',
+        supportsIpv6: true,
+        supportsPortForwarding: false,
+        load: 0.42,
+      );
+      final info = exitInfoFromDto(dto);
+      expect(info.id, 'exit-1');
+      expect(info.country, 'RO');
+      expect(info.city, 'Bucharest');
+      expect(info.supportsIpv6, isTrue);
+      expect(info.supportsPortForwarding, isFalse);
+      expect(info.load, 0.42);
+    });
+
+    test('preserves an absent load', () {
+      const dto = ExitInfoDto(
+        id: 'exit-2',
+        country: 'SE',
+        city: 'Stockholm',
+        supportsIpv6: false,
+        supportsPortForwarding: true,
+      );
+      expect(exitInfoFromDto(dto).load, isNull);
+    });
+  });
+}

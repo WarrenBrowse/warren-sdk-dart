@@ -3,15 +3,15 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
+import 'api/client.dart';
+import 'api/error.dart';
+import 'api/identity.dart';
 import 'dart:async';
 import 'dart:convert';
-
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-import 'api/identity.dart';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
 class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
@@ -71,7 +71,7 @@ class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 418347843;
+  int get rustContentHash => 700957060;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -83,6 +83,24 @@ class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
 }
 
 abstract class WarrenRustBridgeApi extends BaseApi {
+  Future<String> crateApiClientWarrenClientFrbAddress(
+      {required WarrenClientFrb that});
+
+  Future<WarrenClientFrb> crateApiClientWarrenClientFrbCreate(
+      {required String mnemonic,
+      required String apiBase,
+      required String serverPubkeyPin,
+      String? multihopRootPin});
+
+  Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
+      {required WarrenClientFrb that});
+
+  Future<BigInt> crateApiClientWarrenClientFrbRedeemVoucher(
+      {required WarrenClientFrb that, required String secret});
+
+  Future<BigInt> crateApiClientWarrenClientFrbSubscriptionExpiry(
+      {required WarrenClientFrb that});
+
   Future<String> crateApiIdentityAddressFromMnemonic(
       {required String mnemonic});
 
@@ -99,6 +117,15 @@ abstract class WarrenRustBridgeApi extends BaseApi {
   Future<String> crateApiIdentitySs58Decode({required String address});
 
   Future<String> crateApiIdentitySs58Encode({required String publicKeyHex});
+
+  RustArcIncrementStrongCountFnType
+      get rust_arc_increment_strong_count_WarrenClientFrb;
+
+  RustArcDecrementStrongCountFnType
+      get rust_arc_decrement_strong_count_WarrenClientFrb;
+
+  CrossPlatformFinalizerArg
+      get rust_arc_decrement_strong_count_WarrenClientFrbPtr;
 }
 
 class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
@@ -111,25 +138,165 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   });
 
   @override
+  Future<String> crateApiClientWarrenClientFrbAddress(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 1, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_String,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbAddressConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbAddressConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_address",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<WarrenClientFrb> crateApiClientWarrenClientFrbCreate(
+      {required String mnemonic,
+      required String apiBase,
+      required String serverPubkeyPin,
+      String? multihopRootPin}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(mnemonic, serializer);
+        sse_encode_String(apiBase, serializer);
+        sse_encode_String(serverPubkeyPin, serializer);
+        sse_encode_opt_String(multihopRootPin, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 2, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData:
+            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbCreateConstMeta,
+      argValues: [mnemonic, apiBase, serverPubkeyPin, multihopRootPin],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbCreateConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_create",
+        argNames: ["mnemonic", "apiBase", "serverPubkeyPin", "multihopRootPin"],
+      );
+
+  @override
+  Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 3, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_list_exit_info_dto,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbListExitsConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbListExitsConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_list_exits",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<BigInt> crateApiClientWarrenClientFrbRedeemVoucher(
+      {required WarrenClientFrb that, required String secret}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        sse_encode_String(secret, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 4, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_u_64,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbRedeemVoucherConstMeta,
+      argValues: [that, secret],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbRedeemVoucherConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_redeem_voucher",
+        argNames: ["that", "secret"],
+      );
+
+  @override
+  Future<BigInt> crateApiClientWarrenClientFrbSubscriptionExpiry(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 5, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_u_64,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbSubscriptionExpiryConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbSubscriptionExpiryConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_subscription_expiry",
+        argNames: ["that"],
+      );
+
+  @override
   Future<String> crateApiIdentityAddressFromMnemonic(
       {required String mnemonic}) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(mnemonic, serializer);
-          pdeCallFfi(generalizedFrbRustBinding, serializer,
-              funcId: 1, port: port_);
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiIdentityAddressFromMnemonicConstMeta,
-        argValues: [mnemonic],
-        apiImpl: this,
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(mnemonic, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 6, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_String,
+        decodeErrorData: sse_decode_AnyhowException,
       ),
-    );
+      constMeta: kCrateApiIdentityAddressFromMnemonicConstMeta,
+      argValues: [mnemonic],
+      apiImpl: this,
+    ));
   }
 
   TaskConstMeta get kCrateApiIdentityAddressFromMnemonicConstMeta =>
@@ -140,22 +307,20 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
 
   @override
   Future<String> crateApiIdentityGenerateMnemonic() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(generalizedFrbRustBinding, serializer,
-              funcId: 2, port: port_);
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiIdentityGenerateMnemonicConstMeta,
-        argValues: [],
-        apiImpl: this,
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 7, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_String,
+        decodeErrorData: null,
       ),
-    );
+      constMeta: kCrateApiIdentityGenerateMnemonicConstMeta,
+      argValues: [],
+      apiImpl: this,
+    ));
   }
 
   TaskConstMeta get kCrateApiIdentityGenerateMnemonicConstMeta =>
@@ -172,28 +337,26 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       required List<int> body,
       required BigInt timestamp,
       required String nonceHex}) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(seedHex, serializer);
-          sse_encode_String(method, serializer);
-          sse_encode_String(path, serializer);
-          sse_encode_list_prim_u_8_loose(body, serializer);
-          sse_encode_u_64(timestamp, serializer);
-          sse_encode_String(nonceHex, serializer);
-          pdeCallFfi(generalizedFrbRustBinding, serializer,
-              funcId: 3, port: port_);
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_signed_request,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiIdentitySignRequestConstMeta,
-        argValues: [seedHex, method, path, body, timestamp, nonceHex],
-        apiImpl: this,
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(seedHex, serializer);
+        sse_encode_String(method, serializer);
+        sse_encode_String(path, serializer);
+        sse_encode_list_prim_u_8_loose(body, serializer);
+        sse_encode_u_64(timestamp, serializer);
+        sse_encode_String(nonceHex, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 8, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_signed_request,
+        decodeErrorData: sse_decode_AnyhowException,
       ),
-    );
+      constMeta: kCrateApiIdentitySignRequestConstMeta,
+      argValues: [seedHex, method, path, body, timestamp, nonceHex],
+      apiImpl: this,
+    ));
   }
 
   TaskConstMeta get kCrateApiIdentitySignRequestConstMeta =>
@@ -211,23 +374,21 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
 
   @override
   Future<String> crateApiIdentitySs58Decode({required String address}) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(address, serializer);
-          pdeCallFfi(generalizedFrbRustBinding, serializer,
-              funcId: 4, port: port_);
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiIdentitySs58DecodeConstMeta,
-        argValues: [address],
-        apiImpl: this,
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(address, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 9, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_String,
+        decodeErrorData: sse_decode_AnyhowException,
       ),
-    );
+      constMeta: kCrateApiIdentitySs58DecodeConstMeta,
+      argValues: [address],
+      apiImpl: this,
+    ));
   }
 
   TaskConstMeta get kCrateApiIdentitySs58DecodeConstMeta => const TaskConstMeta(
@@ -237,29 +398,35 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
 
   @override
   Future<String> crateApiIdentitySs58Encode({required String publicKeyHex}) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(publicKeyHex, serializer);
-          pdeCallFfi(generalizedFrbRustBinding, serializer,
-              funcId: 5, port: port_);
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiIdentitySs58EncodeConstMeta,
-        argValues: [publicKeyHex],
-        apiImpl: this,
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(publicKeyHex, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 10, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_String,
+        decodeErrorData: sse_decode_AnyhowException,
       ),
-    );
+      constMeta: kCrateApiIdentitySs58EncodeConstMeta,
+      argValues: [publicKeyHex],
+      apiImpl: this,
+    ));
   }
 
   TaskConstMeta get kCrateApiIdentitySs58EncodeConstMeta => const TaskConstMeta(
         debugName: "ss58_encode",
         argNames: ["publicKeyHex"],
       );
+
+  RustArcIncrementStrongCountFnType
+      get rust_arc_increment_strong_count_WarrenClientFrb => wire
+          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb;
+
+  RustArcDecrementStrongCountFnType
+      get rust_arc_decrement_strong_count_WarrenClientFrb => wire
+          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb;
 
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw) {
@@ -268,9 +435,79 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenClientFrb
+      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenClientFrbImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  WarrenClientFrb
+      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenClientFrbImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  WarrenClientFrb
+      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenClientFrbImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
+  }
+
+  @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
+  double dco_decode_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
+  ExitInfoDto dco_decode_exit_info_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return ExitInfoDto(
+      id: dco_decode_String(arr[0]),
+      country: dco_decode_String(arr[1]),
+      city: dco_decode_String(arr[2]),
+      supportsIpv6: dco_decode_bool(arr[3]),
+      supportsPortForwarding: dco_decode_bool(arr[4]),
+      load: dco_decode_opt_box_autoadd_f_64(arr[5]),
+    );
+  }
+
+  @protected
+  double dco_decode_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
+  int dco_decode_i_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  List<ExitInfoDto> dco_decode_list_exit_info_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_exit_info_dto).toList();
   }
 
   @protected
@@ -283,6 +520,18 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
+  }
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  double? dco_decode_opt_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_f_64(raw);
   }
 
   @protected
@@ -318,40 +567,168 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  BigInt dco_decode_usize(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeU64(raw);
+  }
+
+  @protected
+  WarrenErrorKind dco_decode_warren_error_kind(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenErrorKind.values[raw as int];
+  }
+
+  @protected
+  WarrenFfiError dco_decode_warren_ffi_error(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return WarrenFfiError(
+      kind: dco_decode_warren_error_kind(arr[0]),
+      message: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    final inner = sse_decode_String(deserializer);
+    var inner = sse_decode_String(deserializer);
     return AnyhowException(inner);
+  }
+
+  @protected
+  WarrenClientFrb
+      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WarrenClientFrbImpl.frbInternalSseDecode(
+        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
+  }
+
+  @protected
+  WarrenClientFrb
+      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WarrenClientFrbImpl.frbInternalSseDecode(
+        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
+  }
+
+  @protected
+  WarrenClientFrb
+      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WarrenClientFrbImpl.frbInternalSseDecode(
+        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
   }
 
   @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    final inner = sse_decode_list_prim_u_8_strict(deserializer);
+    var inner = sse_decode_list_prim_u_8_strict(deserializer);
     return utf8.decoder.convert(inner);
+  }
+
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_f_64(deserializer));
+  }
+
+  @protected
+  ExitInfoDto sse_decode_exit_info_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_country = sse_decode_String(deserializer);
+    var var_city = sse_decode_String(deserializer);
+    var var_supportsIpv6 = sse_decode_bool(deserializer);
+    var var_supportsPortForwarding = sse_decode_bool(deserializer);
+    var var_load = sse_decode_opt_box_autoadd_f_64(deserializer);
+    return ExitInfoDto(
+        id: var_id,
+        country: var_country,
+        city: var_city,
+        supportsIpv6: var_supportsIpv6,
+        supportsPortForwarding: var_supportsPortForwarding,
+        load: var_load);
+  }
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getFloat64();
+  }
+
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getInt32();
+  }
+
+  @protected
+  List<ExitInfoDto> sse_decode_list_exit_info_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <ExitInfoDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_exit_info_dto(deserializer));
+    }
+    return ans_;
   }
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    final len_ = sse_decode_i_32(deserializer);
+    var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
   }
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    final len_ = sse_decode_i_32(deserializer);
+    var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_f_64(deserializer));
+    } else {
+      return null;
+    }
   }
 
   @protected
   SignedRequest sse_decode_signed_request(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    final var_pubkeySs58 = sse_decode_String(deserializer);
-    final var_signatureHex = sse_decode_String(deserializer);
-    final var_timestamp = sse_decode_u_64(deserializer);
-    final var_nonceHex = sse_decode_String(deserializer);
+    var var_pubkeySs58 = sse_decode_String(deserializer);
+    var var_signatureHex = sse_decode_String(deserializer);
+    var var_timestamp = sse_decode_u_64(deserializer);
+    var var_nonceHex = sse_decode_String(deserializer);
     return SignedRequest(
         pubkeySs58: var_pubkeySs58,
         signatureHex: var_signatureHex,
@@ -377,15 +754,24 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  int sse_decode_i_32(SseDeserializer deserializer) {
+  BigInt sse_decode_usize(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getInt32();
+    return deserializer.buffer.getBigUint64();
   }
 
   @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
+  WarrenErrorKind sse_decode_warren_error_kind(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8() != 0;
+    var inner = sse_decode_i_32(deserializer);
+    return WarrenErrorKind.values[inner];
+  }
+
+  @protected
+  WarrenFfiError sse_decode_warren_ffi_error(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_kind = sse_decode_warren_error_kind(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    return WarrenFfiError(kind: var_kind, message: var_message);
   }
 
   @protected
@@ -396,9 +782,84 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void
+      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          WarrenClientFrb self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+        (self as WarrenClientFrbImpl).frbInternalSseEncode(move: true),
+        serializer);
+  }
+
+  @protected
+  void
+      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          WarrenClientFrb self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+        (self as WarrenClientFrbImpl).frbInternalSseEncode(move: false),
+        serializer);
+  }
+
+  @protected
+  void
+      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          WarrenClientFrb self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+        (self as WarrenClientFrbImpl).frbInternalSseEncode(move: null),
+        serializer);
+  }
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
+  }
+
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_64(self, serializer);
+  }
+
+  @protected
+  void sse_encode_exit_info_dto(ExitInfoDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.country, serializer);
+    sse_encode_String(self.city, serializer);
+    sse_encode_bool(self.supportsIpv6, serializer);
+    sse_encode_bool(self.supportsPortForwarding, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.load, serializer);
+  }
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putFloat64(self);
+  }
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putInt32(self);
+  }
+
+  @protected
+  void sse_encode_list_exit_info_dto(
+      List<ExitInfoDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_exit_info_dto(item, serializer);
+    }
   }
 
   @protected
@@ -416,6 +877,26 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     serializer.buffer.putUint8List(self);
+  }
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_f_64(self, serializer);
+    }
   }
 
   @protected
@@ -445,14 +926,66 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  void sse_encode_i_32(int self, SseSerializer serializer) {
+  void sse_encode_usize(BigInt self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putInt32(self);
+    serializer.buffer.putBigUint64(self);
   }
 
   @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
+  void sse_encode_warren_error_kind(
+      WarrenErrorKind self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self ? 1 : 0);
+    sse_encode_i_32(self.index, serializer);
   }
+
+  @protected
+  void sse_encode_warren_ffi_error(
+      WarrenFfiError self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_warren_error_kind(self.kind, serializer);
+    sse_encode_String(self.message, serializer);
+  }
+}
+
+@sealed
+class WarrenClientFrbImpl extends RustOpaque implements WarrenClientFrb {
+  // Not to be used by end users
+  WarrenClientFrbImpl.frbInternalDcoDecode(List<dynamic> wire)
+      : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  WarrenClientFrbImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
+      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: WarrenRustBridge
+        .instance.api.rust_arc_increment_strong_count_WarrenClientFrb,
+    rustArcDecrementStrongCount: WarrenRustBridge
+        .instance.api.rust_arc_decrement_strong_count_WarrenClientFrb,
+    rustArcDecrementStrongCountPtr: WarrenRustBridge
+        .instance.api.rust_arc_decrement_strong_count_WarrenClientFrbPtr,
+  );
+
+  /// The SS58 `wb...` address of the bound identity.
+  Future<String> address() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbAddress(
+        that: this,
+      );
+
+  /// Fetches and verifies the signed relay list, returning the exits.
+  Future<List<ExitInfoDto>> listExits() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbListExits(
+        that: this,
+      );
+
+  /// Redeems a voucher and returns the new expiry (Unix seconds).
+  Future<BigInt> redeemVoucher({required String secret}) => WarrenRustBridge
+      .instance.api
+      .crateApiClientWarrenClientFrbRedeemVoucher(that: this, secret: secret);
+
+  /// Unix-seconds subscription expiry (`0` means no active subscription).
+  Future<BigInt> subscriptionExpiry() => WarrenRustBridge.instance.api
+          .crateApiClientWarrenClientFrbSubscriptionExpiry(
+        that: this,
+      );
 }

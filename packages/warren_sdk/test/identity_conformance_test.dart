@@ -4,23 +4,21 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
-    show ExternalLibrary;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warren_sdk/warren_sdk.dart';
 import 'package:warren_sdk_ffi/warren_sdk_ffi.dart';
+
+import 'support/engine.dart';
 
 /// Replays the shared `vectors/identity.json` golden vectors through the public
 /// Dart surface, backed by the real Rust engine over flutter_rust_bridge. This
 /// proves the Dart SDK is byte-for-byte wire-compatible with every sibling SDK;
 /// the vectors are the contract and are never edited to make a test pass.
 void main() {
-  // Resolve paths from the package directory (the test working directory).
-  final dylib = _engineLibraryPath();
-  if (!File(dylib).existsSync()) {
+  if (!tryRegisterEngine()) {
     // Fail loudly rather than silently skip: the conformance gate must run.
     fail(
-      'Native engine library not found at $dylib. Build it first:\n'
+      'Native engine library not found at ${engineLibraryPath()}. Build it:\n'
       '  (cd native/warren_sdk_frb && cargo build --release)\n'
       'or run `melos run gen` then the build.',
     );
@@ -29,11 +27,6 @@ void main() {
   final vectors = jsonDecode(
     File('../../vectors/identity.json').readAsStringSync(),
   ) as Map<String, dynamic>;
-
-  setUpAll(() {
-    WarrenSdkFfi.externalLibraryOverride = ExternalLibrary.open(dylib);
-    WarrenSdkFfi.ensureRegistered();
-  });
 
   group('ss58', () {
     final cases = (vectors['ss58'] as Map<String, dynamic>)['vectors'] as List;
@@ -124,13 +117,4 @@ void main() {
       );
     });
   });
-}
-
-/// The cargo `cdylib` output path for the host platform, relative to the package
-/// directory that `flutter test` runs from.
-String _engineLibraryPath() {
-  const base = '../../native/warren_sdk_frb/target/release/';
-  if (Platform.isMacOS) return '${base}libwarren_sdk_frb.dylib';
-  if (Platform.isWindows) return '${base}warren_sdk_frb.dll';
-  return '${base}libwarren_sdk_frb.so';
 }

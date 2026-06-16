@@ -12,29 +12,38 @@ before mobile extensions.
 - [x] Package skeletons: facade, platform interface, ffi, riverpod.
 - [x] Public facade API surface (models, `WarrenClient`, sessions, errors) as
       framework-agnostic Dart, with the platform interface it talks to.
-- [ ] Lints/tooling green: `dart analyze`, `dart format --set-exit-if-changed`.
+- [x] Lints/tooling green: `dart analyze`, `dart format --set-exit-if-changed`.
 
 ## P1: Identity slice over the real engine (Mode A, in-process)
 
 The first vertical slice, mirroring how the Rust engine started with identity.
 
-- [ ] `native/warren_sdk_frb`: FRB glue crate wrapping `warren-sdk` identity
+- [x] `native/warren_sdk_frb`: FRB glue crate wrapping `warren-sdk` identity
       helpers (generate mnemonic, address from mnemonic, SS58 encode/decode,
       sign request).
-- [ ] cargokit build wired into `warren_sdk_ffi` for all desktop targets.
-- [ ] FRB codegen producing the Dart bindings.
-- [ ] `warren_sdk_ffi` implements the identity part of the platform interface.
-- [ ] Golden-vector tests: replay `warren-sdk-rs/vectors/identity.json` through
-      the Dart facade so the surface is wire-identical to every sibling SDK.
+- [x] FRB codegen producing the Dart bindings (checked in under `lib/src/rust`).
+- [x] `warren_sdk_ffi` implements the identity part of the platform interface,
+      with lazy one-shot native init and redacted error mapping.
+- [x] Golden-vector tests: replay `vectors/identity.json` through the Dart
+      facade against the real engine so the surface is wire-identical to every
+      sibling SDK.
+- [ ] cargokit app-bundling build for `warren_sdk_ffi` (Android/iOS/desktop).
+      Deferred: it only takes effect at `flutter build`/`flutter run` time, which
+      is out of scope for this automated environment. The host-side conformance
+      test builds the engine with `cargo build` directly. See
+      `packages/warren_sdk_ffi/NATIVE_BUILD.md`.
 
 ## P2: Account API (Mode A)
 
-- [ ] FRB wrap of `WarrenClient` create + account calls (subscription expiry,
-      redeem voucher, list exits).
-- [ ] Facade `WarrenClient.create`, `subscriptionExpiry`, `redeemVoucher`,
-      `listExits`, `selectExit`.
-- [ ] Error mapping: Rust error to sealed Dart `WarrenError`, redacted.
-- [ ] Live happy-path tests gated on a subscribed test account + real exit.
+- [x] FRB wrap of `WarrenClient` create + account calls (subscription expiry,
+      redeem voucher, list exits) behind an opaque `WarrenClientFrb`.
+- [x] Facade `WarrenClient.create`, `subscription`, `redeemVoucher`,
+      `listExits`, `selectExit`, backed by an `FfiClientHandle`.
+- [x] Error mapping: typed engine error (`WarrenFfiError`) to sealed Dart
+      `WarrenError`, redacted, unit-tested per category.
+- [~] Live happy-path tests gated on a subscribed test account + real exit:
+      `test/account_live_test.dart`, skipped unless `WARREN_MNEMONIC`,
+      `WARREN_API_BASE` and `WARREN_SERVER_PIN` are set. Not yet run here.
 
 ## P3: Proxy datapath (Mode A, the default mode)
 

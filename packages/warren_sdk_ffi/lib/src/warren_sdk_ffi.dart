@@ -5,8 +5,12 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
 import 'package:meta/meta.dart';
 import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
+import 'engine_mapping.dart';
+import 'rust/api/client.dart' as rust_client;
+import 'rust/api/error.dart';
 import 'rust/api/identity.dart' as rust;
 import 'rust/frb_generated.dart';
+import 'warren_client_ffi.dart';
 
 /// Authentication material for a signed Warren API request.
 ///
@@ -137,9 +141,19 @@ class WarrenSdkFfi extends WarrenSdkPlatform {
       });
 
   @override
-  Future<WarrenClientHandle> createClient(WarrenClientConfig config) async =>
-      throw const WarrenUnsupportedError(
-        code: 'client/not-yet',
-        message: 'The engine client lifecycle lands in roadmap P2.',
+  Future<WarrenClientHandle> createClient(WarrenClientConfig config) async {
+    await _ensureInitialized();
+    try {
+      final client = await rust_client.WarrenClientFrb.create(
+        mnemonic: config.mnemonic,
+        apiBase: config.apiBase.toString(),
+        serverPubkeyPin: config.serverPubkeyPin,
+        multihopRootPin: config.multihopRootPin,
       );
+      final address = await client.address();
+      return FfiClientHandle(client, address);
+    } on WarrenFfiError catch (error) {
+      throw mapEngineError(error);
+    }
+  }
 }

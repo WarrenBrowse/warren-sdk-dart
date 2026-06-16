@@ -24,6 +24,11 @@ flutter_rust_bridge = "=2.12.0"
 anyhow = "1"
 hex = "0.4"
 
+# `frb_expand` is set by flutter_rust_bridge_codegen during its cargo-expand pass
+# to exclude the generated module; register it so it is not an unexpected cfg.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+
 [profile.release]
 opt-level = 3
 lto = "thin"
