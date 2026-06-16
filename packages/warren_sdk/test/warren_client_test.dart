@@ -88,6 +88,24 @@ void main() {
       expect(platform.lastConfig?.multihopRootPin, 'feed');
     });
 
+    test('create forwards DAITA configuration when requested', () async {
+      await WarrenClient.create(
+        mnemonic: 'm',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+        daita: true,
+        daitaMachine: 'curated-1',
+      );
+      expect(platform.lastConfig?.daita, isTrue);
+      expect(platform.lastConfig?.daitaMachine, 'curated-1');
+    });
+
+    test('create defaults DAITA off', () async {
+      await create();
+      expect(platform.lastConfig?.daita, isFalse);
+      expect(platform.lastConfig?.daitaMachine, isNull);
+    });
+
     test('subscription surfaces the engine snapshot', () async {
       final client = await create();
       final sub = await client.subscription();

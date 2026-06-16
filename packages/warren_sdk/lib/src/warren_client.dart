@@ -39,6 +39,8 @@ class WarrenClient {
     required Uri apiBase,
     required String serverPubkeyPin,
     String? multihopRootPin,
+    bool daita = false,
+    String? daitaMachine,
   }) async {
     // Ensure the default in-process engine is registered. A privileged Mode B
     // implementation may have already overridden the instance; if so, this is a
@@ -50,6 +52,8 @@ class WarrenClient {
         apiBase: apiBase,
         serverPubkeyPin: serverPubkeyPin,
         multihopRootPin: multihopRootPin,
+        daita: daita,
+        daitaMachine: daitaMachine,
       ),
     );
     return WarrenClient._(handle);

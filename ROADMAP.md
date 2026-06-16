@@ -85,9 +85,17 @@ The first vertical slice, mirroring how the Rust engine started with identity.
 
 ## P6: Port forwarding and advanced features
 
-- [ ] NAT-PMP port forward surfaced (inbound listener / local relay).
-- [ ] Reconnect/backoff supervision surfaced as state-stream transitions.
-- [ ] DAITA options exposed through `ConnectOptions`.
+- [x] Reconnect/backoff supervision surfaced as state-stream transitions: the
+      proxy datapath is supervised, so `Reconnecting` is emitted between epochs
+      (mapped and tested).
+- [x] DAITA exposed via `WarrenClient.create` (`daita`, `daitaMachine`). The
+      engine configures DAITA at client-build time, so it lives on the client
+      config, not `ConnectOptions`; forwarding is unit-tested.
+- [ ] NAT-PMP port forward surfaced (inbound listener / local relay). Deferred:
+      the engine exposes `forward_port` only on the non-supervised `ProxyHandle`,
+      while the SDK uses the self-healing `SupervisedProxyHandle` (auto-reconnect)
+      which does not. Surfacing it needs an engine addition or a non-supervised
+      connect mode, and is live-gated (needs a real exit and an external peer).
 
 ## P7: Optional integrations and polish
 

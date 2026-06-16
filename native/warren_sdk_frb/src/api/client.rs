@@ -62,6 +62,8 @@ impl WarrenClientFrb {
         api_base: String,
         server_pubkey_pin: String,
         multihop_root_pin: Option<String>,
+        daita: bool,
+        daita_machine: Option<String>,
     ) -> Result<WarrenClientFrb, WarrenFfiError> {
         let identity = WarrenIdentity::from_mnemonic(&mnemonic)
             .map_err(|_| err(WarrenErrorKind::Identity, "invalid mnemonic"))?;
@@ -73,6 +75,12 @@ impl WarrenClientFrb {
             .server_pubkey_pin(server_pubkey_pin);
         if let Some(root) = multihop_root_pin {
             builder = builder.multihop_root_pubkey_pin(root);
+        }
+        if daita {
+            builder = builder.daita();
+            if let Some(machine) = daita_machine {
+                builder = builder.daita_machine(machine);
+            }
         }
         let inner = builder
             .build()

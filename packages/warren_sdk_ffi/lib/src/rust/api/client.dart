@@ -34,12 +34,16 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
           {required String mnemonic,
           required String apiBase,
           required String serverPubkeyPin,
-          String? multihopRootPin}) =>
+          String? multihopRootPin,
+          required bool daita,
+          String? daitaMachine}) =>
       WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCreate(
           mnemonic: mnemonic,
           apiBase: apiBase,
           serverPubkeyPin: serverPubkeyPin,
-          multihopRootPin: multihopRootPin);
+          multihopRootPin: multihopRootPin,
+          daita: daita,
+          daitaMachine: daitaMachine);
 
   /// Fetches and verifies the signed relay list, returning the exits.
   Future<List<ExitInfoDto>> listExits();

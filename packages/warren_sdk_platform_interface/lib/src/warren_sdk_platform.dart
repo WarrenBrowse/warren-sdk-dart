@@ -18,6 +18,8 @@ class WarrenClientConfig {
     required this.apiBase,
     required this.serverPubkeyPin,
     this.multihopRootPin,
+    this.daita = false,
+    this.daitaMachine,
   });
 
   /// The 12-word BIP39 mnemonic. Consumed once, zeroized in Rust.
@@ -31,6 +33,17 @@ class WarrenClientConfig {
 
   /// Optional pinned multihop directory root, for stricter PKI verification.
   final String? multihopRootPin;
+
+  /// Whether to enable DAITA (Defense Against AI Traffic Analysis) padding.
+  ///
+  /// DAITA is configured when the client is built, so it is set here rather than
+  /// per connection.
+  final bool daita;
+
+  /// An optional named DAITA machine from the curated pool; the engine picks a
+  /// default when null. Ignored unless [daita] is true. The name is a public
+  /// protocol label, not identity material.
+  final String? daitaMachine;
 }
 
 /// The federated-plugin contract every platform implementation satisfies.

@@ -97,7 +97,9 @@ abstract class WarrenRustBridgeApi extends BaseApi {
       {required String mnemonic,
       required String apiBase,
       required String serverPubkeyPin,
-      String? multihopRootPin});
+      String? multihopRootPin,
+      required bool daita,
+      String? daitaMachine});
 
   Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
       {required WarrenClientFrb that});
@@ -231,7 +233,9 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       {required String mnemonic,
       required String apiBase,
       required String serverPubkeyPin,
-      String? multihopRootPin}) {
+      String? multihopRootPin,
+      required bool daita,
+      String? daitaMachine}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -239,6 +243,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_String(apiBase, serializer);
         sse_encode_String(serverPubkeyPin, serializer);
         sse_encode_opt_String(multihopRootPin, serializer);
+        sse_encode_bool(daita, serializer);
+        sse_encode_opt_String(daitaMachine, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 3, port: port_);
       },
@@ -248,7 +254,14 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         decodeErrorData: sse_decode_warren_ffi_error,
       ),
       constMeta: kCrateApiClientWarrenClientFrbCreateConstMeta,
-      argValues: [mnemonic, apiBase, serverPubkeyPin, multihopRootPin],
+      argValues: [
+        mnemonic,
+        apiBase,
+        serverPubkeyPin,
+        multihopRootPin,
+        daita,
+        daitaMachine
+      ],
       apiImpl: this,
     ));
   }
@@ -256,7 +269,14 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   TaskConstMeta get kCrateApiClientWarrenClientFrbCreateConstMeta =>
       const TaskConstMeta(
         debugName: "WarrenClientFrb_create",
-        argNames: ["mnemonic", "apiBase", "serverPubkeyPin", "multihopRootPin"],
+        argNames: [
+          "mnemonic",
+          "apiBase",
+          "serverPubkeyPin",
+          "multihopRootPin",
+          "daita",
+          "daitaMachine"
+        ],
       );
 
   @override

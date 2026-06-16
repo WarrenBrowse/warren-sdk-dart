@@ -149,6 +149,8 @@ class WarrenSdkFfi extends WarrenSdkPlatform {
         apiBase: config.apiBase.toString(),
         serverPubkeyPin: config.serverPubkeyPin,
         multihopRootPin: config.multihopRootPin,
+        daita: config.daita,
+        daitaMachine: config.daitaMachine,
       );
       final address = await client.address();
       return FfiClientHandle(client, address);
