@@ -49,5 +49,9 @@ sudo install -m 0440 -o root -g wheel "$tmp" "$SUDOERS_FILE" 2>/dev/null \
 sudo visudo -c -f "$SUDOERS_FILE" >/dev/null || die "post-install validation failed (unexpected)."
 
 echo "Installed $SUDOERS_FILE for '$DEV_USER' -> $BIN"
-sudo -n "$BIN" --version >/dev/null 2>&1 || true
-echo "You can now run: sudo -n '$BIN' <socket-path>"
+# Non-blocking authorization check (list mode; does not run the daemon).
+if sudo -n -l "$BIN" >/dev/null 2>&1; then
+  echo "NOPASSWD active. You can now run: sudo -n '$BIN' <socket-path>"
+else
+  die "sudoers installed but 'sudo -n -l $BIN' still fails; inspect $SUDOERS_FILE."
+fi

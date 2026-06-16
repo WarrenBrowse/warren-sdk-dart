@@ -55,11 +55,9 @@ void main() {
         // socket, then drive it.
         final dir = await Directory.systemTemp.createTemp('warrend_root');
         final socketPath = '${dir.path}/d.sock';
-        final daemon = await Process.start('sudo', [
-          '-n',
-          File(daemonBin).absolute.path,
-          socketPath,
-        ]);
+        // Canonical path (no `..`), so it matches the pinned sudoers entry.
+        final daemonPath = File(daemonBin).resolveSymbolicLinksSync();
+        final daemon = await Process.start('sudo', ['-n', daemonPath, socketPath]);
         addTearDown(() async {
           daemon.kill();
           await daemon.exitCode;
