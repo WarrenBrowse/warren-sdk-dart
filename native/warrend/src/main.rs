@@ -5,24 +5,33 @@
 //! connection drives one session: the tunnel is torn down when the connection
 //! closes, so a crashed app never leaves the datapath up (fail-closed).
 //!
+//! The active tunnel is held in a shared slot and torn down on SIGINT/SIGTERM as
+//! well, so stopping the daemon always restores the host's routing and pf state.
+//!
 //! Run as root (TUN needs privilege). The socket path is the first argument, or
 //! `/tmp/warren-sdk-daemon.sock` by default for development.
 
 mod protocol;
 
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{UnixListener, UnixStream};
 use warren_sdk::discovery::VerifiedExit;
 use warren_sdk::identity::WarrenIdentity;
-use warren_sdk::{DefaultClient, SdkError, WarrenClient};
+use warren_sdk::{DefaultClient, SdkError, TunDatapathHandle, WarrenClient};
 
 use protocol::{ConnState, Event, Request};
 
 const DEFAULT_SOCKET: &str = "/tmp/warren-sdk-daemon.sock";
 const MAX_FRAME: usize = 16 * 1024 * 1024;
+
+/// The single active tunnel. Dropping it reverts routing and the killswitch, so
+/// holding it here lets both a connection close and a shutdown signal restore the
+/// host's network.
+type SharedTunnel = Arc<Mutex<Option<TunDatapathHandle>>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -38,15 +47,42 @@ async fn main() -> Result<()> {
     restrict_socket(&socket_path)?;
     eprintln!("warrend listening on {socket_path}");
 
-    loop {
-        let (stream, _) = listener.accept().await?;
-        // One session per connection; a panic in one must not take the daemon
-        // down, so each connection runs in its own task.
+    let tunnel: SharedTunnel = Arc::new(Mutex::new(None));
+
+    // Restore the network on a shutdown signal before exiting (a SIGKILL still
+    // cannot be caught, but a normal stop is always clean).
+    {
+        let tunnel = Arc::clone(&tunnel);
+        let socket_path = socket_path.clone();
         tokio::spawn(async move {
-            if let Err(error) = serve_connection(stream).await {
+            shutdown_signal().await;
+            eprintln!("warrend: shutting down, restoring network");
+            drop(tunnel.lock().expect("tunnel mutex").take());
+            std::fs::remove_file(&socket_path).ok();
+            std::process::exit(0);
+        });
+    }
+
+    loop {
+        let (mut stream, _) = listener.accept().await?;
+        let tunnel = Arc::clone(&tunnel);
+        tokio::spawn(async move {
+            if let Err(error) = serve_connection(&mut stream, &tunnel).await {
                 eprintln!("warrend: connection ended: {error}");
             }
+            // Tear the session's tunnel down when its driving connection closes.
+            drop(tunnel.lock().expect("tunnel mutex").take());
         });
+    }
+}
+
+async fn shutdown_signal() {
+    use tokio::signal::unix::{signal, SignalKind};
+    let mut term = signal(SignalKind::terminate()).expect("install SIGTERM handler");
+    let mut interrupt = signal(SignalKind::interrupt()).expect("install SIGINT handler");
+    tokio::select! {
+        _ = term.recv() => {}
+        _ = interrupt.recv() => {}
     }
 }
 
@@ -69,36 +105,38 @@ fn restrict_socket(socket_path: &str) -> Result<()> {
     Ok(())
 }
 
-/// Per-connection state. Dropping `tunnel` reverts routing and the killswitch.
+/// Per-connection state: the configured engine client. The tunnel itself lives in
+/// the shared slot so signals and connection close can both tear it down.
 #[derive(Default)]
 struct Session {
     client: Option<DefaultClient>,
-    tunnel: Option<warren_sdk::TunDatapathHandle>,
 }
 
-async fn serve_connection(mut stream: UnixStream) -> Result<()> {
+async fn serve_connection(stream: &mut UnixStream, tunnel: &SharedTunnel) -> Result<()> {
     let mut session = Session::default();
-    while let Some(frame) = read_frame(&mut stream).await? {
+    while let Some(frame) = read_frame(stream).await? {
         let request: Request = match serde_json::from_slice(&frame) {
             Ok(request) => request,
             Err(_) => {
-                send(&mut stream, &Event::error("tunnel", "malformed request")).await?;
+                send(stream, &Event::error("tunnel", "malformed request")).await?;
                 continue;
             }
         };
-        match handle(&mut session, request).await {
-            Ok(Some(event)) => send(&mut stream, &event).await?,
+        match handle(&mut session, tunnel, request).await {
+            Ok(Some(event)) => send(stream, &event).await?,
             Ok(None) => {}
-            Err(event) => send(&mut stream, &event).await?,
+            Err(event) => send(stream, &event).await?,
         }
     }
-    // Connection closed: the session (and its tunnel) drops here, tearing the
-    // datapath down.
     Ok(())
 }
 
 /// Handles one request, returning an event to send back (or an error event).
-async fn handle(session: &mut Session, request: Request) -> Result<Option<Event>, Event> {
+async fn handle(
+    session: &mut Session,
+    tunnel: &SharedTunnel,
+    request: Request,
+) -> Result<Option<Event>, Event> {
     match request {
         Request::Configure {
             mnemonic,
@@ -140,11 +178,12 @@ async fn handle(session: &mut Session, request: Request) -> Result<Option<Event>
                 .start_tun_multihop(&exit, "")
                 .await
                 .map_err(map_sdk_error)?;
-            session.tunnel = Some(handle);
+            // Replacing any prior tunnel drops it first (reverting its routes).
+            *tunnel.lock().expect("tunnel mutex") = Some(handle);
             Ok(Some(Event::state(ConnState::Connected)))
         }
         Request::Disconnect => {
-            session.tunnel = None;
+            drop(tunnel.lock().expect("tunnel mutex").take());
             Ok(Some(Event::state(ConnState::Disconnected)))
         }
     }

@@ -87,13 +87,8 @@ void main() {
         expect(await connected, isA<Connected>());
       });
     },
-    skip: Platform.isMacOS
-        // The engine's warren-tun routing layer is Linux-only (gateway discovery
-        // and split-default use iproute2 `ip route`), so the rooted TUN cannot
-        // come up on macOS yet. Everything up to the routing step is exercised.
-        ? 'macOS TUN routing is not implemented in the engine (Linux-only)'
-        : ready
-            ? false
-            : 'set WARREN_ROOTED=1 + WARREN_* and install the dev sudoers to run',
+    skip: ready
+        ? false
+        : 'set WARREN_ROOTED=1 + WARREN_* and install the dev sudoers to run',
   );
 }

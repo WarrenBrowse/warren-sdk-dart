@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.3", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.4", features = [
     "experimental-tun",
 ] }
 tokio = { version = "1", features = [
