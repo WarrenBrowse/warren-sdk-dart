@@ -66,12 +66,17 @@ async fn main() -> Result<()> {
     loop {
         let (mut stream, _) = listener.accept().await?;
         let tunnel = Arc::clone(&tunnel);
+        let socket_path = socket_path.clone();
         tokio::spawn(async move {
             if let Err(error) = serve_connection(&mut stream, &tunnel).await {
                 eprintln!("warrend: connection ended: {error}");
             }
-            // Tear the session's tunnel down when its driving connection closes.
+            // One app drives one daemon: when that connection closes, tear the
+            // tunnel down and exit, so a stopped client never leaves a privileged
+            // daemon (or a captured network) behind.
             drop(tunnel.lock().expect("tunnel mutex").take());
+            std::fs::remove_file(&socket_path).ok();
+            std::process::exit(0);
         });
     }
 }
