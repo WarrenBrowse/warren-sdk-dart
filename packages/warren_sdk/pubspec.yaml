@@ -31,3 +31,6 @@ dev_dependencies:
   flutter_rust_bridge: ^2.12.0
   flutter_test:
     sdk: flutter
+  # Test-only: the rooted TUN live test drives the warrend daemon over its socket.
+  warren_sdk_desktop:
+    path: ../warren_sdk_desktop
