@@ -1,0 +1,34 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+doc/api/
+
+# Generated FFI bindings are checked in only where a package documents it;
+# build artifacts are not.
+**/*.g.dart.bak
+
+# Rust
+native/**/target/
+target/
+
+# Native build (cargokit) intermediate output
+**/cargokit_build/
+
+# Local co-development cargo override (engine path override), never committed.
+# See the README "Local co-development" section.
+native/warren_sdk_frb/.cargo/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Secrets: never commit a mnemonic, key or pin override
+*.env
+.env.*
+secrets.json

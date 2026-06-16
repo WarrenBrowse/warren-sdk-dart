@@ -1,0 +1,15 @@
+# flutter_rust_bridge codegen configuration.
+#
+# Run from the repo root after installing the matching codegen:
+#   cargo install flutter_rust_bridge_codegen --version 2.12.0
+#   flutter_rust_bridge_codegen generate
+#
+# This scans the Rust API surface and (re)generates the Dart bindings under
+# warren_sdk_ffi plus the Rust `frb_generated.rs`. Keep the codegen version in
+# lockstep with the `flutter_rust_bridge` dependency pins (Dart and Rust).
+rust_input: crate::api
+rust_root: native/warren_sdk_frb
+dart_output: packages/warren_sdk_ffi/lib/src/rust
+dart_entrypoint_class_name: WarrenRustBridge
+# Generated Dart is formatted and analyzed like the rest of the workspace.
+dart_format_line_length: 80

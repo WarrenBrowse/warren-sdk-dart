@@ -1,0 +1,6 @@
+# Use the git CLI (and its credential helper) to fetch git dependencies. The
+# Warren engine is a private git dependency over HTTPS; the built-in libgit2
+# fetcher does not reliably pick up credentials, so delegate to git, which uses
+# the gh credential helper locally and the checkout token in CI.
+[net]
+git-fetch-with-cli = true

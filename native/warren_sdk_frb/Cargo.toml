@@ -1,0 +1,31 @@
+[package]
+name = "warren_sdk_frb"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+description = "flutter_rust_bridge glue exposing the Warren engine to Dart/Flutter (Mode A, in-process)."
+publish = false
+
+[lib]
+# cdylib for Android/iOS/desktop dynamic loading; staticlib for iOS/macOS static
+# linking. The Flutter FFI plugin (warren_sdk_ffi) builds this via cargokit.
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+# The audited Warren engine, reused not reimplemented. Pinned to a tagged
+# snapshot for reproducible builds on every machine and in CI (no assumption
+# about repo layout on disk). To bump the engine, move this tag and re-run codegen.
+# For local co-development against a working copy of the engine, use the
+# documented gitignored path override (see the repo README, "Local co-development")
+# so this pin stays the single source of truth for CI and releases.
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.1" }
+
+flutter_rust_bridge = "=2.12.0"
+anyhow = "1"
+hex = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

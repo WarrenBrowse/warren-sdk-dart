@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  dart:
+    name: format + analyze + test
+    runs-on: ubuntu-latest
+    steps:
+      # The vectors submodule is intentionally NOT fetched here: the current
+      # facade tests fake the platform and never read vectors. When P1 adds the
+      # native vector-replay tests, add `submodules: recursive` and
+      # `token: ${{ secrets.VECTORS_TOKEN }}` (a PAT with read access to
+      # warren-vectors), and a Rust job that builds the engine via the pinned
+      # git dependency.
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter --version
+      - run: flutter pub get
+      - name: format
+        run: dart format --output=none --set-exit-if-changed .
+      - name: analyze
+        run: flutter analyze
+      - name: test
+        run: flutter test
+        working-directory: packages/warren_sdk

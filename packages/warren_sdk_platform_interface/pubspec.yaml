@@ -1,0 +1,23 @@
+name: warren_sdk_platform_interface
+description: >-
+  The federated-plugin contract for the Warren VPN Dart SDK: the abstract
+  platform surface, shared immutable models, connection-state events and sealed
+  errors that every platform implementation depends on.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+  plugin_platform_interface: ^2.1.8
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter

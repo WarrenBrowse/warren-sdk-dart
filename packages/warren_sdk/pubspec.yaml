@@ -1,0 +1,29 @@
+name: warren_sdk
+description: >-
+  The Warren VPN client SDK for Flutter. A thin, reactive, framework-agnostic
+  Dart surface over the audited Warren Rust engine. Desktop first (Windows,
+  macOS, Linux) and mobile (Android, iOS). Add this one package.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+  # The default in-process engine (Mode A). Privileged Mode B implementations
+  # override the platform instance per platform; this guarantees the SDK works
+  # out of the box on every platform.
+  warren_sdk_ffi:
+    path: ../warren_sdk_ffi
+  warren_sdk_platform_interface:
+    path: ../warren_sdk_platform_interface
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter

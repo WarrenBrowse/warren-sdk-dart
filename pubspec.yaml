@@ -1,0 +1,19 @@
+# Root of the Dart pub workspace (monorepo). Member packages opt in with
+# `resolution: workspace`. This root is not published.
+name: _warren_sdk_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+# Native pub workspace: one lockfile, one `dart pub get` for every member.
+workspace:
+  - packages/warren_sdk
+  - packages/warren_sdk_platform_interface
+  - packages/warren_sdk_ffi
+  - packages/warren_sdk_riverpod
+
+# Melos is used only as a task runner (analyze/test/format/codegen across
+# packages); resolution itself is handled by the native workspace above.
+dev_dependencies:
+  melos: ^6.0.0
