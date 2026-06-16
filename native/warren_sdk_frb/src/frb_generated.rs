@@ -191,6 +191,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
             let api_multihop_root_pin = <Option<String>>::sse_decode(&mut deserializer);
             let api_daita = <bool>::sse_decode(&mut deserializer);
             let api_daita_machine = <Option<String>>::sse_decode(&mut deserializer);
+            let api_request_ipv6 = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::api::error::WarrenFfiError>(
@@ -202,6 +203,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
                             api_multihop_root_pin,
                             api_daita,
                             api_daita_machine,
+                            api_request_ipv6,
                         )
                         .await?;
                         Ok(output_ok)

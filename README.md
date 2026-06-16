@@ -73,7 +73,7 @@ vendoring it:
 
 - **Engine**: the native glue crate (`native/warren_sdk_frb`) depends on the
   Warren engine through a **pinned git dependency** (`warren-sdk-rs`, tag
-  `v0.0.1`), so builds are reproducible on any machine and in CI with no
+  `v0.0.2`), so builds are reproducible on any machine and in CI with no
   assumption about on-disk layout. To adopt a newer engine, move the tag in
   `native/warren_sdk_frb/Cargo.toml` and re-run FRB codegen.
 - **Golden vectors**: `vectors/` is a **git submodule** of the shared

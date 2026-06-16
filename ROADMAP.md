@@ -56,6 +56,9 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       datapath, which real exits require.
 - [x] DNS-over-tunnel: the engine resolves at the exit gateway by default
       (`ProxyConfig.dns_server = None`).
+- [x] IPv6 unblocked: `WarrenClient.create(requestIpv6: ...)` (default on) asks
+      the exit for a dual-stack allocation; granted v6 egress is routed through
+      the tunnel. Needs engine `v0.0.2` (`request_ipv6()`); live-validated.
 - [x] End-to-end validation against a real exit: `test/connect_live_test.dart`
       passes, establishing a real multihop proxy session that reaches `Connected`
       (env-gated, same vars as P2).

@@ -64,6 +64,7 @@ impl WarrenClientFrb {
         multihop_root_pin: Option<String>,
         daita: bool,
         daita_machine: Option<String>,
+        request_ipv6: bool,
     ) -> Result<WarrenClientFrb, WarrenFfiError> {
         let identity = WarrenIdentity::from_mnemonic(&mnemonic)
             .map_err(|_| err(WarrenErrorKind::Identity, "invalid mnemonic"))?;
@@ -81,6 +82,9 @@ impl WarrenClientFrb {
             if let Some(machine) = daita_machine {
                 builder = builder.daita_machine(machine);
             }
+        }
+        if request_ipv6 {
+            builder = builder.request_ipv6();
         }
         let inner = builder
             .build()

@@ -20,6 +20,7 @@ class WarrenClientConfig {
     this.multihopRootPin,
     this.daita = false,
     this.daitaMachine,
+    this.requestIpv6 = true,
   });
 
   /// The 12-word BIP39 mnemonic. Consumed once, zeroized in Rust.
@@ -44,6 +45,13 @@ class WarrenClientConfig {
   /// default when null. Ignored unless [daita] is true. The name is a public
   /// protocol label, not identity material.
   final String? daitaMachine;
+
+  /// Whether to request a dual-stack IPv6 allocation from exits that serve it.
+  ///
+  /// On by default and always safe: an exit that serves no IPv6 simply grants
+  /// none and the tunnel stays v4-only. When granted, IPv6 egress is routed
+  /// through the tunnel.
+  final bool requestIpv6;
 }
 
 /// The federated-plugin contract every platform implementation satisfies.

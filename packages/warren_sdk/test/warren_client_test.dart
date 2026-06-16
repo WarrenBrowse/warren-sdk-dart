@@ -106,6 +106,19 @@ void main() {
       expect(platform.lastConfig?.daitaMachine, isNull);
     });
 
+    test('create requests IPv6 by default and can opt out', () async {
+      await create();
+      expect(platform.lastConfig?.requestIpv6, isTrue);
+
+      await WarrenClient.create(
+        mnemonic: 'm',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+        requestIpv6: false,
+      );
+      expect(platform.lastConfig?.requestIpv6, isFalse);
+    });
+
     test('subscription surfaces the engine snapshot', () async {
       final client = await create();
       final sub = await client.subscription();

@@ -99,7 +99,8 @@ abstract class WarrenRustBridgeApi extends BaseApi {
       required String serverPubkeyPin,
       String? multihopRootPin,
       required bool daita,
-      String? daitaMachine});
+      String? daitaMachine,
+      required bool requestIpv6});
 
   Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
       {required WarrenClientFrb that});
@@ -235,7 +236,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       required String serverPubkeyPin,
       String? multihopRootPin,
       required bool daita,
-      String? daitaMachine}) {
+      String? daitaMachine,
+      required bool requestIpv6}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -245,6 +247,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_opt_String(multihopRootPin, serializer);
         sse_encode_bool(daita, serializer);
         sse_encode_opt_String(daitaMachine, serializer);
+        sse_encode_bool(requestIpv6, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 3, port: port_);
       },
@@ -260,7 +263,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         serverPubkeyPin,
         multihopRootPin,
         daita,
-        daitaMachine
+        daitaMachine,
+        requestIpv6
       ],
       apiImpl: this,
     ));
@@ -275,7 +279,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
           "serverPubkeyPin",
           "multihopRootPin",
           "daita",
-          "daitaMachine"
+          "daitaMachine",
+          "requestIpv6"
         ],
       );
 

@@ -41,6 +41,7 @@ class WarrenClient {
     String? multihopRootPin,
     bool daita = false,
     String? daitaMachine,
+    bool requestIpv6 = true,
   }) async {
     // Ensure the default in-process engine is registered. A privileged Mode B
     // implementation may have already overridden the instance; if so, this is a
@@ -54,6 +55,7 @@ class WarrenClient {
         multihopRootPin: multihopRootPin,
         daita: daita,
         daitaMachine: daitaMachine,
+        requestIpv6: requestIpv6,
       ),
     );
     return WarrenClient._(handle);

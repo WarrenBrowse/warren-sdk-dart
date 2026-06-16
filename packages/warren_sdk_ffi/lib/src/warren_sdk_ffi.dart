@@ -151,6 +151,7 @@ class WarrenSdkFfi extends WarrenSdkPlatform {
         multihopRootPin: config.multihopRootPin,
         daita: config.daita,
         daitaMachine: config.daitaMachine,
+        requestIpv6: config.requestIpv6,
       );
       final address = await client.address();
       return FfiClientHandle(client, address);
