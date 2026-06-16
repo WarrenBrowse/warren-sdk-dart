@@ -1,6 +1,7 @@
 @TestOn('vm')
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -63,10 +64,16 @@ void main() {
           daemon.kill();
           await daemon.exitCode;
         });
-        await daemon.stderr
-            .transform(const SystemEncoding().decoder)
-            .firstWhere((line) => line.contains('listening'))
-            .timeout(const Duration(seconds: 10));
+        // Keep draining both streams for the daemon's lifetime, so a child's
+        // inherited output never backs up into a broken pipe.
+        unawaited(daemon.stdout.drain<void>());
+        final listening = Completer<void>();
+        daemon.stderr.transform(const SystemEncoding().decoder).listen((line) {
+          if (!listening.isCompleted && line.contains('listening')) {
+            listening.complete();
+          }
+        });
+        await listening.future.timeout(const Duration(seconds: 10));
 
         final daemonClient = await connectDaemonSocket(socketPath);
         addTearDown(daemonClient.close);

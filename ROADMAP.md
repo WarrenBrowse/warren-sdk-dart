@@ -71,15 +71,21 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       in-process socket daemon. See `IPC.md`.
 - [x] Rust daemon binary (`native/warrend`) embedding `warren-sdk` +
       `warren-tun`, serving the IPC protocol over a Unix socket; one session per
-      connection (fail-closed on disconnect). Engine integration validated
-      against the real backend up to the privileged TUN step (non-root).
+      connection, with graceful SIGINT/SIGTERM teardown so a stop always restores
+      the host network. Socket restricted to the invoking user.
+- [x] macOS system-VPN TUN datapath live-validated end-to-end against a real
+      exit: `test/daemon_tun_rooted_live_test.dart` brings the tunnel up
+      (`utun` + `ifconfig` + `route` split-default + `pfctl` killswitch), reaches
+      `Connected`, and fully restores routing + pf on teardown. Engine v0.0.5
+      adds the macOS routing layer (physical-gateway discovery works behind an
+      active VPN; fail-safe revert on partial setup).
 - [ ] Wire `DaemonClient` into a `WarrenSdkPlatform` implementation (system-VPN
       connect path) for `_linux` / `_windows` / `_macos`.
 - [ ] Privilege bootstrap per OS (polkit / launchd helper / Windows service +
       single UAC elevation). Dev-only passwordless run for local testing:
       `native/warrend/scripts/dev-sudoers.sh` (NOT production wiring).
-- [ ] Killswitch and split-default routing validated on each OS (rooted TUN
-      bring-up; gated on a target host).
+- [ ] Linux/Windows rooted TUN bring-up validation (the routing layer exists;
+      validate on those hosts).
 
 ## P5: Mobile System VPN (Mode B)
 

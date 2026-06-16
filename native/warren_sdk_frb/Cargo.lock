@@ -2415,7 +2415,7 @@ dependencies = [
 [[package]]
 name = "warren-api"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "hex",
  "rand 0.8.6",
@@ -2429,7 +2429,7 @@ dependencies = [
 [[package]]
 name = "warren-daita"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "maybenot",
  "maybenot-machines",
@@ -2441,7 +2441,7 @@ dependencies = [
 [[package]]
 name = "warren-discovery"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "ed25519-dalek",
  "hex",
@@ -2455,7 +2455,7 @@ dependencies = [
 [[package]]
 name = "warren-identity"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "bip39",
  "blake2",
@@ -2471,7 +2471,7 @@ dependencies = [
 [[package]]
 name = "warren-multihop"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "chacha20poly1305",
  "ed25519-dalek",
@@ -2484,7 +2484,7 @@ dependencies = [
 [[package]]
 name = "warren-net"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "bytes",
  "rand 0.8.6",
@@ -2500,7 +2500,7 @@ dependencies = [
 [[package]]
 name = "warren-sdk"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "thiserror 2.0.18",
  "tokio",
@@ -2515,7 +2515,7 @@ dependencies = [
 [[package]]
 name = "warren-transport"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "bytes",
  "data-encoding",
@@ -2534,7 +2534,7 @@ dependencies = [
 [[package]]
 name = "warren-tun"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "thiserror 2.0.18",
 ]
@@ -2542,7 +2542,7 @@ dependencies = [
 [[package]]
 name = "warren-wire"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.4#ddc332a77e3853e000bcc01403824fd946bb83c4"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.5#3cc675e892836589bc79b844d7c2bb856789fcd9"
 dependencies = [
  "postcard",
  "serde",
