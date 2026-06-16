@@ -57,7 +57,8 @@ void main() {
         final socketPath = '${dir.path}/d.sock';
         // Canonical path (no `..`), so it matches the pinned sudoers entry.
         final daemonPath = File(daemonBin).resolveSymbolicLinksSync();
-        final daemon = await Process.start('sudo', ['-n', daemonPath, socketPath]);
+        final daemon =
+            await Process.start('sudo', ['-n', daemonPath, socketPath]);
         addTearDown(() async {
           daemon.kill();
           await daemon.exitCode;
@@ -86,8 +87,13 @@ void main() {
         expect(await connected, isA<Connected>());
       });
     },
-    skip: ready
-        ? false
-        : 'set WARREN_ROOTED=1 + WARREN_* and install the dev sudoers to run',
+    skip: Platform.isMacOS
+        // The engine's warren-tun routing layer is Linux-only (gateway discovery
+        // and split-default use iproute2 `ip route`), so the rooted TUN cannot
+        // come up on macOS yet. Everything up to the routing step is exercised.
+        ? 'macOS TUN routing is not implemented in the engine (Linux-only)'
+        : ready
+            ? false
+            : 'set WARREN_ROOTED=1 + WARREN_* and install the dev sudoers to run',
   );
 }

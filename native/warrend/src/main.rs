@@ -35,6 +35,7 @@ async fn main() -> Result<()> {
     }
     let listener = UnixListener::bind(&socket_path)
         .with_context(|| format!("binding the daemon socket at {socket_path}"))?;
+    restrict_socket(&socket_path)?;
     eprintln!("warrend listening on {socket_path}");
 
     loop {
@@ -47,6 +48,25 @@ async fn main() -> Result<()> {
             }
         });
     }
+}
+
+/// Restricts the control socket to its owner (mode 0660) and, when the daemon
+/// was launched via sudo, hands ownership to the invoking user so an unprivileged
+/// app can drive it without making the socket world-accessible.
+fn restrict_socket(socket_path: &str) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+
+    std::fs::set_permissions(socket_path, std::fs::Permissions::from_mode(0o660))?;
+    let uid = std::env::var("SUDO_UID")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok());
+    let gid = std::env::var("SUDO_GID")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok());
+    if uid.is_some() || gid.is_some() {
+        std::os::unix::fs::chown(socket_path, uid, gid)?;
+    }
+    Ok(())
 }
 
 /// Per-connection state. Dropping `tunnel` reverts routing and the killswitch.
@@ -155,7 +175,20 @@ fn map_sdk_error(error: SdkError) -> Event {
         SdkError::Api(_) => "api",
         _ => "tunnel",
     };
-    Event::error(kind, error.to_string())
+    Event::error(kind, error_chain(&error))
+}
+
+/// Renders an error with its `#[source]` chain (system causes like a TUN open or
+/// routing failure). These are OS-level reasons, not identity material.
+fn error_chain(error: &dyn std::error::Error) -> String {
+    let mut message = error.to_string();
+    let mut source = error.source();
+    while let Some(cause) = source {
+        message.push_str(": ");
+        message.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    message
 }
 
 /// Reads one length-prefixed frame, or `None` at clean EOF.
