@@ -34,8 +34,11 @@ void main() {
     'rooted system-VPN TUN to a real exit',
     () {
       test('brings the tunnel up and reaches Connected', () async {
-        expect(tryRegisterEngine(), isTrue,
-            reason: 'build native/warren_sdk_frb');
+        expect(
+          tryRegisterEngine(),
+          isTrue,
+          reason: 'build native/warren_sdk_frb',
+        );
 
         // Discover a real exit's Ed25519 id with the in-process engine.
         final client = await WarrenClient.create(
