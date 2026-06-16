@@ -25,5 +25,9 @@ dependencies:
 
 dev_dependencies:
   flutter_lints: ^5.0.0
+  # Test-only: the conformance test injects the cargo-built engine library via
+  # ExternalLibrary. The facade itself never depends on flutter_rust_bridge; it
+  # talks only to the platform interface.
+  flutter_rust_bridge: ^2.12.0
   flutter_test:
     sdk: flutter
