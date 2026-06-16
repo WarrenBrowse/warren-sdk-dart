@@ -99,11 +99,15 @@ The first vertical slice, mirroring how the Rust engine started with identity.
 
 ## P7: Optional integrations and polish
 
-- [ ] `warren_sdk_riverpod`: Riverpod 3 `AsyncNotifier` providers for client,
-      subscription, exits and live connection state.
-- [ ] Example apps: a desktop example and a mobile example.
-- [ ] CI: analyze, test, golden-vector replay, FRB-codegen drift check, format.
-- [ ] API docs published; `dartdoc` clean.
+- [x] `warren_sdk_riverpod`: Riverpod 3 providers for the client, subscription,
+      exits and live connection state, unit-tested with `ProviderContainer` over
+      a fake platform.
+- [x] CI: format, analyze, unit tests, golden-vector replay (builds the engine),
+      and an FRB-codegen drift check (`.github/workflows/ci.yml`).
+- [x] Usage example (`packages/warren_sdk/example`). A full Flutter example app
+      ships with desktop/mobile app integration.
+- [x] Public API documented; `flutter analyze` enforces `public_member_api_docs`
+      across the workspace.
 
 ## Cross-cutting (every phase)
 

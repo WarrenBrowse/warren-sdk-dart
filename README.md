@@ -58,11 +58,13 @@ optional `warren_sdk_riverpod`.
 | [`warren_sdk`](packages/warren_sdk) | The app-facing facade. Add this. |
 | [`warren_sdk_platform_interface`](packages/warren_sdk_platform_interface) | Federated-plugin contract. |
 | [`warren_sdk_ffi`](packages/warren_sdk_ffi) | In-process engine via `flutter_rust_bridge` (Mode A). |
+| [`warren_sdk_desktop`](packages/warren_sdk_desktop) | Mode B desktop: daemon IPC protocol and client. |
+| [`warren_sdk_mobile`](packages/warren_sdk_mobile) | Mode B mobile: network-extension channel controller. |
 | [`warren_sdk_riverpod`](packages/warren_sdk_riverpod) | Optional Riverpod 3 integration. |
 | `native/warren_sdk_frb` | Rust glue crate exposing the FRB API. |
 
-Mode B platform packages (`warren_sdk_android`, `_ios`, `_macos`, `_windows`,
-`_linux`) are added per the roadmap.
+The Mode B datapath (privileged daemon, mobile network extensions) is the gated
+half: see each package's `IPC.md` / `MOBILE.md`.
 
 ## Repository layout and dependencies
 

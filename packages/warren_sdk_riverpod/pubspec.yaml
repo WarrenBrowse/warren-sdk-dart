@@ -22,3 +22,6 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
+  # Test-only: providers are tested against a fake platform implementation.
+  warren_sdk_platform_interface:
+    path: ../warren_sdk_platform_interface
