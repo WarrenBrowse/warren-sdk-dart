@@ -4,8 +4,10 @@ The Dart/Flutter client SDK for the **Warren VPN**. Embed Warren in any Flutter
 app, desktop first (Windows, macOS, Linux) and mobile too (Android, iOS), with a
 single dependency and an API that fits any app architecture.
 
-> Status: design and scaffolding. See [ROADMAP.md](ROADMAP.md) for what is built
-> and what is next.
+> Status: Mode A (in-process proxy) is implemented and live-validated against the
+> test backend (identity, account, multihop proxy datapath, IPv6). Mode B (system
+> VPN) has its daemon, IPC and clients built; the rooted TUN bring-up is gated on
+> a target host. See [ROADMAP.md](ROADMAP.md) for the per-phase status.
 
 ## What this is
 
@@ -73,7 +75,7 @@ vendoring it:
 
 - **Engine**: the native glue crate (`native/warren_sdk_frb`) depends on the
   Warren engine through a **pinned git dependency** (`warren-sdk-rs`, tag
-  `v0.0.2`), so builds are reproducible on any machine and in CI with no
+  `v0.0.3`), so builds are reproducible on any machine and in CI with no
   assumption about on-disk layout. To adopt a newer engine, move the tag in
   `native/warren_sdk_frb/Cargo.toml` and re-run FRB codegen.
 - **Golden vectors**: `vectors/` is a **git submodule** of the shared
@@ -113,20 +115,23 @@ CI or other developers:
 ```bash
 mkdir -p native/warren_sdk_frb/.cargo
 cat > native/warren_sdk_frb/.cargo/config.toml <<'EOF'
-paths = ["../../../warren-sdk-rs/crates/warren-sdk"]
+paths = ["../../../warren-sdk-rs"]
 EOF
 ```
 
-Remove the file to go back to the pinned git dependency. `native/warren_sdk_frb/.cargo/`
-is gitignored for exactly this purpose.
+Point at the workspace root so every engine crate is overridden together. Remove
+the file to go back to the pinned git dependency. `native/**/.cargo/` is
+gitignored for exactly this purpose (the daemon crate `native/warrend` uses the
+same mechanism).
 
 ### CI
 
-`.github/workflows/ci.yml` runs format, analyze and test on GitHub-hosted
-runners; the current facade tests need neither the engine nor the vectors. When
-the native vector-replay tests land (roadmap P1), CI gains a Rust job and a
-submodule checkout that needs a `VECTORS_TOKEN` secret (a PAT with read access to
-`warren-vectors`); set it as an org or repo secret.
+`.github/workflows/ci.yml` runs, on GitHub-hosted runners: format + analyze, the
+engine-free unit tests, the golden-vector conformance replay (which builds the
+engine), and an FRB-codegen drift check. The conformance and drift jobs fetch the
+private engine (cargo git dependency) and the vectors submodule, so they need a
+`VECTORS_TOKEN` secret: a PAT with read access to **both** `warren-sdk-rs` and
+`warren-vectors`.
 
 See [CLAUDE.md](CLAUDE.md) for the engineering conventions (TDD, English-only, no
 em-dash, no-log discipline, wire compatibility) shared with the Rust engine.

@@ -8,3 +8,4 @@ library;
 export 'src/ipc/daemon_client.dart';
 export 'src/ipc/framing.dart';
 export 'src/ipc/messages.dart';
+export 'src/socket_transport.dart';

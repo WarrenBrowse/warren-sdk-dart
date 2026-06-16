@@ -1,0 +1,33 @@
+[package]
+name = "warrend"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+description = "Warren SDK desktop system-VPN daemon (Mode B): owns the TUN datapath and serves the SDK IPC protocol over a Unix socket."
+publish = false
+
+[[bin]]
+name = "warrend"
+path = "src/main.rs"
+
+[dependencies]
+# Same audited engine as the in-process SDK, with the privileged TUN datapath.
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.3", features = [
+    "experimental-tun",
+] }
+tokio = { version = "1", features = [
+    "rt-multi-thread",
+    "macros",
+    "net",
+    "io-util",
+    "signal",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+hex = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true

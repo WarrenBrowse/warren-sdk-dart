@@ -18,8 +18,10 @@ class DaemonClient {
     required Stream<List<int>> incoming,
     required void Function(List<int> frame) send,
     FrameReader? reader,
+    Future<void> Function()? onClose,
   })  : _send = send,
-        _reader = reader ?? FrameReader() {
+        _reader = reader ?? FrameReader(),
+        _onClose = onClose {
     _subscription = incoming.listen(
       _onChunk,
       onError: _states.addError,
@@ -29,6 +31,7 @@ class DaemonClient {
 
   final void Function(List<int> frame) _send;
   final FrameReader _reader;
+  final Future<void> Function()? _onClose;
   late final StreamSubscription<List<int>> _subscription;
   final StreamController<ConnectionState> _states =
       StreamController<ConnectionState>.broadcast();
@@ -46,9 +49,11 @@ class DaemonClient {
   /// Tears the current session down.
   void disconnect() => _sendMessage(const DisconnectRequest());
 
-  /// Releases the transport subscription and closes the state stream.
+  /// Releases the transport subscription, the underlying transport, and the
+  /// state stream.
   Future<void> close() async {
     await _subscription.cancel();
+    await _onClose?.call();
     if (!_states.isClosed) await _states.close();
   }
 

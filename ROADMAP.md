@@ -66,16 +66,20 @@ The first vertical slice, mirroring how the Rust engine started with identity.
 ## P4: Desktop System VPN (Mode B, privileged)
 
 - [x] IPC protocol and app-side client (`warren_sdk_desktop`): length-prefixed
-      framing, typed framed-JSON messages, and a transport-agnostic
-      `DaemonClient`, unit-tested against an in-memory daemon. See `IPC.md`.
-- [ ] Rust daemon binary embedding `warren-sdk` + `warren-tun`, serving the IPC
-      protocol over a Unix socket / named pipe.
+      framing, typed framed-JSON messages, a transport-agnostic `DaemonClient`,
+      and a real Unix-socket transport, unit-tested against an in-memory and an
+      in-process socket daemon. See `IPC.md`.
+- [x] Rust daemon binary (`native/warrend`) embedding `warren-sdk` +
+      `warren-tun`, serving the IPC protocol over a Unix socket; one session per
+      connection (fail-closed on disconnect). Engine integration validated
+      against the real backend up to the privileged TUN step (non-root).
 - [ ] Wire `DaemonClient` into a `WarrenSdkPlatform` implementation (system-VPN
       connect path) for `_linux` / `_windows` / `_macos`.
 - [ ] Privilege bootstrap per OS (polkit / launchd helper / Windows service +
-      single UAC elevation).
-- [ ] Killswitch and split-default routing surfaced and validated on each OS
-      (needs root; gated, validated on a target host).
+      single UAC elevation). Dev-only passwordless run for local testing:
+      `native/warrend/scripts/dev-sudoers.sh` (NOT production wiring).
+- [ ] Killswitch and split-default routing validated on each OS (rooted TUN
+      bring-up; gated on a target host).
 
 ## P5: Mobile System VPN (Mode B)
 

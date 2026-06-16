@@ -22,7 +22,7 @@ target/
 
 # Local co-development cargo override (engine path override), never committed.
 # See the README "Local co-development" section.
-native/warren_sdk_frb/.cargo/
+native/**/.cargo/
 
 # IDE / OS
 .idea/
