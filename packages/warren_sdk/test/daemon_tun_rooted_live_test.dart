@@ -1,13 +1,14 @@
 @TestOn('vm')
 library;
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warren_sdk/warren_sdk.dart';
 import 'package:warren_sdk_desktop/warren_sdk_desktop.dart';
 
+import 'support/daemon.dart';
+import 'support/egress.dart';
 import 'support/engine.dart';
 
 /// Full rooted Mode B validation: brings up a real system-VPN TUN tunnel through
@@ -19,6 +20,9 @@ import 'support/engine.dart';
 /// (`native/warrend/scripts/dev-sudoers.sh`, test-only) to be installed first.
 /// It uses the in-process engine to discover a real exit, then drives the daemon
 /// to connect to it and waits for `Connected`.
+///
+/// It rewrites the global OS default route and pf, so it must NOT run in parallel
+/// with another system-VPN test: run rooted live tests with `--concurrency=1`.
 void main() {
   final env = Platform.environment;
   final mnemonic = env['WARREN_MNEMONIC'];
@@ -52,37 +56,22 @@ void main() {
         expect(exits, isNotEmpty);
         final exitId = exits.first.id;
         // ignore: avoid_print
-        print('[rooted-test] exit ${exitId.substring(0, 8)} of ${exits.length}');
+        print(
+          '[rooted-test] exit ${exitId.substring(0, 8)} of ${exits.length}',
+        );
 
         // Egress IP before the tunnel, via the physical link. 1.1.1.1 by literal
         // IP so no DNS is needed (the killswitch will block system DNS).
-        final physicalEgress = await _egressIp();
+        final physicalEgress = await egressIp();
         expect(physicalEgress, isNotEmpty, reason: 'no baseline egress IP');
 
-        // Launch the privileged daemon (root via the dev sudoers) on a temp
-        // socket, then drive it.
-        final dir = await Directory.systemTemp.createTemp('warrend_root');
-        final socketPath = '${dir.path}/d.sock';
-        // Canonical path (no `..`), so it matches the pinned sudoers entry.
-        final daemonPath = File(daemonBin).resolveSymbolicLinksSync();
-        final daemon =
-            await Process.start('sudo', ['-n', daemonPath, socketPath]);
+        final daemon = await launchRootedDaemon(daemonBin);
         addTearDown(() async {
-          daemon.kill();
-          await daemon.exitCode;
+          daemon.process.kill();
+          await daemon.process.exitCode;
         });
-        // Keep draining both streams for the daemon's lifetime, so a child's
-        // inherited output never backs up into a broken pipe.
-        unawaited(daemon.stdout.drain<void>());
-        final listening = Completer<void>();
-        daemon.stderr.transform(const SystemEncoding().decoder).listen((line) {
-          if (!listening.isCompleted && line.contains('listening')) {
-            listening.complete();
-          }
-        });
-        await listening.future.timeout(const Duration(seconds: 10));
 
-        final daemonClient = await connectDaemonSocket(socketPath);
+        final daemonClient = await connectDaemonSocket(daemon.socketPath);
         addTearDown(daemonClient.close);
 
         final connected = daemonClient.states
@@ -110,7 +99,7 @@ void main() {
         // A freshly established tunnel can drop the very first probe (TCP/TLS
         // warmup, PMTU settling), so poll a few times before judging. This is a
         // real wait on a live network, not a sleep masking a logic bug.
-        final tunnelEgress = await _egressIpWithRetry();
+        final tunnelEgress = await egressIpWithRetry();
         // ignore: avoid_print
         print('[rooted-test] tunnel egress: '
             '${tunnelEgress.isEmpty ? "(none)" : tunnelEgress}, '
@@ -118,7 +107,8 @@ void main() {
         expect(
           tunnelEgress,
           isNotEmpty,
-          reason: 'no egress through the tunnel (datapath not carrying packets)',
+          reason:
+              'no egress through the tunnel (datapath not carrying packets)',
         );
         expect(
           tunnelEgress,
@@ -131,29 +121,4 @@ void main() {
         ? false
         : 'set WARREN_ROOTED=1 + WARREN_* and install the dev sudoers to run',
   );
-}
-
-/// Returns this host's current public egress IP via `1.1.1.1/cdn-cgi/trace`,
-/// addressed by literal IP so it needs no DNS (which the killswitch blocks).
-/// Empty string if the lookup fails.
-Future<String> _egressIp() async {
-  final result = await Process.run('curl', [
-    '-s',
-    '-m',
-    '8',
-    'https://1.1.1.1/cdn-cgi/trace',
-  ]);
-  final match = RegExp(r'ip=([0-9a-fA-F:.]+)').firstMatch('${result.stdout}');
-  return match?.group(1) ?? '';
-}
-
-/// Polls [_egressIp] until it returns a non-empty IP or the attempts run out.
-/// A freshly established tunnel can drop the first probe while TCP/TLS and PMTU
-/// settle, so a single empty result is not yet a datapath failure.
-Future<String> _egressIpWithRetry({int attempts = 4}) async {
-  var egress = '';
-  for (var i = 0; i < attempts && egress.isEmpty; i++) {
-    egress = await _egressIp();
-  }
-  return egress;
 }
