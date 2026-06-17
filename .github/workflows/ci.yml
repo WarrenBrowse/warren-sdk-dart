@@ -84,7 +84,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.VECTORS_TOKEN }}
+      # rustfmt: FRB codegen formats the generated file (an unformatted file
+      # would otherwise drift from the committed, formatted one). cargo-expand:
+      # codegen runs `cargo expand` for the macro-expansion pass.
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: install cargo-expand
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-expand
       - uses: subosito/flutter-action@v2
         with:
           # Pinned to the fvm-pinned version (.fvmrc) for reproducible CI.
