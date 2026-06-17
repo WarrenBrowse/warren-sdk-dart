@@ -5,6 +5,12 @@ name: CI
 #   [self-hosted, Linux, X64]  -> macstudio-linux-rosetta / warren-docker-ci
 # Do not switch any job to a GitHub-hosted runner (the org's hosted-minutes
 # billing is disabled, so those jobs never start).
+#
+# VECTORS_TOKEN must be a REPO-LEVEL secret (gh secret set ... --repo ...), not the
+# org-level one: while the org billing is degraded, org secrets do not resolve in
+# runs (checkout fails with "Input required and not supplied: token"). It is a PAT
+# with read access to the private warren-sdk-rs (cargo git dep) + warren-vectors
+# (submodule).
 
 on:
   push:

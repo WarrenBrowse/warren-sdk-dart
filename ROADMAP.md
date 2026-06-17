@@ -95,7 +95,12 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       single UAC elevation). Dev-only passwordless run for local testing:
       `native/warrend/scripts/dev-sudoers.sh` (NOT production wiring).
 - [ ] Linux/Windows rooted TUN bring-up validation (the routing layer exists;
-      validate on those hosts).
+      validate on those hosts). A CI job for this must isolate the tunnel in a
+      Linux network namespace (like warren-core `netns-e2e.yml` /
+      `bench/scripts/netns-e2e-dataplane.sh`): running the current host-routing
+      rooted test on a shared self-hosted runner would hijack the runner's default
+      route and break it. The daemon would run inside the netns (with veth + NAT
+      for egress) and need `WARREN_MNEMONIC` as a repo secret.
 
 ## P5: Mobile System VPN (Mode B)
 
