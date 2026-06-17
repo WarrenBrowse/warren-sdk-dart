@@ -44,10 +44,15 @@ class FfiClientHandle implements WarrenClientHandle {
   ) =>
       _mapped(() async {
         if (mode == ConnectMode.systemVpn) {
+          // The in-process engine serves proxy mode only; system-VPN needs a
+          // privileged platform to own the TUN datapath. Registering it (for
+          // example DesktopWarrenSdkPlatform.registerWith() on desktop) replaces
+          // this handle, so reaching here means none is active.
           throw const WarrenUnsupportedError(
-            code: 'mode/system-vpn-not-yet',
-            message: 'System-VPN mode lands in roadmap P4 (desktop) and P5 '
-                '(mobile). Use ConnectMode.proxy.',
+            code: 'mode/system-vpn-unavailable',
+            message: 'System-VPN mode needs a privileged platform. On desktop, '
+                'call DesktopWarrenSdkPlatform.registerWith() before creating '
+                'the client; otherwise use ConnectMode.proxy.',
           );
         }
         final session = await _client.connectProxy(

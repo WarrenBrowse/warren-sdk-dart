@@ -5,6 +5,7 @@
 /// See `IPC.md` for the protocol and the daemon's responsibilities.
 library;
 
+export 'src/desktop_platform.dart';
 export 'src/ipc/daemon_client.dart';
 export 'src/ipc/framing.dart';
 export 'src/ipc/messages.dart';

@@ -79,12 +79,18 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       restores routing + pf on teardown (route back to physical, egress works,
       no leftovers). Engine v0.0.5 adds the macOS routing layer (physical-gateway
       discovery via `netstat` works behind an active VPN; fail-safe revert).
-- [ ] macOS TUN raw-IP DATA egress: the test probes egress through the tunnel and
-      currently finds none (traffic is captured but not carried), so it marks that
-      check skipped. The engine's experimental raw-IP datapath (utun framing /
-      pump / exit handling of TUN-sourced packets) needs packet-level debugging.
-- [ ] Wire `DaemonClient` into a `WarrenSdkPlatform` implementation (system-VPN
-      connect path) for `_linux` / `_windows` / `_macos`.
+- [x] macOS TUN raw-IP DATA egress live-validated (engine v0.0.6): the rooted test
+      asserts the public egress IP becomes the exit's (no skip), and passes 3/3.
+      Root cause was the utun 4-byte AF header serialized in native byte order;
+      it must be network byte order (`to_be_bytes`), confirmed against the `tun`
+      crate warren-app uses. The first probe after a fresh tunnel can drop (TCP/
+      TLS/PMTU warmup), so the test polls a few times.
+- [x] Wire `DaemonClient` into a `WarrenSdkPlatform` implementation (system-VPN
+      connect path): `DesktopWarrenSdkPlatform` (in `warren_sdk_desktop`) delegates
+      control-plane + proxy mode to the in-process engine and drives the daemon for
+      `ConnectMode.systemVpn` (configure -> connect -> await `Connected` -> session
+      with no proxy endpoints). `registerWith()` installs it. Unit-tested with a
+      fake daemon + inner; no native engine or live daemon needed.
 - [ ] Privilege bootstrap per OS (polkit / launchd helper / Windows service +
       single UAC elevation). Dev-only passwordless run for local testing:
       `native/warrend/scripts/dev-sudoers.sh` (NOT production wiring).
