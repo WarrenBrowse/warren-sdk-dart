@@ -1,0 +1,47 @@
+name: Linux TUN (rooted, netns)
+
+# EXPERIMENTAL, manual-only (workflow_dispatch). Deliberately NOT in the push/PR
+# gate: it needs root, a real exit, and a subscribed WARREN_MNEMONIC repo secret,
+# and the Linux TUN datapath is not yet live-validated (unlike macOS). It runs the
+# `warrend` daemon inside a Linux network namespace so its split-default route and
+# nft killswitch stay confined to the namespace and never touch the runner's host
+# routing (see scripts/ci-netns-linux-tun.sh). Without WARREN_MNEMONIC the inner
+# test self-skips, so a dry run is still green.
+#
+# Runs on the org self-hosted Linux runner; needs root + ip/iptables/nft on it.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  netns-tun:
+    name: rooted system-VPN TUN in a netns
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Repo-level PAT: see ci.yml for why the org secret does not resolve.
+          token: ${{ secrets.VECTORS_TOKEN }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned to the fvm-pinned version (.fvmrc) for reproducible CI.
+          flutter-version: 3.44.2
+          channel: stable
+      - name: authenticate cargo for the private engine dependency
+        run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - run: flutter pub get
+      - name: build the in-process engine dylib (discovery)
+        run: cargo build --release
+        working-directory: native/warren_sdk_frb
+      - name: build the privileged daemon
+        run: cargo build --release
+        working-directory: native/warrend
+      - name: run the rooted TUN test inside a network namespace
+        env:
+          FLUTTER: flutter
+          WARREN_ROOTED: "1"
+          WARREN_MNEMONIC: ${{ secrets.WARREN_MNEMONIC }}
+          WARREN_API_BASE: https://api.warrenbrowse.com
+          WARREN_SERVER_PIN: 4c2c9253c426ae4db4cc88703f9ac802a020420c7fea6479c87af530ada72c3e
+        run: sudo -E env "PATH=$PATH" "FLUTTER=$FLUTTER" bash scripts/ci-netns-linux-tun.sh
