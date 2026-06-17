@@ -51,6 +51,8 @@ void main() {
         final exits = await client.listExits();
         expect(exits, isNotEmpty);
         final exitId = exits.first.id;
+        // ignore: avoid_print
+        print('[rooted-test] exit ${exitId.substring(0, 8)} of ${exits.length}');
 
         // Egress IP before the tunnel, via the physical link. 1.1.1.1 by literal
         // IP so no DNS is needed (the killswitch will block system DNS).
@@ -98,21 +100,31 @@ void main() {
 
         expect(await connected, isA<Connected>());
 
-        // Egress proof: with all traffic captured by the TUN, the egress IP
-        // should become the exit's. The macOS raw-IP TUN datapath is still
-        // experimental, so a missing/unchanged egress marks the test skipped
-        // rather than failing: the device open, routing, killswitch, Connected
-        // and (via teardown) the network restore above are the validated part.
-        final tunnelEgress = await _egressIp();
-        if (tunnelEgress.isEmpty || tunnelEgress == physicalEgress) {
-          markTestSkipped(
-            'TUN setup + Connected + teardown validated; raw-IP egress does not '
-            'yet flow through the exit on macOS (engine experimental datapath).',
-          );
-        } else {
-          // Real egress confirmed: traffic now leaves at the exit, not the host.
-          expect(tunnelEgress, isNot(physicalEgress));
-        }
+        // Egress proof: with all traffic captured by the TUN, the public egress
+        // IP must become the exit's, not the host's. This is the end-to-end
+        // datapath assertion: device open, routing, killswitch, the multihop
+        // tunnel AND raw-IP packets actually flowing through the exit. A non-empty
+        // egress that differs from the physical one is only possible if packets
+        // traverse the utun device, get sealed, reach the exit and come back.
+        //
+        // A freshly established tunnel can drop the very first probe (TCP/TLS
+        // warmup, PMTU settling), so poll a few times before judging. This is a
+        // real wait on a live network, not a sleep masking a logic bug.
+        final tunnelEgress = await _egressIpWithRetry();
+        // ignore: avoid_print
+        print('[rooted-test] tunnel egress: '
+            '${tunnelEgress.isEmpty ? "(none)" : tunnelEgress}, '
+            'changed: ${tunnelEgress.isNotEmpty && tunnelEgress != physicalEgress}');
+        expect(
+          tunnelEgress,
+          isNotEmpty,
+          reason: 'no egress through the tunnel (datapath not carrying packets)',
+        );
+        expect(
+          tunnelEgress,
+          isNot(physicalEgress),
+          reason: 'egress must leave at the exit, not the host',
+        );
       });
     },
     skip: ready
@@ -128,9 +140,20 @@ Future<String> _egressIp() async {
   final result = await Process.run('curl', [
     '-s',
     '-m',
-    '12',
+    '8',
     'https://1.1.1.1/cdn-cgi/trace',
   ]);
   final match = RegExp(r'ip=([0-9a-fA-F:.]+)').firstMatch('${result.stdout}');
   return match?.group(1) ?? '';
+}
+
+/// Polls [_egressIp] until it returns a non-empty IP or the attempts run out.
+/// A freshly established tunnel can drop the first probe while TCP/TLS and PMTU
+/// settle, so a single empty result is not yet a datapath failure.
+Future<String> _egressIpWithRetry({int attempts = 4}) async {
+  var egress = '';
+  for (var i = 0; i < attempts && egress.isEmpty; i++) {
+    egress = await _egressIp();
+  }
+  return egress;
 }
