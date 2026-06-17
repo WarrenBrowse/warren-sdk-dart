@@ -9,6 +9,7 @@ environment:
 # Native pub workspace: one lockfile, one `dart pub get` for every member.
 workspace:
   - packages/warren_sdk
+  - packages/warren_sdk/example
   - packages/warren_sdk_platform_interface
   - packages/warren_sdk_ffi
   - packages/warren_sdk_desktop

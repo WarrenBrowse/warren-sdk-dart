@@ -18,16 +18,21 @@ cargokit hooks into each platform's native build system and runs
 | iOS | `ios/warren_sdk_ffi.podspec` runs `cargokit/build_pod.sh` | static lib |
 | Android | `android/build.gradle` applies `cargokit/gradle/plugin.gradle` | `.so` per ABI |
 
-Each hook points at `../native/warren_sdk_frb` (the crate) and the crate name
-`warren_sdk_frb`. `flutter_rust_bridge.yaml` already targets that crate.
+Each hook points at the crate relative to its platform folder
+(`../../../native/warren_sdk_frb`, since the crate lives at the repo root, not
+inside the plugin) and the crate/lib name `warren_sdk_frb`.
+`flutter_rust_bridge.yaml` already targets that crate.
 
-## Why it is not committed yet
+## Status: wired
 
-The plugin platform folders and the vendored `cargokit/` are only exercised by
-`flutter build` / `flutter run`. Those commands are out of scope for the
-automated environment that bootstrapped this SDK, so wiring them blind would be
-unverifiable. They are added (and validated on a real target) when desktop app
-integration lands.
+The platform folders (`macos/`, `ios/`, `linux/`, `windows/`, `android/`) and
+the vendored `cargokit/` are committed. The macОS path is validated by building
+the example app (`packages/warren_sdk/example`) with `flutter build macos`: the
+podspec script phase compiles `warren_sdk_frb` into `libwarren_sdk_frb.a` and
+force-loads it into the plugin framework, and the in-process engine then loads
+through `flutter_rust_bridge`'s default loader (no `ExternalLibrary` override).
+The other desktop/mobile targets reuse the same cargokit wiring and are validated
+on their own hosts.
 
 ## What works today without cargokit
 

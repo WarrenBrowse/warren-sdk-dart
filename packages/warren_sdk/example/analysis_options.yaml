@@ -1,0 +1,19 @@
+# The example inherits the workspace's strict analysis so it stays idiomatic and
+# consistent with the SDK. It is an application, not a published library, so the
+# public-member documentation requirement is relaxed and the Riverpod generated
+# `*.g.dart` output is excluded.
+include: ../../../analysis_options.yaml
+
+analyzer:
+  errors:
+    # Apps need not document every public widget.
+    public_member_api_docs: ignore
+  exclude:
+    - "**/*.g.dart"
+    # The standalone console snippet kept for pub.dev; not part of the app.
+    - "warren_sdk_example.dart"
+
+linter:
+  rules:
+    # Riverpod-friendly: provider/widget docs are nice-to-have here, not enforced.
+    public_member_api_docs: false

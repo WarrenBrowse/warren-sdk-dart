@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart'
     show AnyhowException;
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
@@ -73,8 +75,26 @@ class WarrenSdkFfi extends WarrenSdkPlatform {
     _externalLibraryOverride = null;
   }
 
-  static Future<void> _ensureInitialized() => _init ??=
-      WarrenRustBridge.init(externalLibrary: _externalLibraryOverride);
+  static Future<void> _ensureInitialized() => _init ??= WarrenRustBridge.init(
+        externalLibrary: _externalLibraryOverride ?? _bundledLibrary(),
+      );
+
+  /// Resolves the bundled native engine for a real app build.
+  ///
+  /// On macOS/iOS the engine is force-loaded as a static library into the FFI
+  /// plugin framework, whose name (`warren_sdk_ffi`, the Dart plugin) differs
+  /// from the crate/stem (`warren_sdk_frb`). `flutter_rust_bridge`'s default
+  /// loader looks for `<stem>.framework/<stem>`, which does not exist here, so
+  /// the symbols are resolved from the already-loaded process image instead.
+  /// Other platforms load the bundled dynamic library by name via the default
+  /// loader, so this returns null and lets that path run. Returns null in tests
+  /// too (they set [externalLibraryOverride] to the cargo-built library).
+  static ExternalLibrary? _bundledLibrary() {
+    if (Platform.isMacOS || Platform.isIOS) {
+      return ExternalLibrary.process(iKnowHowToUseIt: true);
+    }
+    return null;
+  }
 
   /// Runs [body] after ensuring the bridge is initialized, mapping a redacted
   /// engine error to a [WarrenIdentityError] with [code].
