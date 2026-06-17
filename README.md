@@ -6,8 +6,10 @@ single dependency and an API that fits any app architecture.
 
 > Status: Mode A (in-process proxy) is implemented and live-validated against the
 > test backend (identity, account, multihop proxy datapath, IPv6). Mode B (system
-> VPN) has its daemon, IPC and clients built; the rooted TUN bring-up is gated on
-> a target host. See [ROADMAP.md](ROADMAP.md) for the per-phase status.
+> VPN) is implemented and live-validated on macOS: a real TUN tunnel through the
+> `warrend` daemon carries egress through the exit, end-to-end via the facade
+> (`connect(mode: systemVpn)`). Linux/Windows bring-up and mobile network
+> extensions remain gated on their hosts. See [ROADMAP.md](ROADMAP.md).
 
 ## What this is
 
@@ -65,8 +67,17 @@ optional `warren_sdk_riverpod`.
 | [`warren_sdk_riverpod`](packages/warren_sdk_riverpod) | Optional Riverpod 3 integration. |
 | `native/warren_sdk_frb` | Rust glue crate exposing the FRB API. |
 
-The Mode B datapath (privileged daemon, mobile network extensions) is the gated
-half: see each package's `IPC.md` / `MOBILE.md`.
+The Mode B datapath runs out of process (privileged daemon on desktop, network
+extensions on mobile). On desktop, register it once before creating the client so
+`connect(mode: systemVpn)` is served:
+
+```dart
+DesktopWarrenSdkPlatform.registerWith(); // from package:warren_sdk_desktop
+final client = await WarrenClient.create(...); // proxy + system-VPN both work
+final session = await client.connect(exit, mode: ConnectMode.systemVpn);
+```
+
+See each package's `IPC.md` / `MOBILE.md` for the protocol details.
 
 ## Repository layout and dependencies
 

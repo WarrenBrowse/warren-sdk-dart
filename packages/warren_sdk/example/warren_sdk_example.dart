@@ -32,6 +32,15 @@ Future<void> main() async {
 
     // 4. Connect in proxy mode (no privilege). The session exposes a local
     //    SOCKS5 endpoint you can point an HTTP client at.
+    //
+    //    For full-OS capture on desktop (Mode B, system VPN), add the
+    //    `warren_sdk_desktop` package and register it once at startup:
+    //
+    //        DesktopWarrenSdkPlatform.registerWith();
+    //
+    //    then connect with `mode: ConnectMode.systemVpn`. That session captures
+    //    all traffic through a privileged TUN daemon and exposes no local proxy
+    //    endpoints (`session.endpoints` is null).
     final session = await client.connect(exit);
     final subscriptionToStates = session.states.listen((state) {
       print('connection state: $state');
