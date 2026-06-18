@@ -86,7 +86,6 @@ class _FakeClientHandle implements WarrenClientHandle {
           country: 'RO',
           city: 'Bucharest',
           supportsIpv6: true,
-          supportsPortForwarding: false,
         ),
       ];
 

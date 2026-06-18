@@ -9,14 +9,12 @@ void main() {
       country: 'RO',
       city: 'Bucharest',
       supportsIpv6: true,
-      supportsPortForwarding: false,
     );
     final se = ExitInfo(
       id: 'b' * 32,
       country: 'SE',
       city: 'Stockholm',
       supportsIpv6: false,
-      supportsPortForwarding: true,
     );
     final exits = [ro, se];
 
@@ -34,21 +32,11 @@ void main() {
       );
     });
 
-    test('filters on the port-forwarding capability', () {
-      expect(
-        WarrenClient.selectExit(
-          exits,
-          const ExitQuery(requirePortForwarding: true),
-        ),
-        equals(se),
-      );
-    });
-
     test('combines predicates with AND and returns null when none match', () {
       expect(
         WarrenClient.selectExit(
           exits,
-          const ExitQuery(country: 'RO', requirePortForwarding: true),
+          const ExitQuery(country: 'SE', requireIpv6: true),
         ),
         isNull,
       );
@@ -214,7 +202,6 @@ class _FakeClientHandle implements WarrenClientHandle {
           country: 'RO',
           city: 'Bucharest',
           supportsIpv6: true,
-          supportsPortForwarding: false,
         ),
       ];
 

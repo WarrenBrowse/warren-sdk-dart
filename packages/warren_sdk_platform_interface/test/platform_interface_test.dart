@@ -52,21 +52,18 @@ void main() {
         country: 'RO',
         city: 'Bucharest',
         supportsIpv6: true,
-        supportsPortForwarding: false,
       );
       const b = ExitInfo(
         id: 'x',
         country: 'RO',
         city: 'Bucharest',
         supportsIpv6: true,
-        supportsPortForwarding: false,
       );
       const c = ExitInfo(
         id: 'y',
         country: 'RO',
         city: 'Bucharest',
         supportsIpv6: true,
-        supportsPortForwarding: false,
       );
       expect(a, equals(b));
       expect(a.hashCode, b.hashCode);

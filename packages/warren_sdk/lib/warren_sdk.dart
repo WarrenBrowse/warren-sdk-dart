@@ -23,7 +23,6 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         Disconnected,
         ExitInfo,
         ExitQuery,
-        MultihopMode,
         ProxyEndpoints,
         Reconnecting,
         SubscriptionInfo,

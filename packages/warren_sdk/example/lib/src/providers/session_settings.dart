@@ -10,16 +10,15 @@ part 'session_settings.g.dart';
 class SessionSettings {
   const SessionSettings({
     this.mode = ConnectMode.proxy,
-    this.multihop = MultihopMode.auto,
     this.dnsOverTunnel = true,
   });
 
   final ConnectMode mode;
-  final MultihopMode multihop;
+
+  /// System-VPN only (proxy always resolves remotely at the exit).
   final bool dnsOverTunnel;
 
   ConnectOptions toOptions() => ConnectOptions(
-        multihop: multihop,
         dnsOverTunnel: dnsOverTunnel,
         // Bind a local HTTP CONNECT proxy alongside SOCKS5 so the in-app network
         // check can route a probe through the tunnel with the stock HttpClient.
@@ -28,12 +27,10 @@ class SessionSettings {
 
   SessionSettings copyWith({
     ConnectMode? mode,
-    MultihopMode? multihop,
     bool? dnsOverTunnel,
   }) =>
       SessionSettings(
         mode: mode ?? this.mode,
-        multihop: multihop ?? this.multihop,
         dnsOverTunnel: dnsOverTunnel ?? this.dnsOverTunnel,
       );
 }
@@ -44,9 +41,6 @@ class SessionSettingsController extends _$SessionSettingsController {
   SessionSettings build() => const SessionSettings();
 
   void setMode(ConnectMode mode) => state = state.copyWith(mode: mode);
-
-  void setMultihop(MultihopMode multihop) =>
-      state = state.copyWith(multihop: multihop);
 
   void setDnsOverTunnel(bool value) =>
       state = state.copyWith(dnsOverTunnel: value);

@@ -39,7 +39,7 @@ void main() {
   });
 
   group('exitInfoFromDto', () {
-    test('maps every field', () {
+    test('maps the public exit fields', () {
       const dto = ExitInfoDto(
         id: 'exit-1',
         country: 'RO',
@@ -53,19 +53,6 @@ void main() {
       expect(info.country, 'RO');
       expect(info.city, 'Bucharest');
       expect(info.supportsIpv6, isTrue);
-      expect(info.supportsPortForwarding, isFalse);
-      expect(info.load, 0.42);
-    });
-
-    test('preserves an absent load', () {
-      const dto = ExitInfoDto(
-        id: 'exit-2',
-        country: 'SE',
-        city: 'Stockholm',
-        supportsIpv6: false,
-        supportsPortForwarding: true,
-      );
-      expect(exitInfoFromDto(dto).load, isNull);
     });
   });
 

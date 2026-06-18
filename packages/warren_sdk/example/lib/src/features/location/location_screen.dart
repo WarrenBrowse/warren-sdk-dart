@@ -18,7 +18,6 @@ class LocationScreen extends ConsumerStatefulWidget {
 class _LocationScreenState extends ConsumerState<LocationScreen> {
   final _search = TextEditingController();
   bool _ipv6 = false;
-  bool _portForward = false;
 
   @override
   void dispose() {
@@ -30,7 +29,6 @@ class _LocationScreenState extends ConsumerState<LocationScreen> {
     final q = _search.text.trim().toLowerCase();
     return exits.where((e) {
       if (_ipv6 && !e.supportsIpv6) return false;
-      if (_portForward && !e.supportsPortForwarding) return false;
       if (q.isEmpty) return true;
       return e.city.toLowerCase().contains(q) ||
           e.country.toLowerCase().contains(q);
@@ -86,12 +84,6 @@ class _LocationScreenState extends ConsumerState<LocationScreen> {
                   label: const Text('IPv6'),
                   selected: _ipv6,
                   onSelected: (v) => setState(() => _ipv6 = v),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Port forwarding'),
-                  selected: _portForward,
-                  onSelected: (v) => setState(() => _portForward = v),
                 ),
               ],
             ),
@@ -201,15 +193,7 @@ class _CityTile extends StatelessWidget {
         color: selected ? scheme.primary : scheme.onSurfaceVariant,
       ),
       title: Text(exit.city),
-      subtitle: Wrap(
-        spacing: 6,
-        children: [
-          if (exit.supportsIpv6) const _MiniTag('IPv6'),
-          if (exit.supportsPortForwarding) const _MiniTag('port-fwd'),
-          if (exit.load != null)
-            _MiniTag('load ${(exit.load! * 100).round()}%'),
-        ],
-      ),
+      subtitle: exit.supportsIpv6 ? const _MiniTag('IPv6') : null,
       trailing: selected ? Icon(Icons.check, color: scheme.primary) : null,
     );
   }

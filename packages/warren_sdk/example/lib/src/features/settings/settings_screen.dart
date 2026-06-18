@@ -59,22 +59,17 @@ class SettingsScreen extends ConsumerWidget {
               padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text('Disconnect to change the mode.'),
             ),
-          SwitchListTile(
-            secondary: const Icon(Icons.alt_route),
-            title: const Text('Multihop'),
-            subtitle: const Text('Route through an entry relay then the exit'),
-            value: settings.multihop == MultihopMode.auto,
-            onChanged: (v) => controller.setMultihop(
-              v ? MultihopMode.auto : MultihopMode.singleHop,
+          // Proxy mode always resolves names remotely at the exit (SOCKS5/HTTP
+          // CONNECT), so DNS-over-tunnel is only a meaningful, wired option for
+          // the system-VPN datapath.
+          if (settings.mode == ConnectMode.systemVpn)
+            SwitchListTile(
+              secondary: const Icon(Icons.dns_outlined),
+              title: const Text('DNS over tunnel'),
+              subtitle: const Text('Resolve names at the exit gateway'),
+              value: settings.dnsOverTunnel,
+              onChanged: controller.setDnsOverTunnel,
             ),
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.dns_outlined),
-            title: const Text('DNS over tunnel'),
-            subtitle: const Text('Resolve names at the exit gateway'),
-            value: settings.dnsOverTunnel,
-            onChanged: controller.setDnsOverTunnel,
-          ),
           const Divider(),
           const _Header('Advanced'),
           ListTile(

@@ -34,6 +34,4 @@ ExitInfo exitInfoFromDto(ExitInfoDto dto) => ExitInfo(
       country: dto.country,
       city: dto.city,
       supportsIpv6: dto.supportsIpv6,
-      supportsPortForwarding: dto.supportsPortForwarding,
-      load: dto.load,
     );

@@ -11,7 +11,6 @@ void main() {
     country: 'RO',
     city: 'Bucharest',
     supportsIpv6: true,
-    supportsPortForwarding: false,
   );
   final config = WarrenClientConfig(
     mnemonic: 'donor sphere session favorite cry screen lesson gloom hollow '

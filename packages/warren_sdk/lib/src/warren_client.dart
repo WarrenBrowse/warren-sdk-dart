@@ -88,9 +88,6 @@ class WarrenClient {
       if (query.country != null && exit.country != query.country) continue;
       if (query.city != null && exit.city != query.city) continue;
       if (query.requireIpv6 == true && !exit.supportsIpv6) continue;
-      if (query.requirePortForwarding == true && !exit.supportsPortForwarding) {
-        continue;
-      }
       return exit;
     }
     return null;

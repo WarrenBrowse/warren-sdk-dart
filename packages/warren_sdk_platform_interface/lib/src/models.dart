@@ -13,15 +13,6 @@ enum ConnectMode {
   systemVpn,
 }
 
-/// How a multihop circuit should be built, when supported by the exit.
-enum MultihopMode {
-  /// Let the engine decide (mandatory multihop on real exits).
-  auto,
-
-  /// Force a direct single-hop path (only where the exit allows it).
-  singleHop,
-}
-
 /// Immutable description of an exit the engine can connect to, as returned by
 /// the verified signed relay list. Identity fields are public by construction;
 /// no secret material is carried here.
@@ -33,8 +24,6 @@ class ExitInfo {
     required this.country,
     required this.city,
     required this.supportsIpv6,
-    required this.supportsPortForwarding,
-    this.load,
   });
 
   /// Stable hex identifier of the exit node.
@@ -49,31 +38,16 @@ class ExitInfo {
   /// Whether the exit can route IPv6 egress.
   final bool supportsIpv6;
 
-  /// Whether the exit offers inbound port forwarding (NAT-PMP).
-  final bool supportsPortForwarding;
-
-  /// Optional load hint in `[0.0, 1.0]`, when advertised.
-  final double? load;
-
   @override
   bool operator ==(Object other) =>
       other is ExitInfo &&
       other.id == id &&
       other.country == country &&
       other.city == city &&
-      other.supportsIpv6 == supportsIpv6 &&
-      other.supportsPortForwarding == supportsPortForwarding &&
-      other.load == load;
+      other.supportsIpv6 == supportsIpv6;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        country,
-        city,
-        supportsIpv6,
-        supportsPortForwarding,
-        load,
-      );
+  int get hashCode => Object.hash(id, country, city, supportsIpv6);
 
   @override
   String toString() => 'ExitInfo($city, $country)';
@@ -88,7 +62,6 @@ class ExitQuery {
     this.country,
     this.city,
     this.requireIpv6,
-    this.requirePortForwarding,
   });
 
   /// Restrict to this ISO country code.
@@ -99,9 +72,6 @@ class ExitQuery {
 
   /// Require IPv6 egress support.
   final bool? requireIpv6;
-
-  /// Require inbound port forwarding support.
-  final bool? requirePortForwarding;
 }
 
 /// Options that tune a connection. Sensible defaults match the engine.
@@ -109,14 +79,10 @@ class ExitQuery {
 class ConnectOptions {
   /// Creates connection options.
   const ConnectOptions({
-    this.multihop = MultihopMode.auto,
     this.socks5Listen = '127.0.0.1:0',
     this.httpListen,
     this.dnsOverTunnel = true,
   });
-
-  /// Multihop behavior for this connection.
-  final MultihopMode multihop;
 
   /// Proxy-mode only: the local SOCKS5 listen address. `:0` picks a free port.
   final String socks5Listen;
@@ -124,7 +90,9 @@ class ConnectOptions {
   /// Proxy-mode only: optional local HTTP CONNECT listen address.
   final String? httpListen;
 
-  /// Whether DNS is resolved over the tunnel gateway.
+  /// System-VPN only: whether DNS is resolved over the tunnel gateway. Proxy
+  /// mode always resolves names remotely at the exit (SOCKS5/HTTP CONNECT), so
+  /// this flag has no effect there.
   final bool dnsOverTunnel;
 }
 
