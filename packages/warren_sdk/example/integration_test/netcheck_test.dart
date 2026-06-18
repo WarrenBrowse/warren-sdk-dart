@@ -68,6 +68,7 @@ void main() {
       String? tunnelIp;
       String? httpEndpoint;
       ConnectionState? finalState;
+      TunnelCheck? serverCheck;
 
       await tester.runAsync(() async {
         final client = await WarrenClient.create(
@@ -78,6 +79,11 @@ void main() {
         final exits = await client.listExits();
 
         directIp = await fetchIp(tries: 2);
+
+        // The signed /v1/check call: a backend-authoritative view. In proxy mode
+        // the account call is direct (not proxied), so this exercises the new
+        // bridge binding and must return the server's observation.
+        serverCheck = await client.checkTunnel();
 
         final session = await client.connect(
           exits.first,
@@ -96,6 +102,12 @@ void main() {
       });
 
       expect(finalState, isA<Connected>());
+      expect(serverCheck, isNotNull, reason: '/v1/check should answer');
+      expect(
+        serverCheck!.ip,
+        isNotEmpty,
+        reason: 'server should report an observed IP',
+      );
       expect(directIp, isNotNull, reason: 'real IP lookup should succeed');
       expect(
         httpEndpoint,

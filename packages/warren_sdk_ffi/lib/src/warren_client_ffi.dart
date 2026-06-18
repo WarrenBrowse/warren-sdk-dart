@@ -31,6 +31,10 @@ class FfiClientHandle implements WarrenClientHandle {
       _mapped(() => _client.redeemVoucher(secret: secret));
 
   @override
+  Future<TunnelCheck> checkTunnel() =>
+      _mapped(() async => tunnelCheckFromDto(await _client.check()));
+
+  @override
   Future<List<ExitInfo>> listExits() => _mapped(() async {
         final dtos = await _client.listExits();
         return dtos.map(exitInfoFromDto).toList(growable: false);
@@ -59,6 +63,7 @@ class FfiClientHandle implements WarrenClientHandle {
           exitPubkeyHex: exit.id,
           socks5Listen: options.socks5Listen,
           httpListen: options.httpListen,
+          dnsServer: options.dnsServer,
         );
         final socks5 = await session.socks5Endpoint();
         final http = await session.httpEndpoint();

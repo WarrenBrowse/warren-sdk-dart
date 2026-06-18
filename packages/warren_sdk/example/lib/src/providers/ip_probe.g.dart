@@ -50,4 +50,61 @@ final class NetCheckProvider extends $FunctionalProvider<AsyncValue<NetCheck>,
   }
 }
 
-String _$netCheckHash() => r'1446b9d1ba29ca4560c5df0eb505c57d9383d40b';
+String _$netCheckHash() => r'f138fbb96bab876e9769ed7a3292a8f077fc3d77';
+
+/// The account server's authoritative view of this device, via the SDK's
+/// `checkTunnel()` (signed `/v1/check`). Re-runs when the session changes.
+///
+/// This reflects the CONTROL-PLANE path (the account API): direct in proxy mode,
+/// tunneled in system-VPN mode. So `isExit` is the real backend confirmation for
+/// system-VPN; in proxy mode it reports the device's own IP (the SOCKS/HTTP
+/// proxy carries app traffic, not the signed account calls).
+
+@ProviderFor(serverCheck)
+const serverCheckProvider = ServerCheckProvider._();
+
+/// The account server's authoritative view of this device, via the SDK's
+/// `checkTunnel()` (signed `/v1/check`). Re-runs when the session changes.
+///
+/// This reflects the CONTROL-PLANE path (the account API): direct in proxy mode,
+/// tunneled in system-VPN mode. So `isExit` is the real backend confirmation for
+/// system-VPN; in proxy mode it reports the device's own IP (the SOCKS/HTTP
+/// proxy carries app traffic, not the signed account calls).
+
+final class ServerCheckProvider extends $FunctionalProvider<
+        AsyncValue<TunnelCheck>, TunnelCheck, FutureOr<TunnelCheck>>
+    with $FutureModifier<TunnelCheck>, $FutureProvider<TunnelCheck> {
+  /// The account server's authoritative view of this device, via the SDK's
+  /// `checkTunnel()` (signed `/v1/check`). Re-runs when the session changes.
+  ///
+  /// This reflects the CONTROL-PLANE path (the account API): direct in proxy mode,
+  /// tunneled in system-VPN mode. So `isExit` is the real backend confirmation for
+  /// system-VPN; in proxy mode it reports the device's own IP (the SOCKS/HTTP
+  /// proxy carries app traffic, not the signed account calls).
+  const ServerCheckProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'serverCheckProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$serverCheckHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<TunnelCheck> $createElement(
+          $ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<TunnelCheck> create(Ref ref) {
+    return serverCheck(ref);
+  }
+}
+
+String _$serverCheckHash() => r'9879b6776e4734e1784a0c8efc2c363590e52d3c';

@@ -5,6 +5,7 @@
 //! protocol logic stays in the audited engine; this is thin delegation plus
 //! error categorization for the bridge.
 
+use std::path::Path;
 use std::sync::Arc;
 
 use warren_sdk::api::dto::RegisterAccountRequest;
@@ -12,7 +13,7 @@ use warren_sdk::api::ClientError;
 use warren_sdk::discovery::Relay;
 use warren_sdk::identity::WarrenIdentity;
 use warren_sdk::net::ProxyConfig;
-use warren_sdk::{DefaultClient, SdkError, WarrenClient};
+use warren_sdk::{DefaultClient, FileGenerationStore, FileServerKeyStore, SdkError, WarrenClient};
 
 use crate::api::datapath::WarrenSessionFrb;
 use crate::api::error::{WarrenErrorKind, WarrenFfiError};
@@ -24,12 +25,9 @@ fn err(kind: WarrenErrorKind, message: impl Into<String>) -> WarrenFfiError {
     }
 }
 
-/// An exit advertised by the verified signed relay list.
-///
-/// `supports_port_forwarding` is not carried in the relay list: inbound port
-/// forwarding is negotiated per connection at handshake time, so it is reported
-/// as `false` here and confirmed once a session is established. `load` is not
-/// advertised either and is left unset.
+/// An exit advertised by the verified signed relay list. Only fields the relay
+/// list actually carries are surfaced; port-forwarding is negotiated per
+/// connection (not known at listing time) and load is not advertised.
 pub struct ExitInfoDto {
     /// Stable, operator-assigned exit identifier (survives key rotation).
     pub id: String,
@@ -39,11 +37,20 @@ pub struct ExitInfoDto {
     pub city: String,
     /// Whether the exit attests IPv6 egress.
     pub supports_ipv6: bool,
-    /// Whether inbound port forwarding is known to be available (always false
-    /// at listing time; negotiated at connect).
-    pub supports_port_forwarding: bool,
-    /// Optional load hint in `[0.0, 1.0]`, when advertised.
-    pub load: Option<f64>,
+}
+
+/// The account server's view of the caller's connection, from a signed
+/// `GET /v1/check`. Lets an app confirm against the backend whether its traffic
+/// egresses from a registered Warren exit, and where.
+pub struct TunnelCheckDto {
+    /// The public IP the account server observed for this call.
+    pub ip: String,
+    /// True when `ip` is a registered Warren exit (traffic is tunneled).
+    pub is_exit: bool,
+    /// Exit country (ISO 3166-1 alpha-2), when `is_exit`.
+    pub country: Option<String>,
+    /// Exit city, when known.
+    pub city: Option<String>,
 }
 
 /// An opaque, live engine client bound to one identity and account API.
@@ -65,6 +72,7 @@ impl WarrenClientFrb {
         daita: bool,
         daita_machine: Option<String>,
         request_ipv6: bool,
+        state_dir: Option<String>,
     ) -> Result<WarrenClientFrb, WarrenFfiError> {
         let identity = WarrenIdentity::from_mnemonic(&mnemonic)
             .map_err(|_| err(WarrenErrorKind::Identity, "invalid mnemonic"))?;
@@ -85,6 +93,25 @@ impl WarrenClientFrb {
         }
         if request_ipv6 {
             builder = builder.request_ipv6();
+        }
+        if let Some(dir) = state_dir {
+            // Persist the anti-rollback floors and the TOFU server pin across
+            // restarts, so a downgraded relay/multihop list or a swapped server
+            // key cannot slip past on the next launch. Mirrors the engine FFI's
+            // `with_persistence`; the filenames must match for state continuity.
+            let dir = Path::new(&dir);
+            let io_err =
+                |_| err(WarrenErrorKind::Api, "persistence state directory is not usable");
+            std::fs::create_dir_all(dir).map_err(io_err)?;
+            let relay_gen =
+                FileGenerationStore::new(dir.join("relay_generation")).map_err(io_err)?;
+            let mh_gen =
+                FileGenerationStore::new(dir.join("multihop_generation")).map_err(io_err)?;
+            let key_store = FileServerKeyStore::new(dir.join("server_key")).map_err(io_err)?;
+            builder = builder
+                .generation_store(Arc::new(relay_gen))
+                .multihop_generation_store(Arc::new(mh_gen))
+                .server_key_store(Arc::new(key_store));
         }
         let inner = builder
             .build()
@@ -128,6 +155,20 @@ impl WarrenClientFrb {
         Ok(resp.expires_at)
     }
 
+    /// The account server's view of this connection (signed `GET /v1/check`):
+    /// whether traffic egresses from a registered Warren exit, and which one.
+    /// Confirms a tunnel end-to-end against the backend rather than a third-party
+    /// IP echo.
+    pub async fn check(&self) -> Result<TunnelCheckDto, WarrenFfiError> {
+        let resp = self.inner.api().check().await.map_err(map_client_error)?;
+        Ok(TunnelCheckDto {
+            ip: resp.ip,
+            is_exit: resp.is_exit,
+            country: resp.exit_country,
+            city: resp.exit_city,
+        })
+    }
+
     /// Fetches and verifies the signed relay list, returning the exits.
     pub async fn list_exits(&self) -> Result<Vec<ExitInfoDto>, WarrenFfiError> {
         let selector = self.inner.fetch_exits().await.map_err(map_sdk_error)?;
@@ -145,6 +186,7 @@ impl WarrenClientFrb {
         exit_pubkey_hex: String,
         socks5_listen: String,
         http_listen: Option<String>,
+        dns_server: Option<String>,
     ) -> Result<WarrenSessionFrb, WarrenFfiError> {
         let target: [u8; 32] = hex::decode(&exit_pubkey_hex)
             .ok()
@@ -172,7 +214,14 @@ impl WarrenClientFrb {
                 ),
                 None => None,
             },
-            dns_server: None,
+            // Optional resolver override (IPv4, port 53 implied) for exits that
+            // disable the default tunnel DNS; otherwise the engine default.
+            dns_server: match dns_server {
+                Some(addr) => Some(addr.parse::<std::net::Ipv4Addr>().map_err(|_| {
+                    err(WarrenErrorKind::Tunnel, "invalid dns server address")
+                })?),
+                None => None,
+            },
         };
 
         let handle = self
@@ -193,8 +242,6 @@ fn relay_to_dto(relay: &Relay) -> ExitInfoDto {
         country: relay.location().country_code().to_owned(),
         city: relay.location().city().to_owned(),
         supports_ipv6: relay.ipv6_egress(),
-        supports_port_forwarding: false,
-        load: None,
     }
 }
 

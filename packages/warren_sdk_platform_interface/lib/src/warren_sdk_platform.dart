@@ -21,6 +21,7 @@ class WarrenClientConfig {
     this.daita = false,
     this.daitaMachine,
     this.requestIpv6 = true,
+    this.stateDir,
   });
 
   /// The 12-word BIP39 mnemonic. Consumed once, zeroized in Rust.
@@ -52,6 +53,11 @@ class WarrenClientConfig {
   /// none and the tunnel stays v4-only. When granted, IPv6 egress is routed
   /// through the tunnel.
   final bool requestIpv6;
+
+  /// Optional directory for on-disk persistence of the anti-rollback floors and
+  /// the TOFU server pin. Without it those live in memory only, so rollback
+  /// protection does not survive a restart. Pass a private, app-owned path.
+  final String? stateDir;
 }
 
 /// The federated-plugin contract every platform implementation satisfies.
@@ -112,6 +118,10 @@ abstract interface class WarrenClientHandle {
 
   /// Redeems a voucher secret, crediting the account.
   Future<void> redeemVoucher(String secret);
+
+  /// Asks the account server what it observes for this connection: whether
+  /// traffic egresses from a registered Warren exit, and which one.
+  Future<TunnelCheck> checkTunnel();
 
   /// Fetches and verifies the signed relay list and returns the exits.
   Future<List<ExitInfo>> listExits();

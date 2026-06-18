@@ -131,6 +131,9 @@ class DesktopClientHandle implements WarrenClientHandle {
   Future<void> redeemVoucher(String secret) => _inner.redeemVoucher(secret);
 
   @override
+  Future<TunnelCheck> checkTunnel() => _inner.checkTunnel();
+
+  @override
   Future<List<ExitInfo>> listExits() => _inner.listExits();
 
   @override

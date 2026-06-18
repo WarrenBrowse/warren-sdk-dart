@@ -26,6 +26,7 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         ProxyEndpoints,
         Reconnecting,
         SubscriptionInfo,
+        TunnelCheck,
         WarrenApiError,
         WarrenDiscoveryError,
         WarrenError,

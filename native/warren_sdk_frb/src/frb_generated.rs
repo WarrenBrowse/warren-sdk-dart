@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1297616505;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1864999553;
 
 // Section: executor
 
@@ -99,6 +99,62 @@ fn wire__crate__api__client__WarrenClientFrb_address_impl(
         },
     )
 }
+fn wire__crate__api__client__WarrenClientFrb_check_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_check",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::error::WarrenFfiError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::client::WarrenClientFrb::check(&*api_that_guard).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__client__WarrenClientFrb_connect_proxy_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -127,6 +183,7 @@ fn wire__crate__api__client__WarrenClientFrb_connect_proxy_impl(
             let api_exit_pubkey_hex = <String>::sse_decode(&mut deserializer);
             let api_socks5_listen = <String>::sse_decode(&mut deserializer);
             let api_http_listen = <Option<String>>::sse_decode(&mut deserializer);
+            let api_dns_server = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::api::error::WarrenFfiError>(
@@ -153,6 +210,7 @@ fn wire__crate__api__client__WarrenClientFrb_connect_proxy_impl(
                             api_exit_pubkey_hex,
                             api_socks5_listen,
                             api_http_listen,
+                            api_dns_server,
                         )
                         .await?;
                         Ok(output_ok)
@@ -192,6 +250,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
             let api_daita = <bool>::sse_decode(&mut deserializer);
             let api_daita_machine = <Option<String>>::sse_decode(&mut deserializer);
             let api_request_ipv6 = <bool>::sse_decode(&mut deserializer);
+            let api_state_dir = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::api::error::WarrenFfiError>(
@@ -204,6 +263,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
                             api_daita,
                             api_daita_machine,
                             api_request_ipv6,
+                            api_state_dir,
                         )
                         .await?;
                         Ok(output_ok)
@@ -900,23 +960,12 @@ impl SseDecode for crate::api::client::ExitInfoDto {
         let mut var_country = <String>::sse_decode(deserializer);
         let mut var_city = <String>::sse_decode(deserializer);
         let mut var_supportsIpv6 = <bool>::sse_decode(deserializer);
-        let mut var_supportsPortForwarding = <bool>::sse_decode(deserializer);
-        let mut var_load = <Option<f64>>::sse_decode(deserializer);
         return crate::api::client::ExitInfoDto {
             id: var_id,
             country: var_country,
             city: var_city,
             supports_ipv6: var_supportsIpv6,
-            supports_port_forwarding: var_supportsPortForwarding,
-            load: var_load,
         };
-    }
-}
-
-impl SseDecode for f64 {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        deserializer.cursor.read_f64::<NativeEndian>().unwrap()
     }
 }
 
@@ -962,17 +1011,6 @@ impl SseDecode for Option<String> {
     }
 }
 
-impl SseDecode for Option<f64> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        if (<bool>::sse_decode(deserializer)) {
-            return Some(<f64>::sse_decode(deserializer));
-        } else {
-            return None;
-        }
-    }
-}
-
 impl SseDecode for crate::api::identity::SignedRequest {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -985,6 +1023,22 @@ impl SseDecode for crate::api::identity::SignedRequest {
             signature_hex: var_signatureHex,
             timestamp: var_timestamp,
             nonce_hex: var_nonceHex,
+        };
+    }
+}
+
+impl SseDecode for crate::api::client::TunnelCheckDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_ip = <String>::sse_decode(deserializer);
+        let mut var_isExit = <bool>::sse_decode(deserializer);
+        let mut var_country = <Option<String>>::sse_decode(deserializer);
+        let mut var_city = <Option<String>>::sse_decode(deserializer);
+        return crate::api::client::TunnelCheckDto {
+            ip: var_ip,
+            is_exit: var_isExit,
+            country: var_country,
+            city: var_city,
         };
     }
 }
@@ -1057,67 +1111,70 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        2 => wire__crate__api__client__WarrenClientFrb_connect_proxy_impl(
+        2 => {
+            wire__crate__api__client__WarrenClientFrb_check_impl(port, ptr, rust_vec_len, data_len)
+        }
+        3 => wire__crate__api__client__WarrenClientFrb_connect_proxy_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        3 => {
+        4 => {
             wire__crate__api__client__WarrenClientFrb_create_impl(port, ptr, rust_vec_len, data_len)
         }
-        4 => wire__crate__api__client__WarrenClientFrb_list_exits_impl(
+        5 => wire__crate__api__client__WarrenClientFrb_list_exits_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        5 => wire__crate__api__client__WarrenClientFrb_redeem_voucher_impl(
+        6 => wire__crate__api__client__WarrenClientFrb_redeem_voucher_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__client__WarrenClientFrb_subscription_expiry_impl(
+        7 => wire__crate__api__client__WarrenClientFrb_subscription_expiry_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
+        8 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        8 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
+        9 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
+        10 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
+        11 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        11 => wire__crate__api__identity__address_from_mnemonic_impl(
+        12 => wire__crate__api__identity__address_from_mnemonic_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
+        13 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1197,8 +1254,6 @@ impl flutter_rust_bridge::IntoDart for crate::api::client::ExitInfoDto {
             self.country.into_into_dart().into_dart(),
             self.city.into_into_dart().into_dart(),
             self.supports_ipv6.into_into_dart().into_dart(),
-            self.supports_port_forwarding.into_into_dart().into_dart(),
-            self.load.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1234,6 +1289,29 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::identity::SignedRequest>
     for crate::api::identity::SignedRequest
 {
     fn into_into_dart(self) -> crate::api::identity::SignedRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::client::TunnelCheckDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.ip.into_into_dart().into_dart(),
+            self.is_exit.into_into_dart().into_dart(),
+            self.country.into_into_dart().into_dart(),
+            self.city.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::client::TunnelCheckDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::client::TunnelCheckDto>
+    for crate::api::client::TunnelCheckDto
+{
+    fn into_into_dart(self) -> crate::api::client::TunnelCheckDto {
         self
     }
 }
@@ -1377,15 +1455,6 @@ impl SseEncode for crate::api::client::ExitInfoDto {
         <String>::sse_encode(self.country, serializer);
         <String>::sse_encode(self.city, serializer);
         <bool>::sse_encode(self.supports_ipv6, serializer);
-        <bool>::sse_encode(self.supports_port_forwarding, serializer);
-        <Option<f64>>::sse_encode(self.load, serializer);
-    }
-}
-
-impl SseEncode for f64 {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        serializer.cursor.write_f64::<NativeEndian>(self).unwrap();
     }
 }
 
@@ -1426,16 +1495,6 @@ impl SseEncode for Option<String> {
     }
 }
 
-impl SseEncode for Option<f64> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <bool>::sse_encode(self.is_some(), serializer);
-        if let Some(value) = self {
-            <f64>::sse_encode(value, serializer);
-        }
-    }
-}
-
 impl SseEncode for crate::api::identity::SignedRequest {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1443,6 +1502,16 @@ impl SseEncode for crate::api::identity::SignedRequest {
         <String>::sse_encode(self.signature_hex, serializer);
         <u64>::sse_encode(self.timestamp, serializer);
         <String>::sse_encode(self.nonce_hex, serializer);
+    }
+}
+
+impl SseEncode for crate::api::client::TunnelCheckDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.ip, serializer);
+        <bool>::sse_encode(self.is_exit, serializer);
+        <Option<String>>::sse_encode(self.country, serializer);
+        <Option<String>>::sse_encode(self.city, serializer);
     }
 }
 

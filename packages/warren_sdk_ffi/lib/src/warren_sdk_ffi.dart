@@ -172,6 +172,7 @@ class WarrenSdkFfi extends WarrenSdkPlatform {
         daita: config.daita,
         daitaMachine: config.daitaMachine,
         requestIpv6: config.requestIpv6,
+        stateDir: config.stateDir,
       );
       final address = await client.address();
       return FfiClientHandle(client, address);

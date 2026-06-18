@@ -81,6 +81,7 @@ class ConnectOptions {
   const ConnectOptions({
     this.socks5Listen = '127.0.0.1:0',
     this.httpListen,
+    this.dnsServer,
     this.dnsOverTunnel = true,
   });
 
@@ -89,6 +90,11 @@ class ConnectOptions {
 
   /// Proxy-mode only: optional local HTTP CONNECT listen address.
   final String? httpListen;
+
+  /// Proxy-mode only: optional IPv4 DNS resolver (port 53 implied) to use for
+  /// names that travel the tunnel. Needed only for exits that disable the
+  /// default tunnel DNS; leave null to use the engine default.
+  final String? dnsServer;
 
   /// System-VPN only: whether DNS is resolved over the tunnel gateway. Proxy
   /// mode always resolves names remotely at the exit (SOCKS5/HTTP CONNECT), so
@@ -120,4 +126,30 @@ class SubscriptionInfo {
 
   /// Whether the subscription is currently active.
   bool get isActive => expiresAtUnix > 0;
+}
+
+/// The account server's view of the caller's connection, from a signed
+/// `/v1/check`. Confirms, against the backend, whether traffic egresses from a
+/// registered Warren exit (and where), independent of any third-party IP echo.
+@immutable
+class TunnelCheck {
+  /// Creates a tunnel-check snapshot.
+  const TunnelCheck({
+    required this.ip,
+    required this.isExit,
+    this.country,
+    this.city,
+  });
+
+  /// The public IP the account server observed for this call.
+  final String ip;
+
+  /// Whether [ip] is a registered Warren exit, i.e. traffic is tunneled.
+  final bool isExit;
+
+  /// Exit country (ISO 3166-1 alpha-2), when [isExit].
+  final String? country;
+
+  /// Exit city, when known.
+  final String? city;
 }

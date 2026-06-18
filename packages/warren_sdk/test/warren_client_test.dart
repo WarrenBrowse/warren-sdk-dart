@@ -127,6 +127,14 @@ void main() {
       expect(exits.single.city, 'Bucharest');
     });
 
+    test('checkTunnel surfaces the server view', () async {
+      final client = await create();
+      final check = await client.checkTunnel();
+      expect(check.ip, '203.0.113.7');
+      expect(check.isExit, isTrue);
+      expect(check.country, 'RO');
+    });
+
     test('connect wraps the session handle and forwards disconnect', () async {
       final client = await create();
       final exit = (await client.listExits()).single;
@@ -194,6 +202,10 @@ class _FakeClientHandle implements WarrenClientHandle {
 
   @override
   Future<void> redeemVoucher(String secret) async => redeemedSecret = secret;
+
+  @override
+  Future<TunnelCheck> checkTunnel() async =>
+      const TunnelCheck(ip: '203.0.113.7', isExit: true, country: 'RO');
 
   @override
   Future<List<ExitInfo>> listExits() async => const [

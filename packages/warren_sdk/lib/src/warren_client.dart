@@ -42,6 +42,7 @@ class WarrenClient {
     bool daita = false,
     String? daitaMachine,
     bool requestIpv6 = true,
+    String? stateDir,
   }) async {
     // Ensure the default in-process engine is registered. A privileged Mode B
     // implementation may have already overridden the instance; if so, this is a
@@ -56,6 +57,7 @@ class WarrenClient {
         daita: daita,
         daitaMachine: daitaMachine,
         requestIpv6: requestIpv6,
+        stateDir: stateDir,
       ),
     );
     return WarrenClient._(handle);
@@ -70,6 +72,14 @@ class WarrenClient {
   ///
   /// Throws a [WarrenApiError] if the voucher is invalid or already used.
   Future<void> redeemVoucher(String secret) => _handle.redeemVoucher(secret);
+
+  /// Asks the account server what it observes for this connection: whether
+  /// traffic egresses from a registered Warren exit, and which one. A
+  /// backend-authoritative confirmation of the tunnel, independent of any
+  /// third-party IP echo.
+  ///
+  /// Throws a [WarrenApiError] on a network or server failure.
+  Future<TunnelCheck> checkTunnel() => _handle.checkTunnel();
 
   /// Fetches and verifies the signed relay list and returns the available
   /// exits.

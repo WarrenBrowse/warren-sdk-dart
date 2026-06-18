@@ -45,14 +45,36 @@ void main() {
         country: 'RO',
         city: 'Bucharest',
         supportsIpv6: true,
-        supportsPortForwarding: false,
-        load: 0.42,
       );
       final info = exitInfoFromDto(dto);
       expect(info.id, 'exit-1');
       expect(info.country, 'RO');
       expect(info.city, 'Bucharest');
       expect(info.supportsIpv6, isTrue);
+    });
+  });
+
+  group('tunnelCheckFromDto', () {
+    test('maps an exit hit with location', () {
+      const dto = TunnelCheckDto(
+        ip: '203.0.113.7',
+        isExit: true,
+        country: 'NL',
+        city: 'Amsterdam',
+      );
+      final check = tunnelCheckFromDto(dto);
+      expect(check.ip, '203.0.113.7');
+      expect(check.isExit, isTrue);
+      expect(check.country, 'NL');
+      expect(check.city, 'Amsterdam');
+    });
+
+    test('maps a non-exit with no location', () {
+      const dto = TunnelCheckDto(ip: '82.65.12.5', isExit: false);
+      final check = tunnelCheckFromDto(dto);
+      expect(check.isExit, isFalse);
+      expect(check.country, isNull);
+      expect(check.city, isNull);
     });
   });
 

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:warren_sdk_riverpod/warren_sdk_riverpod.dart';
 
 import 'connection.dart';
 
@@ -210,4 +211,18 @@ Future<IpReport> _probe({String? proxy, bool ipv6 = false}) async {
   } finally {
     client.close(force: true);
   }
+}
+
+/// The account server's authoritative view of this device, via the SDK's
+/// `checkTunnel()` (signed `/v1/check`). Re-runs when the session changes.
+///
+/// This reflects the CONTROL-PLANE path (the account API): direct in proxy mode,
+/// tunneled in system-VPN mode. So `isExit` is the real backend confirmation for
+/// system-VPN; in proxy mode it reports the device's own IP (the SOCKS/HTTP
+/// proxy carries app traffic, not the signed account calls).
+@Riverpod(keepAlive: true)
+Future<TunnelCheck> serverCheck(Ref ref) async {
+  ref.watch(connectionControllerProvider);
+  final client = await ref.watch(warrenClientProvider.future);
+  return client.checkTunnel();
 }

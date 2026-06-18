@@ -15,6 +15,12 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
   /// The SS58 `wb...` address of the bound identity.
   Future<String> address();
 
+  /// The account server's view of this connection (signed `GET /v1/check`):
+  /// whether traffic egresses from a registered Warren exit, and which one.
+  /// Confirms a tunnel end-to-end against the backend rather than a third-party
+  /// IP echo.
+  Future<TunnelCheckDto> check();
+
   /// Opens a self-healing multihop proxy to the exit whose Ed25519 identity is
   /// `exit_pubkey_hex` (the `id` from [`list_exits`]), binding the local
   /// listeners. Proxy mode always uses multihop, which real exits require.
@@ -24,7 +30,8 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
   Future<WarrenSessionFrb> connectProxy(
       {required String exitPubkeyHex,
       required String socks5Listen,
-      String? httpListen});
+      String? httpListen,
+      String? dnsServer});
 
   /// Builds a client from a mnemonic and the account API configuration.
   ///
@@ -37,7 +44,8 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
           String? multihopRootPin,
           required bool daita,
           String? daitaMachine,
-          required bool requestIpv6}) =>
+          required bool requestIpv6,
+          String? stateDir}) =>
       WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCreate(
           mnemonic: mnemonic,
           apiBase: apiBase,
@@ -45,7 +53,8 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
           multihopRootPin: multihopRootPin,
           daita: daita,
           daitaMachine: daitaMachine,
-          requestIpv6: requestIpv6);
+          requestIpv6: requestIpv6,
+          stateDir: stateDir);
 
   /// Fetches and verifies the signed relay list, returning the exits.
   Future<List<ExitInfoDto>> listExits();
@@ -57,12 +66,9 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
   Future<BigInt> subscriptionExpiry();
 }
 
-/// An exit advertised by the verified signed relay list.
-///
-/// `supports_port_forwarding` is not carried in the relay list: inbound port
-/// forwarding is negotiated per connection at handshake time, so it is reported
-/// as `false` here and confirmed once a session is established. `load` is not
-/// advertised either and is left unset.
+/// An exit advertised by the verified signed relay list. Only fields the relay
+/// list actually carries are surfaced; port-forwarding is negotiated per
+/// connection (not known at listing time) and load is not advertised.
 class ExitInfoDto {
   /// Stable, operator-assigned exit identifier (survives key rotation).
   final String id;
@@ -76,30 +82,16 @@ class ExitInfoDto {
   /// Whether the exit attests IPv6 egress.
   final bool supportsIpv6;
 
-  /// Whether inbound port forwarding is known to be available (always false
-  /// at listing time; negotiated at connect).
-  final bool supportsPortForwarding;
-
-  /// Optional load hint in `[0.0, 1.0]`, when advertised.
-  final double? load;
-
   const ExitInfoDto({
     required this.id,
     required this.country,
     required this.city,
     required this.supportsIpv6,
-    required this.supportsPortForwarding,
-    this.load,
   });
 
   @override
   int get hashCode =>
-      id.hashCode ^
-      country.hashCode ^
-      city.hashCode ^
-      supportsIpv6.hashCode ^
-      supportsPortForwarding.hashCode ^
-      load.hashCode;
+      id.hashCode ^ country.hashCode ^ city.hashCode ^ supportsIpv6.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -109,7 +101,43 @@ class ExitInfoDto {
           id == other.id &&
           country == other.country &&
           city == other.city &&
-          supportsIpv6 == other.supportsIpv6 &&
-          supportsPortForwarding == other.supportsPortForwarding &&
-          load == other.load;
+          supportsIpv6 == other.supportsIpv6;
+}
+
+/// The account server's view of the caller's connection, from a signed
+/// `GET /v1/check`. Lets an app confirm against the backend whether its traffic
+/// egresses from a registered Warren exit, and where.
+class TunnelCheckDto {
+  /// The public IP the account server observed for this call.
+  final String ip;
+
+  /// True when `ip` is a registered Warren exit (traffic is tunneled).
+  final bool isExit;
+
+  /// Exit country (ISO 3166-1 alpha-2), when `is_exit`.
+  final String? country;
+
+  /// Exit city, when known.
+  final String? city;
+
+  const TunnelCheckDto({
+    required this.ip,
+    required this.isExit,
+    this.country,
+    this.city,
+  });
+
+  @override
+  int get hashCode =>
+      ip.hashCode ^ isExit.hashCode ^ country.hashCode ^ city.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TunnelCheckDto &&
+          runtimeType == other.runtimeType &&
+          ip == other.ip &&
+          isExit == other.isExit &&
+          country == other.country &&
+          city == other.city;
 }

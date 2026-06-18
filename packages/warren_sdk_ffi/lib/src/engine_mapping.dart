@@ -1,6 +1,6 @@
 import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
-import 'rust/api/client.dart' show ExitInfoDto;
+import 'rust/api/client.dart' show ExitInfoDto, TunnelCheckDto;
 import 'rust/api/datapath.dart' show ConnectionStateDto;
 import 'rust/api/error.dart';
 
@@ -34,4 +34,12 @@ ExitInfo exitInfoFromDto(ExitInfoDto dto) => ExitInfo(
       country: dto.country,
       city: dto.city,
       supportsIpv6: dto.supportsIpv6,
+    );
+
+/// Maps the engine tunnel-check DTO to the public [TunnelCheck].
+TunnelCheck tunnelCheckFromDto(TunnelCheckDto dto) => TunnelCheck(
+      ip: dto.ip,
+      isExit: dto.isExit,
+      country: dto.country,
+      city: dto.city,
     );

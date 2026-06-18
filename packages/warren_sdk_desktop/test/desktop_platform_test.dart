@@ -242,6 +242,12 @@ class _FakeInnerHandle implements WarrenClientHandle {
   @override
   Future<void> redeemVoucher(String secret) async => calls.add('redeem');
   @override
+  Future<TunnelCheck> checkTunnel() async {
+    calls.add('checkTunnel');
+    return const TunnelCheck(ip: '203.0.113.7', isExit: true);
+  }
+
+  @override
   Future<List<ExitInfo>> listExits() async {
     calls.add('listExits');
     return const [];

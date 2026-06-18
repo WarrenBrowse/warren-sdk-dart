@@ -76,16 +76,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   bool dco_decode_bool(dynamic raw);
 
   @protected
-  double dco_decode_box_autoadd_f_64(dynamic raw);
-
-  @protected
   ConnectionStateDto dco_decode_connection_state_dto(dynamic raw);
 
   @protected
   ExitInfoDto dco_decode_exit_info_dto(dynamic raw);
-
-  @protected
-  double dco_decode_f_64(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -103,10 +97,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
-  double? dco_decode_opt_box_autoadd_f_64(dynamic raw);
+  SignedRequest dco_decode_signed_request(dynamic raw);
 
   @protected
-  SignedRequest dco_decode_signed_request(dynamic raw);
+  TunnelCheckDto dco_decode_tunnel_check_dto(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -171,17 +165,11 @@ abstract class WarrenRustBridgeApiImplPlatform
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
-  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer);
-
-  @protected
   ConnectionStateDto sse_decode_connection_state_dto(
       SseDeserializer deserializer);
 
   @protected
   ExitInfoDto sse_decode_exit_info_dto(SseDeserializer deserializer);
-
-  @protected
-  double sse_decode_f_64(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -199,10 +187,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
-  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer);
+  SignedRequest sse_decode_signed_request(SseDeserializer deserializer);
 
   @protected
-  SignedRequest sse_decode_signed_request(SseDeserializer deserializer);
+  TunnelCheckDto sse_decode_tunnel_check_dto(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -267,17 +255,11 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer);
-
-  @protected
   void sse_encode_connection_state_dto(
       ConnectionStateDto self, SseSerializer serializer);
 
   @protected
   void sse_encode_exit_info_dto(ExitInfoDto self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_f_64(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -297,10 +279,11 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer);
+  void sse_encode_signed_request(SignedRequest self, SseSerializer serializer);
 
   @protected
-  void sse_encode_signed_request(SignedRequest self, SseSerializer serializer);
+  void sse_encode_tunnel_check_dto(
+      TunnelCheckDto self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_64(BigInt self, SseSerializer serializer);

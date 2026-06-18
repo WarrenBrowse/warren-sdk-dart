@@ -72,7 +72,7 @@ class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1297616505;
+  int get rustContentHash => 1864999553;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -87,11 +87,15 @@ abstract class WarrenRustBridgeApi extends BaseApi {
   Future<String> crateApiClientWarrenClientFrbAddress(
       {required WarrenClientFrb that});
 
+  Future<TunnelCheckDto> crateApiClientWarrenClientFrbCheck(
+      {required WarrenClientFrb that});
+
   Future<WarrenSessionFrb> crateApiClientWarrenClientFrbConnectProxy(
       {required WarrenClientFrb that,
       required String exitPubkeyHex,
       required String socks5Listen,
-      String? httpListen});
+      String? httpListen,
+      String? dnsServer});
 
   Future<WarrenClientFrb> crateApiClientWarrenClientFrbCreate(
       {required String mnemonic,
@@ -100,7 +104,8 @@ abstract class WarrenRustBridgeApi extends BaseApi {
       String? multihopRootPin,
       required bool daita,
       String? daitaMachine,
-      required bool requestIpv6});
+      required bool requestIpv6,
+      String? stateDir});
 
   Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
       {required WarrenClientFrb that});
@@ -196,11 +201,39 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       );
 
   @override
+  Future<TunnelCheckDto> crateApiClientWarrenClientFrbCheck(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 2, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_tunnel_check_dto,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbCheckConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbCheckConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_check",
+        argNames: ["that"],
+      );
+
+  @override
   Future<WarrenSessionFrb> crateApiClientWarrenClientFrbConnectProxy(
       {required WarrenClientFrb that,
       required String exitPubkeyHex,
       required String socks5Listen,
-      String? httpListen}) {
+      String? httpListen,
+      String? dnsServer}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -209,8 +242,9 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_String(exitPubkeyHex, serializer);
         sse_encode_String(socks5Listen, serializer);
         sse_encode_opt_String(httpListen, serializer);
+        sse_encode_opt_String(dnsServer, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 2, port: port_);
+            funcId: 3, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -218,7 +252,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         decodeErrorData: sse_decode_warren_ffi_error,
       ),
       constMeta: kCrateApiClientWarrenClientFrbConnectProxyConstMeta,
-      argValues: [that, exitPubkeyHex, socks5Listen, httpListen],
+      argValues: [that, exitPubkeyHex, socks5Listen, httpListen, dnsServer],
       apiImpl: this,
     ));
   }
@@ -226,7 +260,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   TaskConstMeta get kCrateApiClientWarrenClientFrbConnectProxyConstMeta =>
       const TaskConstMeta(
         debugName: "WarrenClientFrb_connect_proxy",
-        argNames: ["that", "exitPubkeyHex", "socks5Listen", "httpListen"],
+        argNames: [
+          "that",
+          "exitPubkeyHex",
+          "socks5Listen",
+          "httpListen",
+          "dnsServer"
+        ],
       );
 
   @override
@@ -237,7 +277,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       String? multihopRootPin,
       required bool daita,
       String? daitaMachine,
-      required bool requestIpv6}) {
+      required bool requestIpv6,
+      String? stateDir}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -248,8 +289,9 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_bool(daita, serializer);
         sse_encode_opt_String(daitaMachine, serializer);
         sse_encode_bool(requestIpv6, serializer);
+        sse_encode_opt_String(stateDir, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 3, port: port_);
+            funcId: 4, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -264,7 +306,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         multihopRootPin,
         daita,
         daitaMachine,
-        requestIpv6
+        requestIpv6,
+        stateDir
       ],
       apiImpl: this,
     ));
@@ -280,7 +323,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
           "multihopRootPin",
           "daita",
           "daitaMachine",
-          "requestIpv6"
+          "requestIpv6",
+          "stateDir"
         ],
       );
 
@@ -293,7 +337,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 4, port: port_);
+            funcId: 5, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_exit_info_dto,
@@ -321,7 +365,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_String(secret, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 5, port: port_);
+            funcId: 6, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -348,7 +392,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
+            funcId: 7, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -375,7 +419,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
+            funcId: 8, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -402,7 +446,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
+            funcId: 9, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_String,
@@ -429,7 +473,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
+            funcId: 10, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -458,7 +502,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_connection_state_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 10, port: port_);
+            funcId: 11, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -485,7 +529,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(mnemonic, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
+            funcId: 12, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -509,7 +553,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 12, port: port_);
+            funcId: 13, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -545,7 +589,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_u_64(timestamp, serializer);
         sse_encode_String(nonceHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 13, port: port_);
+            funcId: 14, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_signed_request,
@@ -577,7 +621,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(address, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 14, port: port_);
+            funcId: 15, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -601,7 +645,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(publicKeyHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 15, port: port_);
+            funcId: 16, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -708,12 +752,6 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  double dco_decode_box_autoadd_f_64(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as double;
-  }
-
-  @protected
   ConnectionStateDto dco_decode_connection_state_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return ConnectionStateDto.values[raw as int];
@@ -723,22 +761,14 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   ExitInfoDto dco_decode_exit_info_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return ExitInfoDto(
       id: dco_decode_String(arr[0]),
       country: dco_decode_String(arr[1]),
       city: dco_decode_String(arr[2]),
       supportsIpv6: dco_decode_bool(arr[3]),
-      supportsPortForwarding: dco_decode_bool(arr[4]),
-      load: dco_decode_opt_box_autoadd_f_64(arr[5]),
     );
-  }
-
-  @protected
-  double dco_decode_f_64(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as double;
   }
 
   @protected
@@ -772,12 +802,6 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  double? dco_decode_opt_box_autoadd_f_64(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_box_autoadd_f_64(raw);
-  }
-
-  @protected
   SignedRequest dco_decode_signed_request(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -788,6 +812,20 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       signatureHex: dco_decode_String(arr[1]),
       timestamp: dco_decode_u_64(arr[2]),
       nonceHex: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  TunnelCheckDto dco_decode_tunnel_check_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return TunnelCheckDto(
+      ip: dco_decode_String(arr[0]),
+      isExit: dco_decode_bool(arr[1]),
+      country: dco_decode_opt_String(arr[2]),
+      city: dco_decode_opt_String(arr[3]),
     );
   }
 
@@ -916,12 +954,6 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_f_64(deserializer));
-  }
-
-  @protected
   ConnectionStateDto sse_decode_connection_state_dto(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -936,21 +968,11 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     var var_country = sse_decode_String(deserializer);
     var var_city = sse_decode_String(deserializer);
     var var_supportsIpv6 = sse_decode_bool(deserializer);
-    var var_supportsPortForwarding = sse_decode_bool(deserializer);
-    var var_load = sse_decode_opt_box_autoadd_f_64(deserializer);
     return ExitInfoDto(
         id: var_id,
         country: var_country,
         city: var_city,
-        supportsIpv6: var_supportsIpv6,
-        supportsPortForwarding: var_supportsPortForwarding,
-        load: var_load);
-  }
-
-  @protected
-  double sse_decode_f_64(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getFloat64();
+        supportsIpv6: var_supportsIpv6);
   }
 
   @protected
@@ -998,17 +1020,6 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_box_autoadd_f_64(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
   SignedRequest sse_decode_signed_request(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_pubkeySs58 = sse_decode_String(deserializer);
@@ -1020,6 +1031,17 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         signatureHex: var_signatureHex,
         timestamp: var_timestamp,
         nonceHex: var_nonceHex);
+  }
+
+  @protected
+  TunnelCheckDto sse_decode_tunnel_check_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_ip = sse_decode_String(deserializer);
+    var var_isExit = sse_decode_bool(deserializer);
+    var var_country = sse_decode_opt_String(deserializer);
+    var var_city = sse_decode_opt_String(deserializer);
+    return TunnelCheckDto(
+        ip: var_ip, isExit: var_isExit, country: var_country, city: var_city);
   }
 
   @protected
@@ -1153,12 +1175,6 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_f_64(self, serializer);
-  }
-
-  @protected
   void sse_encode_connection_state_dto(
       ConnectionStateDto self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1172,14 +1188,6 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_String(self.country, serializer);
     sse_encode_String(self.city, serializer);
     sse_encode_bool(self.supportsIpv6, serializer);
-    sse_encode_bool(self.supportsPortForwarding, serializer);
-    sse_encode_opt_box_autoadd_f_64(self.load, serializer);
-  }
-
-  @protected
-  void sse_encode_f_64(double self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putFloat64(self);
   }
 
   @protected
@@ -1226,22 +1234,22 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
-  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_box_autoadd_f_64(self, serializer);
-    }
-  }
-
-  @protected
   void sse_encode_signed_request(SignedRequest self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.pubkeySs58, serializer);
     sse_encode_String(self.signatureHex, serializer);
     sse_encode_u_64(self.timestamp, serializer);
     sse_encode_String(self.nonceHex, serializer);
+  }
+
+  @protected
+  void sse_encode_tunnel_check_dto(
+      TunnelCheckDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.ip, serializer);
+    sse_encode_bool(self.isExit, serializer);
+    sse_encode_opt_String(self.country, serializer);
+    sse_encode_opt_String(self.city, serializer);
   }
 
   @protected
@@ -1308,6 +1316,15 @@ class WarrenClientFrbImpl extends RustOpaque implements WarrenClientFrb {
         that: this,
       );
 
+  /// The account server's view of this connection (signed `GET /v1/check`):
+  /// whether traffic egresses from a registered Warren exit, and which one.
+  /// Confirms a tunnel end-to-end against the backend rather than a third-party
+  /// IP echo.
+  Future<TunnelCheckDto> check() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCheck(
+        that: this,
+      );
+
   /// Opens a self-healing multihop proxy to the exit whose Ed25519 identity is
   /// `exit_pubkey_hex` (the `id` from [`list_exits`]), binding the local
   /// listeners. Proxy mode always uses multihop, which real exits require.
@@ -1317,12 +1334,14 @@ class WarrenClientFrbImpl extends RustOpaque implements WarrenClientFrb {
   Future<WarrenSessionFrb> connectProxy(
           {required String exitPubkeyHex,
           required String socks5Listen,
-          String? httpListen}) =>
+          String? httpListen,
+          String? dnsServer}) =>
       WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbConnectProxy(
           that: this,
           exitPubkeyHex: exitPubkeyHex,
           socks5Listen: socks5Listen,
-          httpListen: httpListen);
+          httpListen: httpListen,
+          dnsServer: dnsServer);
 
   /// Fetches and verifies the signed relay list, returning the exits.
   Future<List<ExitInfoDto>> listExits() =>

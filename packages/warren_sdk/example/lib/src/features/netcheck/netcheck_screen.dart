@@ -20,13 +20,21 @@ class NetCheckScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'Re-run',
             icon: const Icon(Icons.refresh),
-            onPressed:
-                check.isLoading ? null : () => ref.invalidate(netCheckProvider),
+            onPressed: check.isLoading
+                ? null
+                : () {
+                    ref.invalidate(netCheckProvider);
+                    ref.invalidate(serverCheckProvider);
+                  },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.refresh(netCheckProvider.future),
+        onRefresh: () async {
+          ref.invalidate(serverCheckProvider);
+          ref.invalidate(netCheckProvider);
+          await ref.read(netCheckProvider.future);
+        },
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -37,6 +45,8 @@ class NetCheckScreen extends ConsumerWidget {
               error: (e, _) => _Hint('Check failed: $e'),
               data: (data) => _Results(data: data),
             ),
+            const SizedBox(height: 12),
+            const _ServerCheckCard(),
           ],
         ),
       ),
@@ -274,6 +284,93 @@ class _Ipv6Row extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The account server's authoritative answer via `WarrenClient.checkTunnel()`
+/// (`/v1/check`). Confirms, backend-side, whether traffic egresses from a
+/// registered exit. Meaningful for system VPN (all traffic tunneled); in proxy
+/// mode it reports the device's own IP, since signed account calls go direct.
+class _ServerCheckCard extends ConsumerWidget {
+  const _ServerCheckCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final check = ref.watch(serverCheckProvider);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.dns_outlined,
+                size: 20,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text('Account server', style: theme.textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'What api.warrenbrowse.com sees for the signed /v1/check call: '
+            'tunneled in system VPN, direct in proxy mode.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          const Divider(height: 20),
+          check.when(
+            loading: () => const Text('Asking the server…'),
+            error: (e, _) => Text(
+              'Unavailable: $e',
+              style: TextStyle(color: scheme.error),
+            ),
+            data: (c) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      c.isExit ? Icons.verified_user : Icons.public,
+                      size: 18,
+                      color: c.isExit ? Colors.green.shade600 : scheme.outline,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      c.isExit ? 'Exit confirmed' : 'Not an exit',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    if (c.country != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        countryFlag(c.country!),
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                SelectableText(c.ip, style: theme.textTheme.bodyLarge),
+                if (c.city != null)
+                  Text(
+                    c.city!,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

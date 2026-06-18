@@ -42,7 +42,7 @@ final class SessionSettingsControllerProvider
 }
 
 String _$sessionSettingsControllerHash() =>
-    r'a7a7df26c75be7b8e43c2ddea181bebbab9d6cb0';
+    r'd3bfe38a5872e7f3edac6a439bdd4799a5d84e2c';
 
 abstract class _$SessionSettingsController extends $Notifier<SessionSettings> {
   SessionSettings build();
