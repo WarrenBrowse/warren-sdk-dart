@@ -148,16 +148,27 @@ async fn handle(
             api_base,
             server_pubkey_pin,
             multihop_root_pin,
+            daita,
+            daita_machine,
+            request_ipv6,
         } => {
             let identity = WarrenIdentity::from_mnemonic(&mnemonic)
                 .map_err(|_| Event::error("identity", "invalid mnemonic"))?;
             let mut builder = WarrenClient::builder()
                 .identity(identity)
                 .api_base(api_base)
-                .server_pubkey_pin(server_pubkey_pin)
-                .request_ipv6();
+                .server_pubkey_pin(server_pubkey_pin);
             if let Some(root) = multihop_root_pin {
                 builder = builder.multihop_root_pubkey_pin(root);
+            }
+            if request_ipv6 {
+                builder = builder.request_ipv6();
+            }
+            if daita {
+                builder = builder.daita();
+                if let Some(machine) = daita_machine {
+                    builder = builder.daita_machine(machine);
+                }
             }
             let client = builder
                 .build()

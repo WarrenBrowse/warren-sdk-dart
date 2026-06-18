@@ -92,6 +92,9 @@ class DesktopWarrenSdkPlatform extends WarrenSdkPlatform {
         apiBase: config.apiBase.toString(),
         serverPubkeyPin: config.serverPubkeyPin,
         multihopRootPin: config.multihopRootPin,
+        daita: config.daita,
+        daitaMachine: config.daitaMachine,
+        requestIpv6: config.requestIpv6,
       ),
       connectTimeout: _connectTimeout,
     );

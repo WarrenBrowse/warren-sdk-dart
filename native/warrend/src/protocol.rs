@@ -19,6 +19,14 @@ pub enum Request {
         server_pubkey_pin: String,
         #[serde(default, rename = "multihopRootPin")]
         multihop_root_pin: Option<String>,
+        #[serde(default)]
+        daita: bool,
+        #[serde(default, rename = "daitaMachine")]
+        daita_machine: Option<String>,
+        // Defaults to true so an older client that omits the field keeps the
+        // previous always-on IPv6 behaviour.
+        #[serde(default = "default_true", rename = "requestIpv6")]
+        request_ipv6: bool,
     },
     /// Bring up a system-VPN session to an exit (Ed25519 id from `listExits`).
     Connect {
@@ -87,10 +95,13 @@ mod tests {
             r#"{"type":"configure","mnemonic":"m","apiBase":"https://a","serverPubkeyPin":"p"}"#,
         )
         .expect("configure");
+        // Omitted optional fields default: no root pin, DAITA off, IPv6 on.
         assert!(matches!(
             configure,
             Request::Configure {
                 multihop_root_pin: None,
+                daita: false,
+                request_ipv6: true,
                 ..
             }
         ));
@@ -112,6 +123,29 @@ mod tests {
 
         let disconnect: Request = serde_json::from_str(r#"{"type":"disconnect"}"#).expect("disc");
         assert!(matches!(disconnect, Request::Disconnect));
+    }
+
+    #[test]
+    fn configure_carries_daita_and_ipv6_options() {
+        let configure: Request = serde_json::from_str(
+            r#"{"type":"configure","mnemonic":"m","apiBase":"https://a",
+                "serverPubkeyPin":"p","daita":true,"daitaMachine":"tamaraw",
+                "requestIpv6":false}"#,
+        )
+        .expect("configure");
+        match configure {
+            Request::Configure {
+                daita,
+                daita_machine,
+                request_ipv6,
+                ..
+            } => {
+                assert!(daita);
+                assert_eq!(daita_machine.as_deref(), Some("tamaraw"));
+                assert!(!request_ipv6);
+            }
+            _ => panic!("expected configure"),
+        }
     }
 
     #[test]

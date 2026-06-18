@@ -14,19 +14,30 @@ void main() {
         apiBase: 'https://api.example.com',
         serverPubkeyPin: 'deadbeef',
         multihopRootPin: 'feed',
+        daita: true,
+        daitaMachine: 'tamaraw',
+        requestIpv6: false,
       );
       final full = roundTrip(fullSource);
       expect(full.mnemonic, 'twelve words');
       expect(full.apiBase, 'https://api.example.com');
       expect(full.serverPubkeyPin, 'deadbeef');
       expect(full.multihopRootPin, 'feed');
+      expect(full.daita, isTrue);
+      expect(full.daitaMachine, 'tamaraw');
+      expect(full.requestIpv6, isFalse);
 
       const minimalSource = ConfigureRequest(
         mnemonic: 'm',
         apiBase: 'https://a',
         serverPubkeyPin: 'p',
       );
-      expect(roundTrip(minimalSource).multihopRootPin, isNull);
+      final minimal = roundTrip(minimalSource);
+      expect(minimal.multihopRootPin, isNull);
+      // Defaults: DAITA off, IPv6 on, no machine.
+      expect(minimal.daita, isFalse);
+      expect(minimal.daitaMachine, isNull);
+      expect(minimal.requestIpv6, isTrue);
     });
 
     test('ConnectRequest', () {

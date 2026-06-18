@@ -38,12 +38,18 @@ class MobileVpnController {
     required String apiBase,
     required String serverPubkeyPin,
     String? multihopRootPin,
+    bool daita = false,
+    String? daitaMachine,
+    bool requestIpv6 = true,
   }) =>
       _method.invokeMethod('configure', {
         'mnemonic': mnemonic,
         'apiBase': apiBase,
         'serverPubkeyPin': serverPubkeyPin,
         if (multihopRootPin != null) 'multihopRootPin': multihopRootPin,
+        if (daita) 'daita': daita,
+        if (daitaMachine != null) 'daitaMachine': daitaMachine,
+        'requestIpv6': requestIpv6,
       });
 
   /// Brings up a system-VPN session to an exit.

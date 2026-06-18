@@ -59,6 +59,9 @@ final class ConfigureRequest extends DaemonMessage {
     required this.apiBase,
     required this.serverPubkeyPin,
     this.multihopRootPin,
+    this.daita = false,
+    this.daitaMachine,
+    this.requestIpv6 = true,
   });
 
   /// The 12-word BIP39 mnemonic.
@@ -73,6 +76,15 @@ final class ConfigureRequest extends DaemonMessage {
   /// Optional pinned multihop directory root (hex).
   final String? multihopRootPin;
 
+  /// Whether the daemon enables DAITA padding on its datapath.
+  final bool daita;
+
+  /// Optional named DAITA machine; ignored unless [daita] is true.
+  final String? daitaMachine;
+
+  /// Whether the daemon requests a dual-stack IPv6 allocation from the exit.
+  final bool requestIpv6;
+
   @override
   Map<String, Object?> toJson() => {
         'type': 'configure',
@@ -80,6 +92,9 @@ final class ConfigureRequest extends DaemonMessage {
         'apiBase': apiBase,
         'serverPubkeyPin': serverPubkeyPin,
         if (multihopRootPin != null) 'multihopRootPin': multihopRootPin,
+        if (daita) 'daita': daita,
+        if (daitaMachine != null) 'daitaMachine': daitaMachine,
+        'requestIpv6': requestIpv6,
       };
 
   static ConfigureRequest _fromJson(Map<String, Object?> json) =>
@@ -88,6 +103,9 @@ final class ConfigureRequest extends DaemonMessage {
         apiBase: json['apiBase']! as String,
         serverPubkeyPin: json['serverPubkeyPin']! as String,
         multihopRootPin: json['multihopRootPin'] as String?,
+        daita: json['daita'] as bool? ?? false,
+        daitaMachine: json['daitaMachine'] as String?,
+        requestIpv6: json['requestIpv6'] as bool? ?? true,
       );
 
   // Never render the mnemonic.

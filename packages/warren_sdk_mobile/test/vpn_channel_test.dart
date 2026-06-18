@@ -79,6 +79,24 @@ void main() {
       final configureArgs =
           (calls.first.arguments as Map).cast<String, Object?>();
       expect(configureArgs.containsKey('multihopRootPin'), isFalse);
+      // Defaults: DAITA omitted (off), IPv6 present and on.
+      expect(configureArgs.containsKey('daita'), isFalse);
+      expect(configureArgs['requestIpv6'], isTrue);
+    });
+
+    test('configure forwards DAITA and IPv6 options when set', () async {
+      await controller.configure(
+        mnemonic: 'm',
+        apiBase: 'https://a',
+        serverPubkeyPin: 'p',
+        daita: true,
+        daitaMachine: 'tamaraw',
+        requestIpv6: false,
+      );
+      final args = (calls.single.arguments as Map).cast<String, Object?>();
+      expect(args['daita'], isTrue);
+      expect(args['daitaMachine'], 'tamaraw');
+      expect(args['requestIpv6'], isFalse);
     });
   });
 

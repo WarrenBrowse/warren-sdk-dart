@@ -17,6 +17,9 @@ void main() {
         'regular wife link',
     apiBase: Uri.parse('https://api.example.test'),
     serverPubkeyPin: 'deadbeef',
+    daita: true,
+    daitaMachine: 'tamaraw',
+    requestIpv6: false,
   );
 
   group('createClient delegates to the inner platform and wraps the handle',
@@ -95,6 +98,10 @@ void main() {
       final configure = received.whereType<ConfigureRequest>().single;
       expect(configure.mnemonic, config.mnemonic);
       expect(configure.serverPubkeyPin, 'deadbeef');
+      // DAITA and IPv6 must reach the daemon, not be dropped at the boundary.
+      expect(configure.daita, isTrue);
+      expect(configure.daitaMachine, 'tamaraw');
+      expect(configure.requestIpv6, isFalse);
       final connect = received.whereType<ConnectRequest>().single;
       expect(connect.exitPubkeyHex, 'ab12');
       expect(connect.dnsOverTunnel, isFalse);
