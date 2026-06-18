@@ -16,20 +16,13 @@ import 'secure_store.dart';
 /// zeroizes it in the Rust engine) and never retained by the app.
 Future<WarrenClient> createWarrenClient(Ref ref) async {
   final config = ref.watch(clientConfigControllerProvider);
-  if (config == null) {
-    throw const WarrenApiError(
-      code: 'app/no-config',
-      message: 'No client configured. Open the Client tab and create one.',
-    );
-  }
 
-  final mnemonic = await ref.watch(secureStoreProvider).read(
-        key: AppEnv.mnemonicKey,
-      );
+  final mnemonic = AppEnv.envMnemonic ??
+      await ref.watch(secureStoreProvider).read(key: AppEnv.mnemonicKey);
   if (mnemonic == null || mnemonic.isEmpty) {
     throw const WarrenIdentityError(
-      code: 'app/no-mnemonic',
-      message: 'No mnemonic in secure storage. Set one in the Client tab.',
+      code: 'app/no-wallet',
+      message: 'No wallet yet. Complete onboarding to create one.',
     );
   }
 

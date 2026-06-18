@@ -5,7 +5,7 @@ part 'exit_selection.g.dart';
 
 /// The current [ExitQuery] used to filter the exit list and drive
 /// `WarrenClient.selectExit`.
-@riverpod
+@Riverpod(keepAlive: true)
 class ExitQueryController extends _$ExitQueryController {
   @override
   ExitQuery build() => const ExitQuery();
@@ -16,7 +16,7 @@ class ExitQueryController extends _$ExitQueryController {
 }
 
 /// The exit the user picked to connect through, or null.
-@riverpod
+@Riverpod(keepAlive: true)
 class SelectedExit extends _$SelectedExit {
   @override
   ExitInfo? build() => null;

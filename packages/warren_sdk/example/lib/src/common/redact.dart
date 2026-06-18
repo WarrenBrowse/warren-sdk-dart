@@ -20,6 +20,17 @@ String formatUnixSeconds(int seconds) {
       '${two(dt.hour)}:${two(dt.minute)}';
 }
 
+/// Maps an ISO 3166-1 alpha-2 country code to its flag emoji (regional
+/// indicator pair). Falls back to a neutral flag for malformed input.
+String countryFlag(String isoCode) {
+  if (isoCode.length != 2) return '🏳️';
+  final cc = isoCode.toUpperCase();
+  final a = cc.codeUnitAt(0);
+  final b = cc.codeUnitAt(1);
+  if (a < 0x41 || a > 0x5A || b < 0x41 || b > 0x5A) return '🏳️';
+  return String.fromCharCodes([0x1F1E6 + (a - 0x41), 0x1F1E6 + (b - 0x41)]);
+}
+
 /// A compact wall-clock `HH:mm:ss` for log timestamps.
 String formatClock(DateTime dt) {
   String two(int n) => n.toString().padLeft(2, '0');

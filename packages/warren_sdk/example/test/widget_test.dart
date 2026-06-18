@@ -1,37 +1,33 @@
-// Smoke test: the app renders and navigates without a native engine. No SDK
-// call is made until a button is pressed, so the in-process engine library is
-// never loaded here.
+// Smoke test: with no wallet, the app shows onboarding and reveals the import
+// field. The wallet provider is faked, so no secure storage or native engine is
+// touched.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warren_sdk_example/src/app/app.dart';
-import 'package:warren_sdk_example/src/providers/client.dart';
-import 'package:warren_sdk_riverpod/warren_sdk_riverpod.dart';
+import 'package:warren_sdk_example/src/providers/wallet.dart';
+
+class _NoWallet extends Wallet {
+  @override
+  Future<String?> build() async => null;
+}
 
 void main() {
-  testWidgets('renders the overview and navigates to Identity', (tester) async {
+  testWidgets('onboarding shows when no wallet exists', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [warrenClientProvider.overrideWith(createWarrenClient)],
+        retry: (_, __) => null,
+        overrides: [walletProvider.overrideWith(_NoWallet.new)],
         child: const WarrenExampleApp(),
       ),
     );
     await tester.pumpAndSettle();
 
-    // Overview is the landing screen; no client is configured yet, so the
-    // overridden warrenClientProvider resolves to an error and the pill reads
-    // "No client".
-    expect(find.text('What to test'), findsOneWidget);
-    expect(find.text('No client'), findsOneWidget);
+    expect(find.text('Warren VPN'), findsOneWidget);
+    expect(find.text('Create a new wallet'), findsOneWidget);
 
-    // The navigation rail switches the active screen.
-    await tester.tap(
-      find.descendant(
-        of: find.byType(NavigationRail),
-        matching: find.text('Identity'),
-      ),
-    );
+    await tester.tap(find.text('I have a recovery phrase'));
     await tester.pumpAndSettle();
-    expect(find.text('Generate mnemonic'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Import wallet'), findsOneWidget);
   });
 }

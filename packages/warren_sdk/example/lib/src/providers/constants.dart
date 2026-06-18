@@ -1,6 +1,17 @@
+import 'dart:io' show Platform;
+
 /// Build-time defaults, overridable with `--dart-define`. These keep the test
 /// network ergonomic without baking any secret into the binary.
 abstract final class AppEnv {
+  /// Dev override: the mnemonic from the `WARREN_MNEMONIC` runtime environment,
+  /// if set and non-empty. Lets a desktop run boot straight onto a wallet
+  /// without touching the secure store (the documented `WARREN_MNEMONIC` flow),
+  /// which is handy when the macOS keychain is awkward on an unsigned dev build.
+  static String? get envMnemonic {
+    final value = Platform.environment['WARREN_MNEMONIC'];
+    return (value != null && value.trim().isNotEmpty) ? value.trim() : null;
+  }
+
   /// Default account API base. The Warren test network.
   static const String apiBase = String.fromEnvironment(
     'WARREN_API_BASE',

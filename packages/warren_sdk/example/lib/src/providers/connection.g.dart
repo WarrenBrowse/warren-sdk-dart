@@ -29,7 +29,7 @@ final class ConnectionControllerProvider
           argument: null,
           retry: null,
           name: r'connectionControllerProvider',
-          isAutoDispose: true,
+          isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
@@ -43,7 +43,7 @@ final class ConnectionControllerProvider
 }
 
 String _$connectionControllerHash() =>
-    r'310eeca57985d373ba5ef5a6e6caa9aea32c81a8';
+    r'a999aa5c97f5f92786d0d2e3e703cf8badd88f8d';
 
 /// Owns the active [WarrenSession]: opening it through the live client,
 /// swapping it on reconnect, and tearing it down. The session's reactive state

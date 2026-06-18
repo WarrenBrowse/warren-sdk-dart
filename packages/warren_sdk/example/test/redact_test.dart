@@ -14,6 +14,18 @@ void main() {
     });
   });
 
+  group('countryFlag', () {
+    test('maps an ISO code to a regional-indicator flag', () {
+      expect(countryFlag('RO'), '🇷🇴');
+      expect(countryFlag('us'), '🇺🇸');
+    });
+
+    test('falls back for malformed input', () {
+      expect(countryFlag('X'), '🏳️');
+      expect(countryFlag('1A'), '🏳️');
+    });
+  });
+
   group('formatUnixSeconds', () {
     test('returns a dash for zero (no subscription)', () {
       expect(formatUnixSeconds(0), '—');

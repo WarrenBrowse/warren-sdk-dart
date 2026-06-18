@@ -1,27 +1,37 @@
 # Warren SDK example app
 
-A Flutter app that exercises **every** feature of the Warren VPN Dart SDK, wired
-through the optional Riverpod 3 integration (`warren_sdk_riverpod`). It is the
-hands-on counterpart to the package docs: each tab maps to one slice of the
-public API.
+A turnkey VPN app built on the Warren VPN Dart SDK, wired through the optional
+Riverpod 3 integration (`warren_sdk_riverpod`). It looks and behaves like a real
+product (a Mullvad-style connect screen), while still exercising **every** part
+of the public API: the developer-facing surfaces live under Settings → Developer.
 
-| Tab | SDK surface |
+### Product surfaces
+
+| Screen | SDK surface |
 |---|---|
-| **Overview** | The active environment and a guide to what each tab tests. |
-| **Identity** | `WarrenIdentity.generateMnemonic`, `addressFromMnemonic`, `ss58Encode`, `ss58Decode`. Stateless, no account or network. |
-| **Client** | The mnemonic in the platform secure store, then `WarrenClient.create` with every option (`apiBase`, `serverPubkeyPin`, `multihopRootPin`, `daita` / `daitaMachine`, `requestIpv6`), and `dispose`. |
-| **Account** | `subscription()` snapshot and `redeemVoucher()`. |
-| **Exits** | `listExits()` and `selectExit()` driven by an `ExitQuery` filter. |
-| **Connection** | `connect()` in proxy or system-VPN mode, full `ConnectOptions`, the live `states` stream (`Connecting` / `Connected` / `Reconnecting` / `Disconnected` / `ConnectionFailed`), proxy `endpoints`, and `disconnect()`. |
-| **Activity** | A redacted log of every SDK call and every mapped `WarrenError`. |
+| **Onboarding** | `WarrenIdentity.generateMnemonic` / `addressFromMnemonic`, stored in the secure store. |
+| **Connect** (home) | `connect()` / `disconnect()`, the live `states` stream (`Connecting` / `Connected` / `Reconnecting` / `Disconnected` / `ConnectionFailed`), proxy `endpoints`, and the subscription chip. |
+| **Location** | `listExits()`, searchable and filterable, sets the connection target. |
+| **Account** | the wallet address, the `subscription()` snapshot and `redeemVoucher()`. |
+| **Settings** | connection mode (proxy / system-VPN), multihop and DNS-over-tunnel (`ConnectOptions`), and wallet reset. |
+
+### Settings → Developer (the full SDK testbench)
+
+| Tool | SDK surface |
+|---|---|
+| **Identity helpers** | `generateMnemonic`, `addressFromMnemonic`, `ss58Encode`, `ss58Decode`. Stateless, no account or network. |
+| **Engine configuration** | `WarrenClient.create` with every option (`apiBase`, `serverPubkeyPin`, `multihopRootPin`, `daita` / `daitaMachine`, `requestIpv6`); applying rebuilds the live client. |
+| **Activity log** | A redacted log of every SDK call and every mapped `WarrenError`. |
 
 ## Architecture
 
-- **State**: Riverpod 3 with code generation. The app overrides the package's
-  `warrenClientProvider` to build a live client from the in-app config plus the
-  mnemonic in secure storage, so `subscriptionProvider` and `exitsProvider`
-  resolve with no extra glue. The active session feeds
-  `connectionStateProvider(session)`.
+- **State**: Riverpod 3 with code generation. A wallet gate routes to onboarding
+  until a mnemonic exists; after that the app overrides the package's
+  `warrenClientProvider` to build a live client from the baked network config
+  plus that mnemonic, so `subscriptionProvider` and `exitsProvider` resolve with
+  no extra glue. The active session feeds `connectionStateProvider(session)`.
+  Automatic provider retry is disabled, so expected states (no wallet) surface at
+  once instead of looping.
 - **Secrets**: the 12-word mnemonic lives only in `flutter_secure_storage`
   (Keychain / Keystore / libsecret / DPAPI). It is read once, handed to the
   engine (which zeroizes it) and never retained or logged. The UI redacts every

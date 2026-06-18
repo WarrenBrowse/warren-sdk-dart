@@ -6,7 +6,7 @@ part 'activity_log.g.dart';
 
 /// The in-app activity log. Every SDK call and mapped error is recorded here so
 /// the whole surface can be exercised and observed in one place. Newest first.
-@riverpod
+@Riverpod(keepAlive: true)
 class ActivityLog extends _$ActivityLog {
   static const int _cap = 500;
 

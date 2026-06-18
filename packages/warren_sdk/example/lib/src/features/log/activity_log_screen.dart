@@ -15,50 +15,35 @@ class ActivityLogScreen extends ConsumerWidget {
     final entries = ref.watch(activityLogProvider);
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-          child: Row(
-            children: [
-              Text('Activity', style: theme.textTheme.headlineSmall),
-              const Spacer(),
-              Text(
-                '${entries.length} entries',
-                style: theme.textTheme.bodySmall?.copyWith(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Activity log'),
+        actions: [
+          TextButton.icon(
+            onPressed: entries.isEmpty
+                ? null
+                : () => ref.read(activityLogProvider.notifier).clear(),
+            icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+            label: const Text('Clear'),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: entries.isEmpty
+          ? Center(
+              child: Text(
+                'No activity yet. Exercise the SDK from the app.',
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: entries.isEmpty
-                    ? null
-                    : () => ref.read(activityLogProvider.notifier).clear(),
-                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                label: const Text('Clear'),
-              ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: entries.isEmpty
-              ? Center(
-                  child: Text(
-                    'No activity yet. Exercise the SDK from the other tabs.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: entries.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) => _LogTile(entries[i]),
-                ),
-        ),
-      ],
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: entries.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, i) => _LogTile(entries[i]),
+            ),
     );
   }
 }

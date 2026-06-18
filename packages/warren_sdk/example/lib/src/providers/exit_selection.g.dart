@@ -26,7 +26,7 @@ final class ExitQueryControllerProvider
           argument: null,
           retry: null,
           name: r'exitQueryControllerProvider',
-          isAutoDispose: true,
+          isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
@@ -48,7 +48,7 @@ final class ExitQueryControllerProvider
 }
 
 String _$exitQueryControllerHash() =>
-    r'68eed76c7adf1353e18bc2142ace3b46318ae4b4';
+    r'839ccd28f654adff03982f2b4301f6a49230c969';
 
 /// The current [ExitQuery] used to filter the exit list and drive
 /// `WarrenClient.selectExit`.
@@ -81,7 +81,7 @@ final class SelectedExitProvider
           argument: null,
           retry: null,
           name: r'selectedExitProvider',
-          isAutoDispose: true,
+          isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
@@ -102,7 +102,7 @@ final class SelectedExitProvider
   }
 }
 
-String _$selectedExitHash() => r'9b6fcafa4b842fd0bfaaa141730539b48ed97611';
+String _$selectedExitHash() => r'5b9991d535e6cf87d8f29fb25586934415eec483';
 
 /// The exit the user picked to connect through, or null.
 

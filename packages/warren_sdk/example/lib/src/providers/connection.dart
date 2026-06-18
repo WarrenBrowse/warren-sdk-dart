@@ -10,7 +10,7 @@ part 'connection.g.dart';
 /// Owns the active [WarrenSession]: opening it through the live client,
 /// swapping it on reconnect, and tearing it down. The session's reactive state
 /// is mirrored by the package's `connectionStateProvider(session)`.
-@riverpod
+@Riverpod(keepAlive: true)
 class ConnectionController extends _$ConnectionController {
   @override
   FutureOr<WarrenSession?> build() => null;

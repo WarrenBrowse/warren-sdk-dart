@@ -4,79 +4,72 @@ import 'package:warren_sdk/warren_sdk.dart';
 
 import '../../common/widgets/copyable.dart';
 import '../../common/widgets/outcome.dart';
-import '../../common/widgets/page_body.dart';
 import '../../common/widgets/section_card.dart';
 import '../../providers/activity_log.dart';
 
 /// Stateless identity playground. Each card drives one `WarrenIdentity` helper;
-/// none of them need an account or the network, so they work the moment the
-/// engine is loaded. Errors surface as the sealed `WarrenIdentityError`.
-class IdentityScreen extends StatelessWidget {
-  const IdentityScreen({super.key});
+/// none need an account or the network, so they work the moment the engine is
+/// loaded. Errors surface as the sealed `WarrenIdentityError`.
+class IdentityToolsScreen extends StatelessWidget {
+  const IdentityToolsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return PageBody(
-      title: 'Identity',
-      subtitle:
-          'Stateless helpers pinned by the shared golden vectors. No account '
-          'or network required.',
-      children: [
-        _OpCard(
-          title: 'Generate mnemonic',
-          icon: Icons.casino_outlined,
-          description:
-              'A fresh 12-word BIP39 mnemonic. Secret: store it in the secure '
-              'store (Client tab), never in logs.',
-          category: 'identity',
-          buttonLabel: 'Generate',
-          resultLabel: 'mnemonic (secret)',
-          run: (ref, _) => WarrenIdentity.generateMnemonic(),
-        ),
-        _OpCard(
-          title: 'Address from mnemonic',
-          icon: Icons.alternate_email,
-          description: 'Derive the SS58 wb… address bound to a mnemonic.',
-          category: 'identity',
-          fields: const [(label: 'Mnemonic', hint: '12 words')],
-          buttonLabel: 'Derive address',
-          resultLabel: 'address',
-          run: (ref, values) =>
-              WarrenIdentity.addressFromMnemonic(values[0].trim()),
-        ),
-        _OpCard(
-          title: 'SS58 encode',
-          icon: Icons.lock_outline,
-          description: 'Encode a 32-byte public key (hex) to its wb… address.',
-          category: 'identity',
-          fields: const [(label: 'Public key (hex)', hint: '64 hex chars')],
-          buttonLabel: 'Encode',
-          resultLabel: 'address',
-          run: (ref, values) => WarrenIdentity.ss58Encode(values[0].trim()),
-        ),
-        _OpCard(
-          title: 'SS58 decode',
-          icon: Icons.lock_open_outlined,
-          description: 'Decode a wb… address back to its public key hex.',
-          category: 'identity',
-          fields: const [(label: 'Address', hint: 'wb…')],
-          buttonLabel: 'Decode',
-          resultLabel: 'public key (hex)',
-          run: (ref, values) => WarrenIdentity.ss58Decode(values[0].trim()),
-        ),
-      ],
+    return Scaffold(
+      appBar: AppBar(title: const Text('Identity helpers')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _OpCard(
+            title: 'Generate mnemonic',
+            icon: Icons.casino_outlined,
+            description:
+                'A fresh 12-word BIP39 mnemonic. Secret: do not log it.',
+            buttonLabel: 'Generate',
+            resultLabel: 'mnemonic (secret)',
+            run: (_) => WarrenIdentity.generateMnemonic(),
+          ),
+          _OpCard(
+            title: 'Address from mnemonic',
+            icon: Icons.alternate_email,
+            description: 'Derive the SS58 wb… address bound to a mnemonic.',
+            fields: const [(label: 'Mnemonic', hint: '12 words')],
+            buttonLabel: 'Derive address',
+            resultLabel: 'address',
+            run: (v) => WarrenIdentity.addressFromMnemonic(v[0].trim()),
+          ),
+          _OpCard(
+            title: 'SS58 encode',
+            icon: Icons.lock_outline,
+            description:
+                'Encode a 32-byte public key (hex) to its wb… address.',
+            fields: const [(label: 'Public key (hex)', hint: '64 hex chars')],
+            buttonLabel: 'Encode',
+            resultLabel: 'address',
+            run: (v) => WarrenIdentity.ss58Encode(v[0].trim()),
+          ),
+          _OpCard(
+            title: 'SS58 decode',
+            icon: Icons.lock_open_outlined,
+            description: 'Decode a wb… address back to its public key hex.',
+            fields: const [(label: 'Address', hint: 'wb…')],
+            buttonLabel: 'Decode',
+            resultLabel: 'public key (hex)',
+            run: (v) => WarrenIdentity.ss58Decode(v[0].trim()),
+          ),
+        ],
+      ),
     );
   }
 }
 
-typedef _OpRun = Future<String> Function(WidgetRef ref, List<String> values);
+typedef _OpRun = Future<String> Function(List<String> values);
 
 class _OpCard extends ConsumerStatefulWidget {
   const _OpCard({
     required this.title,
     required this.icon,
     required this.description,
-    required this.category,
     required this.buttonLabel,
     required this.resultLabel,
     required this.run,
@@ -86,7 +79,6 @@ class _OpCard extends ConsumerStatefulWidget {
   final String title;
   final IconData icon;
   final String description;
-  final String category;
   final String buttonLabel;
   final String resultLabel;
   final List<({String label, String hint})> fields;
@@ -120,15 +112,11 @@ class _OpCardState extends ConsumerState<_OpCard> {
     });
     final log = ref.read(activityLogProvider.notifier);
     try {
-      final values = [for (final c in _controllers) c.text];
-      final result = await widget.run(ref, values);
-      log.success(widget.category, '${widget.title}: ok');
+      final result = await widget.run([for (final c in _controllers) c.text]);
+      log.success('identity', '${widget.title}: ok');
       if (mounted) setState(() => _result = result);
     } on WarrenError catch (error) {
-      log.error(widget.category, error.message, code: error.code);
-      if (mounted) setState(() => _error = error);
-    } catch (error) {
-      log.error(widget.category, error.toString());
+      log.error('identity', error.message, code: error.code);
       if (mounted) setState(() => _error = error);
     } finally {
       if (mounted) setState(() => _busy = false);

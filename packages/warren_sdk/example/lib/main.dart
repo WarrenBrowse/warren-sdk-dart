@@ -24,6 +24,11 @@ void main() {
 
   runApp(
     ProviderScope(
+      // SDK failures are sealed `WarrenError`s (Exceptions, not Errors), which
+      // Riverpod 3 would otherwise auto-retry ~10x over ~38s. Expected states
+      // like "no client configured" must surface at once, and every data view
+      // already offers a manual refresh, so disable the automatic retry.
+      retry: (retryCount, error) => null,
       // Make the package's `warrenClientProvider` build a live client from the
       // app's config + the mnemonic in secure storage. `subscriptionProvider`
       // and `exitsProvider` then resolve with no extra wiring.

@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<!--
-	  Dev/test example: the App Sandbox is intentionally not enabled. The SDK
-	  needs raw outbound network (QUIC to the exit), and Mode B connects to the
-	  privileged warrend daemon over a Unix socket in /tmp, which a sandboxed app
-	  cannot reach. flutter_secure_storage uses the login keychain. Re-enable the
-	  sandbox (with network.client + keychain-sharing) for a real shipped app.
+	  Dev/test build: App Sandbox is off so Mode B can reach the warrend daemon's
+	  /tmp socket and the engine has raw network. flutter_secure_storage uses the
+	  legacy login keychain (see secure_store.dart), which works here but prompts
+	  once for access ("Always Allow"). A signed, sandboxed build with the
+	  Keychain Sharing capability is prompt-free.
 	-->
 	<key>com.apple.security.cs.allow-jit</key>
 	<true/>

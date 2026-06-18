@@ -1,112 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../common/widgets/outcome.dart';
 import '../features/account/account_screen.dart';
-import '../features/client/client_screen.dart';
-import '../features/connection/connection_screen.dart';
-import '../features/exits/exits_screen.dart';
-import '../features/identity/identity_screen.dart';
-import '../features/log/activity_log_screen.dart';
-import '../features/overview/overview_screen.dart';
-import 'status_bar.dart';
+import '../features/connect/connect_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
+import '../features/settings/settings_screen.dart';
+import '../providers/wallet.dart';
 
-class _Destination {
-  const _Destination(this.label, this.icon, this.selectedIcon, this.screen);
-  final String label;
-  final IconData icon;
-  final IconData selectedIcon;
-  final Widget screen;
-}
-
-const List<_Destination> _destinations = [
-  _Destination(
-    'Overview',
-    Icons.dashboard_outlined,
-    Icons.dashboard,
-    OverviewScreen(),
-  ),
-  _Destination(
-    'Identity',
-    Icons.badge_outlined,
-    Icons.badge,
-    IdentityScreen(),
-  ),
-  _Destination(
-    'Client',
-    Icons.vpn_key_outlined,
-    Icons.vpn_key,
-    ClientScreen(),
-  ),
-  _Destination(
-    'Account',
-    Icons.account_balance_wallet_outlined,
-    Icons.account_balance_wallet,
-    AccountScreen(),
-  ),
-  _Destination('Exits', Icons.public_outlined, Icons.public, ExitsScreen()),
-  _Destination(
-    'Connection',
-    Icons.vpn_lock_outlined,
-    Icons.vpn_lock,
-    ConnectionScreen(),
-  ),
-  _Destination(
-    'Activity',
-    Icons.receipt_long_outlined,
-    Icons.receipt_long,
-    ActivityLogScreen(),
-  ),
-];
-
-/// The app shell: a navigation rail beside the active screen, with a persistent
-/// status bar (bound client + live connection state) in the app bar.
-class HomeShell extends StatefulWidget {
+/// Root gate: shows onboarding until a wallet exists, then the main app.
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wallet = ref.watch(walletProvider);
+    return switch (wallet) {
+      AsyncData(:final value) =>
+        value == null ? const OnboardingScreen() : const _MainScaffold(),
+      AsyncError(:final error) => Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(child: OutcomeError(error)),
+          ),
+        ),
+      _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
+    };
+  }
 }
 
-class _HomeShellState extends State<HomeShell> {
+/// The bottom-nav shell once a wallet is set up: Connect, Account, Settings.
+class _MainScaffold extends StatefulWidget {
+  const _MainScaffold();
+
+  @override
+  State<_MainScaffold> createState() => _MainScaffoldState();
+}
+
+class _MainScaffoldState extends State<_MainScaffold> {
   int _index = 0;
+
+  static const _screens = [ConnectScreen(), AccountScreen(), SettingsScreen()];
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 1000;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Warren SDK Example'),
-        actions: const [
-          ClientStatusPill(),
-          SizedBox(width: 12),
-          ConnectionStatusChip(),
-          SizedBox(width: 16),
-        ],
-      ),
-      body: Row(
-        children: [
-          NavigationRail(
-            extended: wide,
-            minExtendedWidth: 184,
-            labelType: wide
-                ? NavigationRailLabelType.none
-                : NavigationRailLabelType.all,
-            selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            destinations: [
-              for (final d in _destinations)
-                NavigationRailDestination(
-                  icon: Icon(d.icon),
-                  selectedIcon: Icon(d.selectedIcon),
-                  label: Text(d.label),
-                ),
-            ],
+      body: IndexedStack(index: _index, children: _screens),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.shield_outlined),
+            selectedIcon: Icon(Icons.shield),
+            label: 'Connect',
           ),
-          const VerticalDivider(width: 1),
-          Expanded(
-            child: IndexedStack(
-              index: _index,
-              children: [for (final d in _destinations) d.screen],
-            ),
+          NavigationDestination(
+            icon: Icon(Icons.account_circle_outlined),
+            selectedIcon: Icon(Icons.account_circle),
+            label: 'Account',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),

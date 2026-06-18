@@ -26,7 +26,7 @@ final class ActivityLogProvider
           argument: null,
           retry: null,
           name: r'activityLogProvider',
-          isAutoDispose: true,
+          isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
@@ -47,7 +47,7 @@ final class ActivityLogProvider
   }
 }
 
-String _$activityLogHash() => r'45fdaf5ab62ec8c1c9cebc69aa4e69d92c0fc272';
+String _$activityLogHash() => r'de6aec98b980a9245bb4befbad57dc48f8000871';
 
 /// The in-app activity log. Every SDK call and mapped error is recorded here so
 /// the whole surface can be exercised and observed in one place. Newest first.
