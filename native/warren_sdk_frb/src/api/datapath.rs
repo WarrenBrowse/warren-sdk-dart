@@ -5,12 +5,15 @@
 //! logic lives entirely in the audited engine; this is endpoint exposure, a
 //! state forwarder and teardown.
 
+use std::net::SocketAddr;
 use std::sync::Mutex;
 
 use flutter_rust_bridge::frb;
 use tokio::sync::watch::Receiver;
-use warren_sdk::{ConnectionState, SupervisedProxyHandle};
+use warren_sdk::net::MapProto;
+use warren_sdk::{ConnectionState, SupervisedForwardedPort, SupervisedProxyHandle};
 
+use crate::api::error::{WarrenErrorKind, WarrenFfiError};
 use crate::frb_generated::StreamSink;
 
 /// Lifecycle state of a connection, mirrored for Dart as a plain enum.
@@ -85,11 +88,105 @@ impl WarrenSessionFrb {
         }
     }
 
+    /// Forwards a tunnel-side port via NAT-PMP, re-mapped automatically across
+    /// reconnects. `local_target` is the local `ip:port` inbound connections are
+    /// relayed to. The exit must run a NAT-PMP gateway.
+    pub fn forward_port(
+        &self,
+        proto: MapProtoDto,
+        internal_port: u16,
+        local_target: String,
+    ) -> Result<WarrenForwardedPortFrb, WarrenFfiError> {
+        let target: SocketAddr = local_target.parse().map_err(|_| WarrenFfiError {
+            kind: WarrenErrorKind::Tunnel,
+            message: "invalid local target address".to_owned(),
+        })?;
+        let guard = self.handle.lock().expect("session mutex poisoned");
+        let handle = guard.as_ref().ok_or(WarrenFfiError {
+            kind: WarrenErrorKind::Tunnel,
+            message: "session is disconnected".to_owned(),
+        })?;
+        let port = handle.forward_port(proto.to_engine(), internal_port, target);
+        Ok(WarrenForwardedPortFrb::new(port))
+    }
+
     /// Tears the connection down and releases its datapath resources.
     /// Idempotent: a second call is a no-op.
     pub fn disconnect(&self) {
         if let Some(handle) = self.handle.lock().expect("session mutex poisoned").take() {
             handle.shutdown();
+        }
+    }
+}
+
+/// Transport protocol for a forwarded port, mirrored to Dart as a plain enum.
+pub enum MapProtoDto {
+    /// TCP.
+    Tcp,
+    /// UDP.
+    Udp,
+}
+
+impl MapProtoDto {
+    fn to_engine(&self) -> MapProto {
+        match self {
+            MapProtoDto::Tcp => MapProto::Tcp,
+            MapProtoDto::Udp => MapProto::Udp,
+        }
+    }
+}
+
+/// An opaque, self-healing forwarded port. Its external port can change across
+/// reconnects, so observe it via [`Self::external_ports`] rather than caching
+/// [`Self::external_port`]. Dropping or [`Self::shutdown`]ing it tears the
+/// mapping down.
+pub struct WarrenForwardedPortFrb {
+    internal_port: u16,
+    external_rx: Receiver<Option<u16>>,
+    // Behind a Mutex<Option<>> because `shutdown` consumes the handle by value.
+    port: Mutex<Option<SupervisedForwardedPort>>,
+}
+
+impl WarrenForwardedPortFrb {
+    #[frb(ignore)]
+    pub(crate) fn new(port: SupervisedForwardedPort) -> Self {
+        Self {
+            internal_port: port.internal_port(),
+            external_rx: port.watch_external_port(),
+            port: Mutex::new(Some(port)),
+        }
+    }
+
+    /// The local internal port being forwarded.
+    pub fn internal_port(&self) -> u16 {
+        self.internal_port
+    }
+
+    /// The current external port remote peers reach the app on, or `None` while
+    /// the tunnel is down or before the first mapping is granted.
+    pub fn external_port(&self) -> Option<u16> {
+        *self.external_rx.borrow()
+    }
+
+    /// Streams external-port changes (re-mappings across reconnects), emitting
+    /// the current value first so a late listener always gets one.
+    pub async fn external_ports(&self, sink: StreamSink<Option<u16>>) {
+        let mut rx = self.external_rx.clone();
+        if sink.add(*rx.borrow()).is_err() {
+            return;
+        }
+        while rx.changed().await.is_ok() {
+            let value = *rx.borrow();
+            if sink.add(value).is_err() {
+                break;
+            }
+        }
+    }
+
+    /// Tears the forward down. Idempotent: a second call is a no-op.
+    pub fn shutdown(&self) {
+        if let Some(port) = self.port.lock().expect("forward mutex poisoned").take() {
+            port.shutdown();
         }
     }
 }

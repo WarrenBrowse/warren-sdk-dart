@@ -110,5 +110,48 @@ class FfiSessionHandle implements WarrenSessionHandle {
   Stream<ConnectionState> get states => _states;
 
   @override
+  Future<WarrenForwardedPort> forwardPort(
+    ForwardProtocol proto,
+    int internalPort,
+    String localTarget,
+  ) async {
+    try {
+      final port = await _session.forwardPort(
+        proto: proto == ForwardProtocol.udp
+            ? rust_session.MapProtoDto.udp
+            : rust_session.MapProtoDto.tcp,
+        internalPort: internalPort,
+        localTarget: localTarget,
+      );
+      return FfiForwardedPort(port, await port.internalPort());
+    } on WarrenFfiError catch (error) {
+      throw mapEngineError(error);
+    }
+  }
+
+  @override
   Future<void> disconnect() => _session.disconnect();
+}
+
+/// A self-healing forwarded port backed by the in-process engine.
+class FfiForwardedPort implements WarrenForwardedPort {
+  /// Wraps an opaque engine forwarded port and its resolved internal port.
+  FfiForwardedPort(this._port, this.internalPort);
+
+  final rust_session.WarrenForwardedPortFrb _port;
+
+  @override
+  final int internalPort;
+
+  late final Stream<int?> _externalPorts =
+      _port.externalPorts().asBroadcastStream();
+
+  @override
+  Future<int?> externalPort() => _port.externalPort();
+
+  @override
+  Stream<int?> get externalPorts => _externalPorts;
+
+  @override
+  Future<void> dispose() async => _port.shutdown();
 }

@@ -281,6 +281,13 @@ class _FakeProxySession implements WarrenSessionHandle {
   @override
   Stream<ConnectionState> get states => const Stream.empty();
   @override
+  Future<WarrenForwardedPort> forwardPort(
+    ForwardProtocol proto,
+    int internalPort,
+    String localTarget,
+  ) =>
+      throw UnimplementedError();
+  @override
   Future<void> disconnect() async {}
 }
 

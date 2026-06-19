@@ -4,6 +4,7 @@ import '../log/activity_log_screen.dart';
 import '../netcheck/netcheck_screen.dart';
 import 'engine_config_screen.dart';
 import 'identity_tools_screen.dart';
+import 'port_forward_screen.dart';
 
 /// The developer hub. Everything that exercises the SDK directly (stateless
 /// identity helpers, the raw engine configuration, the activity log) lives here,
@@ -35,6 +36,12 @@ class DeveloperScreen extends StatelessWidget {
             title: 'Network check',
             subtitle: 'Live public IP, real vs exit, IPv6 leak probe',
             screen: NetCheckScreen(),
+          ),
+          const _Tile(
+            icon: Icons.open_in_browser,
+            title: 'Port forwarding',
+            subtitle: 'Map an inbound port at the exit (NAT-PMP), live',
+            screen: PortForwardScreen(),
           ),
           const _Tile(
             icon: Icons.receipt_long_outlined,

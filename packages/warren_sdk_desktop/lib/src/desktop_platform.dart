@@ -219,6 +219,18 @@ class DaemonSessionHandle implements WarrenSessionHandle {
   Stream<ConnectionState> get states => _daemon.states;
 
   @override
+  Future<WarrenForwardedPort> forwardPort(
+    ForwardProtocol proto,
+    int internalPort,
+    String localTarget,
+  ) async =>
+      throw const WarrenUnsupportedError(
+        code: 'forward/system-vpn-unavailable',
+        message: 'Inbound port forwarding is a proxy-mode feature; it is not '
+            'exposed for the system-VPN datapath.',
+      );
+
+  @override
   Future<void> disconnect() async {
     _daemon.disconnect();
     await _daemon.close();

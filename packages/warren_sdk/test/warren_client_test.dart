@@ -148,6 +148,23 @@ void main() {
       expect(handle.session.disconnected, isTrue);
     });
 
+    test('forwardPort delegates to the session handle', () async {
+      final client = await create();
+      final exit = (await client.listExits()).single;
+      final session = await client.connect(exit);
+
+      final forward = await session.forwardPort(
+        ForwardProtocol.tcp,
+        8080,
+        '127.0.0.1:8080',
+      );
+      expect(handle.session.forwardedProto, ForwardProtocol.tcp);
+      expect(handle.session.forwardedInternalPort, 8080);
+      expect(forward.internalPort, 8080);
+      expect(await forward.externalPort(), 41234);
+      await forward.dispose();
+    });
+
     test('dispose releases the handle', () async {
       final client = await create();
       await client.dispose();
@@ -179,8 +196,38 @@ class _FakeSessionHandle implements WarrenSessionHandle {
   Stream<ConnectionState> get states =>
       Stream.value(const Connected(sinceUnix: 7));
 
+  ForwardProtocol? forwardedProto;
+  int? forwardedInternalPort;
+
+  @override
+  Future<WarrenForwardedPort> forwardPort(
+    ForwardProtocol proto,
+    int internalPort,
+    String localTarget,
+  ) async {
+    forwardedProto = proto;
+    forwardedInternalPort = internalPort;
+    return _FakeForwardedPort(internalPort);
+  }
+
   @override
   Future<void> disconnect() async => disconnected = true;
+}
+
+class _FakeForwardedPort implements WarrenForwardedPort {
+  _FakeForwardedPort(this.internalPort);
+
+  @override
+  final int internalPort;
+
+  @override
+  Future<int?> externalPort() async => 41234;
+
+  @override
+  Stream<int?> get externalPorts => Stream.value(41234);
+
+  @override
+  Future<void> dispose() async {}
 }
 
 class _FakeClientHandle implements WarrenClientHandle {

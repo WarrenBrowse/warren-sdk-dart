@@ -29,6 +29,10 @@ abstract class WarrenRustBridgeApiImplPlatform
           .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb;
 
   CrossPlatformFinalizerArg
+      get rust_arc_decrement_strong_count_WarrenForwardedPortFrbPtr => wire
+          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb;
+
+  CrossPlatformFinalizerArg
       get rust_arc_decrement_strong_count_WarrenSessionFrbPtr => wire
           .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb;
 
@@ -38,6 +42,11 @@ abstract class WarrenRustBridgeApiImplPlatform
   @protected
   WarrenClientFrb
       dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          dynamic raw);
+
+  @protected
+  WarrenForwardedPortFrb
+      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
           dynamic raw);
 
   @protected
@@ -51,6 +60,11 @@ abstract class WarrenRustBridgeApiImplPlatform
           dynamic raw);
 
   @protected
+  WarrenForwardedPortFrb
+      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          dynamic raw);
+
+  @protected
   WarrenSessionFrb
       dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           dynamic raw);
@@ -58,6 +72,11 @@ abstract class WarrenRustBridgeApiImplPlatform
   @protected
   WarrenClientFrb
       dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          dynamic raw);
+
+  @protected
+  WarrenForwardedPortFrb
+      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
           dynamic raw);
 
   @protected
@@ -70,10 +89,17 @@ abstract class WarrenRustBridgeApiImplPlatform
       dco_decode_StreamSink_connection_state_dto_Sse(dynamic raw);
 
   @protected
+  RustStreamSink<int?> dco_decode_StreamSink_opt_box_autoadd_u_16_Sse(
+      dynamic raw);
+
+  @protected
   String dco_decode_String(dynamic raw);
 
   @protected
   bool dco_decode_bool(dynamic raw);
+
+  @protected
+  int dco_decode_box_autoadd_u_16(dynamic raw);
 
   @protected
   ConnectionStateDto dco_decode_connection_state_dto(dynamic raw);
@@ -94,13 +120,22 @@ abstract class WarrenRustBridgeApiImplPlatform
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  MapProtoDto dco_decode_map_proto_dto(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
 
   @protected
   SignedRequest dco_decode_signed_request(dynamic raw);
 
   @protected
   TunnelCheckDto dco_decode_tunnel_check_dto(dynamic raw);
+
+  @protected
+  int dco_decode_u_16(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -129,6 +164,11 @@ abstract class WarrenRustBridgeApiImplPlatform
           SseDeserializer deserializer);
 
   @protected
+  WarrenForwardedPortFrb
+      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          SseDeserializer deserializer);
+
+  @protected
   WarrenSessionFrb
       sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           SseDeserializer deserializer);
@@ -136,6 +176,11 @@ abstract class WarrenRustBridgeApiImplPlatform
   @protected
   WarrenClientFrb
       sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          SseDeserializer deserializer);
+
+  @protected
+  WarrenForwardedPortFrb
+      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
           SseDeserializer deserializer);
 
   @protected
@@ -149,6 +194,11 @@ abstract class WarrenRustBridgeApiImplPlatform
           SseDeserializer deserializer);
 
   @protected
+  WarrenForwardedPortFrb
+      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          SseDeserializer deserializer);
+
+  @protected
   WarrenSessionFrb
       sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           SseDeserializer deserializer);
@@ -159,10 +209,17 @@ abstract class WarrenRustBridgeApiImplPlatform
           SseDeserializer deserializer);
 
   @protected
+  RustStreamSink<int?> sse_decode_StreamSink_opt_box_autoadd_u_16_Sse(
+      SseDeserializer deserializer);
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_box_autoadd_u_16(SseDeserializer deserializer);
 
   @protected
   ConnectionStateDto sse_decode_connection_state_dto(
@@ -184,13 +241,22 @@ abstract class WarrenRustBridgeApiImplPlatform
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  MapProtoDto sse_decode_map_proto_dto(SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
 
   @protected
   SignedRequest sse_decode_signed_request(SseDeserializer deserializer);
 
   @protected
   TunnelCheckDto sse_decode_tunnel_check_dto(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_16(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -221,6 +287,11 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   void
+      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          WarrenForwardedPortFrb self, SseSerializer serializer);
+
+  @protected
+  void
       sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           WarrenSessionFrb self, SseSerializer serializer);
 
@@ -228,6 +299,11 @@ abstract class WarrenRustBridgeApiImplPlatform
   void
       sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
           WarrenClientFrb self, SseSerializer serializer);
+
+  @protected
+  void
+      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          WarrenForwardedPortFrb self, SseSerializer serializer);
 
   @protected
   void
@@ -241,6 +317,11 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   void
+      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          WarrenForwardedPortFrb self, SseSerializer serializer);
+
+  @protected
+  void
       sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           WarrenSessionFrb self, SseSerializer serializer);
 
@@ -249,10 +330,17 @@ abstract class WarrenRustBridgeApiImplPlatform
       RustStreamSink<ConnectionStateDto> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_StreamSink_opt_box_autoadd_u_16_Sse(
+      RustStreamSink<int?> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_connection_state_dto(
@@ -276,7 +364,13 @@ abstract class WarrenRustBridgeApiImplPlatform
       Uint8List self, SseSerializer serializer);
 
   @protected
+  void sse_encode_map_proto_dto(MapProtoDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);
 
   @protected
   void sse_encode_signed_request(SignedRequest self, SseSerializer serializer);
@@ -284,6 +378,9 @@ abstract class WarrenRustBridgeApiImplPlatform
   @protected
   void sse_encode_tunnel_check_dto(
       TunnelCheckDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_16(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_64(BigInt self, SseSerializer serializer);
@@ -323,6 +420,18 @@ class WarrenRustBridgeWire implements BaseWire {
           .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
               ptr);
 
+  void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          int ptr) =>
+      wasmModule
+          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+              ptr);
+
+  void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          int ptr) =>
+      wasmModule
+          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+              ptr);
+
   void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           int ptr) =>
       wasmModule
@@ -348,6 +457,14 @@ extension type WarrenRustBridgeWasmModule._(JSObject _) implements JSObject {
 
   external void
       rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+          int ptr);
+
+  external void
+      rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          int ptr);
+
+  external void
+      rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
           int ptr);
 
   external void

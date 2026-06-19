@@ -4,15 +4,41 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `new`, `to_dto`
+// These functions are ignored because they are not marked as `pub`: `new`, `new`, `to_dto`, `to_engine`
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenForwardedPortFrb>>
+abstract class WarrenForwardedPortFrb implements RustOpaqueInterface {
+  /// The current external port remote peers reach the app on, or `None` while
+  /// the tunnel is down or before the first mapping is granted.
+  Future<int?> externalPort();
+
+  /// Streams external-port changes (re-mappings across reconnects), emitting
+  /// the current value first so a late listener always gets one.
+  Stream<int?> externalPorts();
+
+  /// The local internal port being forwarded.
+  Future<int> internalPort();
+
+  /// Tears the forward down. Idempotent: a second call is a no-op.
+  Future<void> shutdown();
+}
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenSessionFrb>>
 abstract class WarrenSessionFrb implements RustOpaqueInterface {
   /// Tears the connection down and releases its datapath resources.
   /// Idempotent: a second call is a no-op.
   Future<void> disconnect();
+
+  /// Forwards a tunnel-side port via NAT-PMP, re-mapped automatically across
+  /// reconnects. `local_target` is the local `ip:port` inbound connections are
+  /// relayed to. The exit must run a NAT-PMP gateway.
+  Future<WarrenForwardedPortFrb> forwardPort(
+      {required MapProtoDto proto,
+      required int internalPort,
+      required String localTarget});
 
   /// The bound local HTTP CONNECT endpoint, if one was requested.
   Future<String?> httpEndpoint();
@@ -38,5 +64,15 @@ enum ConnectionStateDto {
 
   /// Every attempt failed; the supervisor gave up.
   failed,
+  ;
+}
+
+/// Transport protocol for a forwarded port, mirrored to Dart as a plain enum.
+enum MapProtoDto {
+  /// TCP.
+  tcp,
+
+  /// UDP.
+  udp,
   ;
 }

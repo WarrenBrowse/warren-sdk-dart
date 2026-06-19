@@ -72,7 +72,7 @@ class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1864999553;
+  int get rustContentHash => 467754991;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -116,8 +116,26 @@ abstract class WarrenRustBridgeApi extends BaseApi {
   Future<BigInt> crateApiClientWarrenClientFrbSubscriptionExpiry(
       {required WarrenClientFrb that});
 
+  Future<int?> crateApiDatapathWarrenForwardedPortFrbExternalPort(
+      {required WarrenForwardedPortFrb that});
+
+  Stream<int?> crateApiDatapathWarrenForwardedPortFrbExternalPorts(
+      {required WarrenForwardedPortFrb that});
+
+  Future<int> crateApiDatapathWarrenForwardedPortFrbInternalPort(
+      {required WarrenForwardedPortFrb that});
+
+  Future<void> crateApiDatapathWarrenForwardedPortFrbShutdown(
+      {required WarrenForwardedPortFrb that});
+
   Future<void> crateApiDatapathWarrenSessionFrbDisconnect(
       {required WarrenSessionFrb that});
+
+  Future<WarrenForwardedPortFrb> crateApiDatapathWarrenSessionFrbForwardPort(
+      {required WarrenSessionFrb that,
+      required MapProtoDto proto,
+      required int internalPort,
+      required String localTarget});
 
   Future<String?> crateApiDatapathWarrenSessionFrbHttpEndpoint(
       {required WarrenSessionFrb that});
@@ -153,6 +171,15 @@ abstract class WarrenRustBridgeApi extends BaseApi {
 
   CrossPlatformFinalizerArg
       get rust_arc_decrement_strong_count_WarrenClientFrbPtr;
+
+  RustArcIncrementStrongCountFnType
+      get rust_arc_increment_strong_count_WarrenForwardedPortFrb;
+
+  RustArcDecrementStrongCountFnType
+      get rust_arc_decrement_strong_count_WarrenForwardedPortFrb;
+
+  CrossPlatformFinalizerArg
+      get rust_arc_decrement_strong_count_WarrenForwardedPortFrbPtr;
 
   RustArcIncrementStrongCountFnType
       get rust_arc_increment_strong_count_WarrenSessionFrb;
@@ -411,6 +438,120 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       );
 
   @override
+  Future<int?> crateApiDatapathWarrenForwardedPortFrbExternalPort(
+      {required WarrenForwardedPortFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 8, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_opt_box_autoadd_u_16,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDatapathWarrenForwardedPortFrbExternalPortConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta
+      get kCrateApiDatapathWarrenForwardedPortFrbExternalPortConstMeta =>
+          const TaskConstMeta(
+            debugName: "WarrenForwardedPortFrb_external_port",
+            argNames: ["that"],
+          );
+
+  @override
+  Stream<int?> crateApiDatapathWarrenForwardedPortFrbExternalPorts(
+      {required WarrenForwardedPortFrb that}) {
+    final sink = RustStreamSink<int?>();
+    unawaited(handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+            that, serializer);
+        sse_encode_StreamSink_opt_box_autoadd_u_16_Sse(sink, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 9, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDatapathWarrenForwardedPortFrbExternalPortsConstMeta,
+      argValues: [that, sink],
+      apiImpl: this,
+    )));
+    return sink.stream;
+  }
+
+  TaskConstMeta
+      get kCrateApiDatapathWarrenForwardedPortFrbExternalPortsConstMeta =>
+          const TaskConstMeta(
+            debugName: "WarrenForwardedPortFrb_external_ports",
+            argNames: ["that", "sink"],
+          );
+
+  @override
+  Future<int> crateApiDatapathWarrenForwardedPortFrbInternalPort(
+      {required WarrenForwardedPortFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 10, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_u_16,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDatapathWarrenForwardedPortFrbInternalPortConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta
+      get kCrateApiDatapathWarrenForwardedPortFrbInternalPortConstMeta =>
+          const TaskConstMeta(
+            debugName: "WarrenForwardedPortFrb_internal_port",
+            argNames: ["that"],
+          );
+
+  @override
+  Future<void> crateApiDatapathWarrenForwardedPortFrbShutdown(
+      {required WarrenForwardedPortFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 11, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDatapathWarrenForwardedPortFrbShutdownConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDatapathWarrenForwardedPortFrbShutdownConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenForwardedPortFrb_shutdown",
+        argNames: ["that"],
+      );
+
+  @override
   Future<void> crateApiDatapathWarrenSessionFrbDisconnect(
       {required WarrenSessionFrb that}) {
     return handler.executeNormal(NormalTask(
@@ -419,7 +560,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
+            funcId: 12, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -438,6 +579,40 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       );
 
   @override
+  Future<WarrenForwardedPortFrb> crateApiDatapathWarrenSessionFrbForwardPort(
+      {required WarrenSessionFrb that,
+      required MapProtoDto proto,
+      required int internalPort,
+      required String localTarget}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+            that, serializer);
+        sse_encode_map_proto_dto(proto, serializer);
+        sse_encode_u_16(internalPort, serializer);
+        sse_encode_String(localTarget, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 13, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData:
+            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiDatapathWarrenSessionFrbForwardPortConstMeta,
+      argValues: [that, proto, internalPort, localTarget],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDatapathWarrenSessionFrbForwardPortConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenSessionFrb_forward_port",
+        argNames: ["that", "proto", "internalPort", "localTarget"],
+      );
+
+  @override
   Future<String?> crateApiDatapathWarrenSessionFrbHttpEndpoint(
       {required WarrenSessionFrb that}) {
     return handler.executeNormal(NormalTask(
@@ -446,7 +621,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
+            funcId: 14, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_String,
@@ -473,7 +648,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 10, port: port_);
+            funcId: 15, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -502,7 +677,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_connection_state_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
+            funcId: 16, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -529,7 +704,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(mnemonic, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 12, port: port_);
+            funcId: 17, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -553,7 +728,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 13, port: port_);
+            funcId: 18, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -589,7 +764,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_u_64(timestamp, serializer);
         sse_encode_String(nonceHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 14, port: port_);
+            funcId: 19, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_signed_request,
@@ -621,7 +796,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(address, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 15, port: port_);
+            funcId: 20, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -645,7 +820,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(publicKeyHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 16, port: port_);
+            funcId: 21, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -671,6 +846,14 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
           .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb;
 
   RustArcIncrementStrongCountFnType
+      get rust_arc_increment_strong_count_WarrenForwardedPortFrb => wire
+          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb;
+
+  RustArcDecrementStrongCountFnType
+      get rust_arc_decrement_strong_count_WarrenForwardedPortFrb => wire
+          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb;
+
+  RustArcIncrementStrongCountFnType
       get rust_arc_increment_strong_count_WarrenSessionFrb => wire
           .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb;
 
@@ -693,6 +876,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenForwardedPortFrb
+      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenForwardedPortFrbImpl.frbInternalDcoDecode(
+        raw as List<dynamic>);
+  }
+
+  @protected
   WarrenSessionFrb
       dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           dynamic raw) {
@@ -706,6 +898,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
           dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return WarrenClientFrbImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  WarrenForwardedPortFrb
+      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenForwardedPortFrbImpl.frbInternalDcoDecode(
+        raw as List<dynamic>);
   }
 
   @protected
@@ -725,6 +926,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenForwardedPortFrb
+      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenForwardedPortFrbImpl.frbInternalDcoDecode(
+        raw as List<dynamic>);
+  }
+
+  @protected
   WarrenSessionFrb
       dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           dynamic raw) {
@@ -740,6 +950,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  RustStreamSink<int?> dco_decode_StreamSink_opt_box_autoadd_u_16_Sse(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
@@ -749,6 +966,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
+  }
+
+  @protected
+  int dco_decode_box_autoadd_u_16(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
   }
 
   @protected
@@ -796,9 +1019,21 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  MapProtoDto dco_decode_map_proto_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return MapProtoDto.values[raw as int];
+  }
+
+  @protected
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_16(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_16(raw);
   }
 
   @protected
@@ -827,6 +1062,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       country: dco_decode_opt_String(arr[2]),
       city: dco_decode_opt_String(arr[3]),
     );
+  }
+
+  @protected
+  int dco_decode_u_16(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
   }
 
   @protected
@@ -888,6 +1129,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenForwardedPortFrb
+      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WarrenForwardedPortFrbImpl.frbInternalSseDecode(
+        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
+  }
+
+  @protected
   WarrenSessionFrb
       sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           SseDeserializer deserializer) {
@@ -902,6 +1152,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
           SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return WarrenClientFrbImpl.frbInternalSseDecode(
+        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
+  }
+
+  @protected
+  WarrenForwardedPortFrb
+      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WarrenForwardedPortFrbImpl.frbInternalSseDecode(
         sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
   }
 
@@ -924,6 +1183,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenForwardedPortFrb
+      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WarrenForwardedPortFrbImpl.frbInternalSseDecode(
+        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
+  }
+
+  @protected
   WarrenSessionFrb
       sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           SseDeserializer deserializer) {
@@ -941,6 +1209,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  RustStreamSink<int?> sse_decode_StreamSink_opt_box_autoadd_u_16_Sse(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -951,6 +1226,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  int sse_decode_box_autoadd_u_16(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_16(deserializer));
   }
 
   @protected
@@ -1009,11 +1290,29 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  MapProtoDto sse_decode_map_proto_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return MapProtoDto.values[inner];
+  }
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_16(deserializer));
     } else {
       return null;
     }
@@ -1042,6 +1341,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     var var_city = sse_decode_opt_String(deserializer);
     return TunnelCheckDto(
         ip: var_ip, isExit: var_isExit, country: var_country, city: var_city);
+  }
+
+  @protected
+  int sse_decode_u_16(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint16();
   }
 
   @protected
@@ -1101,6 +1406,16 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
 
   @protected
   void
+      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          WarrenForwardedPortFrb self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+        (self as WarrenForwardedPortFrbImpl).frbInternalSseEncode(move: true),
+        serializer);
+  }
+
+  @protected
+  void
       sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           WarrenSessionFrb self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1121,6 +1436,16 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
 
   @protected
   void
+      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          WarrenForwardedPortFrb self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+        (self as WarrenForwardedPortFrbImpl).frbInternalSseEncode(move: false),
+        serializer);
+  }
+
+  @protected
+  void
       sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           WarrenSessionFrb self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1136,6 +1461,16 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
         (self as WarrenClientFrbImpl).frbInternalSseEncode(move: null),
+        serializer);
+  }
+
+  @protected
+  void
+      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
+          WarrenForwardedPortFrb self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+        (self as WarrenForwardedPortFrbImpl).frbInternalSseEncode(move: null),
         serializer);
   }
 
@@ -1163,6 +1498,19 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_StreamSink_opt_box_autoadd_u_16_Sse(
+      RustStreamSink<int?> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+        self.setupAndSerialize(
+            codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_box_autoadd_u_16,
+          decodeErrorData: sse_decode_AnyhowException,
+        )),
+        serializer);
+  }
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
@@ -1172,6 +1520,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_16(self, serializer);
   }
 
   @protected
@@ -1224,12 +1578,28 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_map_proto_dto(MapProtoDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_16(self, serializer);
     }
   }
 
@@ -1250,6 +1620,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_bool(self.isExit, serializer);
     sse_encode_opt_String(self.country, serializer);
     sse_encode_opt_String(self.city, serializer);
+  }
+
+  @protected
+  void sse_encode_u_16(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint16(self);
   }
 
   @protected
@@ -1362,6 +1738,54 @@ class WarrenClientFrbImpl extends RustOpaque implements WarrenClientFrb {
 }
 
 @sealed
+class WarrenForwardedPortFrbImpl extends RustOpaque
+    implements WarrenForwardedPortFrb {
+  // Not to be used by end users
+  WarrenForwardedPortFrbImpl.frbInternalDcoDecode(List<dynamic> wire)
+      : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  WarrenForwardedPortFrbImpl.frbInternalSseDecode(
+      BigInt ptr, int externalSizeOnNative)
+      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: WarrenRustBridge
+        .instance.api.rust_arc_increment_strong_count_WarrenForwardedPortFrb,
+    rustArcDecrementStrongCount: WarrenRustBridge
+        .instance.api.rust_arc_decrement_strong_count_WarrenForwardedPortFrb,
+    rustArcDecrementStrongCountPtr: WarrenRustBridge
+        .instance.api.rust_arc_decrement_strong_count_WarrenForwardedPortFrbPtr,
+  );
+
+  /// The current external port remote peers reach the app on, or `None` while
+  /// the tunnel is down or before the first mapping is granted.
+  Future<int?> externalPort() => WarrenRustBridge.instance.api
+          .crateApiDatapathWarrenForwardedPortFrbExternalPort(
+        that: this,
+      );
+
+  /// Streams external-port changes (re-mappings across reconnects), emitting
+  /// the current value first so a late listener always gets one.
+  Stream<int?> externalPorts() => WarrenRustBridge.instance.api
+          .crateApiDatapathWarrenForwardedPortFrbExternalPorts(
+        that: this,
+      );
+
+  /// The local internal port being forwarded.
+  Future<int> internalPort() => WarrenRustBridge.instance.api
+          .crateApiDatapathWarrenForwardedPortFrbInternalPort(
+        that: this,
+      );
+
+  /// Tears the forward down. Idempotent: a second call is a no-op.
+  Future<void> shutdown() => WarrenRustBridge.instance.api
+          .crateApiDatapathWarrenForwardedPortFrbShutdown(
+        that: this,
+      );
+}
+
+@sealed
 class WarrenSessionFrbImpl extends RustOpaque implements WarrenSessionFrb {
   // Not to be used by end users
   WarrenSessionFrbImpl.frbInternalDcoDecode(List<dynamic> wire)
@@ -1387,6 +1811,19 @@ class WarrenSessionFrbImpl extends RustOpaque implements WarrenSessionFrb {
       WarrenRustBridge.instance.api.crateApiDatapathWarrenSessionFrbDisconnect(
         that: this,
       );
+
+  /// Forwards a tunnel-side port via NAT-PMP, re-mapped automatically across
+  /// reconnects. `local_target` is the local `ip:port` inbound connections are
+  /// relayed to. The exit must run a NAT-PMP gateway.
+  Future<WarrenForwardedPortFrb> forwardPort(
+          {required MapProtoDto proto,
+          required int internalPort,
+          required String localTarget}) =>
+      WarrenRustBridge.instance.api.crateApiDatapathWarrenSessionFrbForwardPort(
+          that: this,
+          proto: proto,
+          internalPort: internalPort,
+          localTarget: localTarget);
 
   /// The bound local HTTP CONNECT endpoint, if one was requested.
   Future<String?> httpEndpoint() => WarrenRustBridge.instance.api

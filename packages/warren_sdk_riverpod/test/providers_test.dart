@@ -65,6 +65,14 @@ class _FakeSessionHandle implements WarrenSessionHandle {
       Stream.fromIterable([const Connecting(), const Connected()]);
 
   @override
+  Future<WarrenForwardedPort> forwardPort(
+    ForwardProtocol proto,
+    int internalPort,
+    String localTarget,
+  ) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> disconnect() async {}
 }
 

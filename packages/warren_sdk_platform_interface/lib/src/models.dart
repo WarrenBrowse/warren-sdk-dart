@@ -102,6 +102,15 @@ class ConnectOptions {
   final bool dnsOverTunnel;
 }
 
+/// Transport protocol for an inbound forwarded port.
+enum ForwardProtocol {
+  /// TCP.
+  tcp,
+
+  /// UDP.
+  udp,
+}
+
 /// The local endpoints exposed by a proxy-mode session.
 @immutable
 class ProxyEndpoints {

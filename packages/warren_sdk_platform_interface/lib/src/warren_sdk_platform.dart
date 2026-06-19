@@ -146,8 +146,38 @@ abstract interface class WarrenSessionHandle {
   /// The live connection-state stream (broadcast, latest-state on listen).
   Stream<ConnectionState> get states;
 
+  /// Forwards an inbound tunnel-side [internalPort] to a local [localTarget]
+  /// (`ip:port`) via NAT-PMP, re-mapped automatically across reconnects.
+  ///
+  /// Proxy mode only, and only against an exit that runs a NAT-PMP gateway.
+  /// Throws [WarrenUnsupportedError] in system-VPN mode.
+  Future<WarrenForwardedPort> forwardPort(
+    ForwardProtocol proto,
+    int internalPort,
+    String localTarget,
+  );
+
   /// Tears the connection down.
   Future<void> disconnect();
+}
+
+/// An inbound forwarded port that re-maps itself across reconnects. Always
+/// [dispose] it when done; the exit reclaims the port when the lease lapses.
+abstract interface class WarrenForwardedPort {
+  /// The local internal port being forwarded (stable for this handle's life).
+  int get internalPort;
+
+  /// The external port remote peers reach the app on, or `null` while the
+  /// tunnel is down or before the first mapping is granted. Can change across
+  /// reconnects, so do not cache it.
+  Future<int?> externalPort();
+
+  /// A broadcast stream of external-port changes (re-mappings), latest on
+  /// listen.
+  Stream<int?> get externalPorts;
+
+  /// Tears the forward down.
+  Future<void> dispose();
 }
 
 /// The default implementation, active until a real one registers. Every call
