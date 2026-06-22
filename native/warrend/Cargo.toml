@@ -12,9 +12,13 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.6", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.10", features = [
     "experimental-tun",
 ] }
+# Builds the engine's obfuscated QUIC-Initial transport config injected into the
+# SDK (system-VPN anti-DPI parity with warren-app). Uses the fork-only quinn API,
+# available because this daemon patches quinn to the WarrenGuard fork below.
+warrenguard-transport-core = { path = "../../../warrenguard/crates/warrenguard-transport-core" }
 tokio = { version = "1", features = [
     "rt-multi-thread",
     "macros",
@@ -26,6 +30,29 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
 hex = "0.4"
+
+# This daemon builds against the WarrenGuard quinn fork so its handshake carries
+# the QUIC-Initial obfuscation. Workspace-global: the SDK's transitive quinn
+# resolves to the fork too (a superset of upstream; the SDK names no fork-only
+# API). Mirror warren-app's pin; bump alongside the engine.
+[patch.crates-io]
+quinn = { path = "../../../warrenguard/vendor/quinn-fork/quinn" }
+quinn-proto = { path = "../../../warrenguard/vendor/quinn-fork/quinn-proto" }
+quinn-udp = { path = "../../../warrenguard/vendor/quinn-fork/quinn-udp" }
+
+# The SDK declares the engine crates as git deps; this daemon has warrenguard as a
+# sibling, so resolve them (and their transitive engine deps, via the sibling's own
+# internal path-deps) from the local checkout. Keep in lockstep with the SDK's git
+# deps. Without a sibling, drop this block and cargo fetches the pinned git rev.
+[patch."https://github.com/WarrenBrowse/warrenguard.git"]
+warrenguard-wire = { path = "../../../warrenguard/crates/warrenguard-wire" }
+warrenguard-identity = { path = "../../../warrenguard/crates/warrenguard-identity" }
+warrenguard-multihop = { path = "../../../warrenguard/crates/warrenguard-multihop" }
+warrenguard-daita = { path = "../../../warrenguard/crates/warrenguard-daita" }
+warrenguard-tls = { path = "../../../warrenguard/crates/warrenguard-tls" }
+warrenguard-natpmp-protocol = { path = "../../../warrenguard/crates/warrenguard-natpmp-protocol" }
+warrenguard-tun-core = { path = "../../../warrenguard/crates/warrenguard-tun-core" }
+warrenguard-tun-device = { path = "../../../warrenguard/crates/warrenguard-tun-device" }
 
 [profile.release]
 opt-level = 3

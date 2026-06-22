@@ -170,6 +170,12 @@ async fn handle(
                     builder = builder.daita_machine(machine);
                 }
             }
+            // System-VPN obfuscation: this daemon's workspace patches quinn to the
+            // WarrenGuard fork, so inject the engine's obfuscated QUIC-Initial
+            // config (ClientHello split + first-datagram padding) to match
+            // warren-app's anti-DPI handshake. The SDK itself stays on upstream.
+            builder = builder
+                .transport_config(warrenguard_transport_core::warren_transport_config_client());
             let client = builder
                 .build()
                 .map_err(|e| Event::error("api", e.to_string()))?;
