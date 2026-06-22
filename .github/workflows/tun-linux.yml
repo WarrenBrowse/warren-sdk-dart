@@ -34,6 +34,21 @@ jobs:
       - name: build the in-process engine dylib (discovery)
         run: cargo build --release
         working-directory: native/warren_sdk_frb
+      - name: checkout the WarrenGuard engine sibling + reconstruct the quinn fork
+        # warrend builds against the engine's quinn fork and injects its obfuscated
+        # transport config; both resolve through the sibling `../warrenguard` that
+        # the SDK's git deps and warrend's `[patch]` point at. The fork is gitignored,
+        # so rebuild it with setup-quinn-fork.sh. Pinned to the SDK's
+        # `.warrenguard-version` so the patched engine crates match the SDK's git rev.
+        run: |
+          set -euo pipefail
+          REV="16141d04c8c923771d6aedb756f258958e1cb600"
+          rm -rf ../warrenguard
+          git clone --quiet \
+            "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" \
+            ../warrenguard
+          git -C ../warrenguard checkout --quiet "$REV"
+          ( cd ../warrenguard && ./bench/scripts/setup-quinn-fork.sh )
       - name: build the privileged daemon
         run: cargo build --release
         working-directory: native/warrend
