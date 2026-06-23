@@ -119,6 +119,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c59bdb34bc650a32731b31bd8f0829cc15d24a708ee31559e0bb34f2bc320cba"
 
 [[package]]
+name = "atomic-polyfill"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8cf2bce30dfe09ef0bfaef228b9d414faaf7e563035494d7fe092dba54b300f4"
+dependencies = [
+ "critical-section",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -388,6 +397,12 @@ checksum = "9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "critical-section"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b"
 
 [[package]]
 name = "crypto-common"
@@ -874,6 +889,15 @@ dependencies = [
 
 [[package]]
 name = "hash32"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0c35f58762feb77d74ebe43bdbc3210f09be9fe6742234d573bacc26ed92b67"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
+name = "hash32"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47d60b12902ba28e2730cd37e95b8c9223af2808df9e902d4df49588d1470606"
@@ -895,11 +919,25 @@ checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
 
 [[package]]
 name = "heapless"
+version = "0.7.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdc6457c0eb62c71aac4bc17216026d8410337c4126773b9c5daba343f17964f"
+dependencies = [
+ "atomic-polyfill",
+ "hash32 0.2.1",
+ "rustc_version",
+ "serde",
+ "spin",
+ "stable_deref_trait",
+]
+
+[[package]]
+name = "heapless"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0bfb9eb618601c89945a70e254898da93b13be0388091d42117462b265bb3fad"
 dependencies = [
- "hash32",
+ "hash32 0.3.1",
  "stable_deref_trait",
 ]
 
@@ -1500,6 +1538,7 @@ dependencies = [
  "cobs",
  "embedded-io 0.4.0",
  "embedded-io 0.6.1",
+ "heapless 0.7.17",
  "serde",
 ]
 
@@ -1811,6 +1850,7 @@ version = "0.23.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef86cd5876211988985292b91c96a8f2d298df24e75989a43a3c73f2d4d8168b"
 dependencies = [
+ "log",
  "once_cell",
  "ring",
  "rustls-pki-types",
@@ -2071,7 +2111,7 @@ dependencies = [
  "byteorder",
  "cfg-if",
  "defmt 0.3.100",
- "heapless",
+ "heapless 0.8.0",
  "managed",
 ]
 
@@ -2083,6 +2123,15 @@ checksum = "52d1cfed4120b4d927bf7c0f86d2087a4a7d6027c906d9f9d525a80573b9be51"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "spin"
+version = "0.9.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
+dependencies = [
+ "lock_api",
 ]
 
 [[package]]
@@ -2314,7 +2363,19 @@ checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
 dependencies = [
  "log",
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7490cfa5ec963746568740651ac6781f701c9c5ea257c58e057f3ba8cf69e8da"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2415,7 +2476,7 @@ dependencies = [
 [[package]]
 name = "warren-api"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
  "hex",
  "rand 0.8.6",
@@ -2429,19 +2490,15 @@ dependencies = [
 [[package]]
 name = "warren-daita"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
- "maybenot",
- "maybenot-machines",
- "rand 0.9.4",
- "serde",
- "thiserror 2.0.18",
+ "warrenguard-daita",
 ]
 
 [[package]]
 name = "warren-discovery"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
  "ed25519-dalek",
  "hex",
@@ -2455,37 +2512,30 @@ dependencies = [
 [[package]]
 name = "warren-identity"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
  "bip39",
  "blake2",
  "bs58",
  "ed25519-dalek",
  "hex",
- "hkdf",
  "sha2",
  "thiserror 2.0.18",
- "zeroize",
+ "warrenguard-identity",
 ]
 
 [[package]]
 name = "warren-multihop"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
- "chacha20poly1305",
- "ed25519-dalek",
- "hpke",
- "rand_core 0.9.5",
- "thiserror 2.0.18",
- "warren-wire",
- "zeroize",
+ "warrenguard-multihop",
 ]
 
 [[package]]
 name = "warren-net"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
  "bytes",
  "rand 0.8.6",
@@ -2494,14 +2544,14 @@ dependencies = [
  "tokio",
  "tokio-util",
  "warren-transport",
- "warren-tun",
+ "warren-tun-core",
  "warren-wire",
 ]
 
 [[package]]
 name = "warren-sdk"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
  "thiserror 2.0.18",
  "tokio",
@@ -2516,38 +2566,38 @@ dependencies = [
 [[package]]
 name = "warren-transport"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
  "bytes",
- "data-encoding",
  "ed25519-dalek",
  "quinn",
  "rand 0.8.6",
  "rand_core 0.9.5",
- "rustls",
  "thiserror 2.0.18",
  "tokio",
  "warren-daita",
  "warren-multihop",
  "warren-wire",
+ "warrenguard-tls",
 ]
 
 [[package]]
-name = "warren-tun"
+name = "warren-tun-core"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
- "thiserror 2.0.18",
+ "warrenguard-tun-core",
 ]
 
 [[package]]
 name = "warren-wire"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.8#539d6291eda2d1c471b97abbed7590bae1b9a505"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?tag=v0.0.11#c18d35783aac041625603cd88276a73afeaa6248"
 dependencies = [
- "postcard",
  "serde",
- "thiserror 2.0.18",
+ "warrenguard-multihop",
+ "warrenguard-natpmp-protocol",
+ "warrenguard-wire",
 ]
 
 [[package]]
@@ -2559,6 +2609,98 @@ dependencies = [
  "hex",
  "tokio",
  "warren-sdk",
+]
+
+[[package]]
+name = "warrenguard-config"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+dependencies = [
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "warrenguard-daita"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+dependencies = [
+ "maybenot",
+ "maybenot-machines",
+ "rand 0.9.4",
+ "thiserror 2.0.18",
+ "warrenguard-wire",
+]
+
+[[package]]
+name = "warrenguard-identity"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+dependencies = [
+ "bip39",
+ "ed25519-dalek",
+ "hex",
+ "hkdf",
+ "sha2",
+ "thiserror 2.0.18",
+ "tracing",
+ "warrenguard-config",
+ "zeroize",
+]
+
+[[package]]
+name = "warrenguard-multihop"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+dependencies = [
+ "chacha20poly1305",
+ "ed25519-dalek",
+ "hex",
+ "hpke",
+ "postcard",
+ "rand_core 0.9.5",
+ "serde",
+ "thiserror 2.0.18",
+ "warrenguard-wire",
+ "zeroize",
+]
+
+[[package]]
+name = "warrenguard-natpmp-protocol"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+dependencies = [
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "warrenguard-tls"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+dependencies = [
+ "data-encoding",
+ "ed25519-dalek",
+ "quinn",
+ "rustls",
+ "thiserror 2.0.18",
+ "warrenguard-wire",
+]
+
+[[package]]
+name = "warrenguard-tun-core"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+
+[[package]]
+name = "warrenguard-wire"
+version = "0.1.0"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=6e4f40c02e282e11f64fe720e8ac3aa83ef38938#6e4f40c02e282e11f64fe720e8ac3aa83ef38938"
+dependencies = [
+ "hex",
+ "postcard",
+ "serde",
+ "subtle",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
