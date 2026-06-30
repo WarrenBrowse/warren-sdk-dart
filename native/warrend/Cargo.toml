@@ -16,8 +16,9 @@ warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = 
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
-# SDK (system-VPN anti-DPI parity with warren-app). Uses the fork-only quinn API,
-# available because this daemon patches quinn to the WarrenGuard fork below.
+# SDK (system-VPN anti-DPI parity with warren-app). The fork-only quinn API is
+# available transitively: warren-sdk and warrenguard both depend on the
+# warren-quinn fork, so no `[patch.crates-io]` is needed here.
 warrenguard-transport-core = { path = "../../../warrenguard/crates/warrenguard-transport-core" }
 tokio = { version = "1", features = [
     "rt-multi-thread",
@@ -30,15 +31,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
 hex = "0.4"
-
-# This daemon builds against the WarrenGuard quinn fork so its handshake carries
-# the QUIC-Initial obfuscation. Workspace-global: the SDK's transitive quinn
-# resolves to the fork too (a superset of upstream; the SDK names no fork-only
-# API). Mirror warren-app's pin; bump alongside the engine.
-[patch.crates-io]
-quinn = { path = "../../../warrenguard/vendor/quinn-fork/quinn" }
-quinn-proto = { path = "../../../warrenguard/vendor/quinn-fork/quinn-proto" }
-quinn-udp = { path = "../../../warrenguard/vendor/quinn-fork/quinn-udp" }
 
 # The SDK declares the engine crates as git deps; this daemon has warrenguard as a
 # sibling, so resolve them (and their transitive engine deps, via the sibling's own
