@@ -24,7 +24,10 @@ between them.
 - **Datapath** (line rate, per-packet crypto, OS privilege): QUIC transport, the
   TLS 1.3 raw-public-key handshake, HPKE multihop sealing, per-packet AEAD, the
   userspace netstack, and the privileged TUN device with its firewall
-  killswitch.
+  killswitch. The engine builds on the `warren-quinn` fork with the obfuscated
+  QUIC Initial (Initial-fragmentation) on by default, so the Dart proxy presents
+  the same handshake fingerprint as warren-app; it is inherited through the
+  pinned engine, nothing is re-tuned in Dart.
 
 **Neither is reimplemented in Dart.** Both live in the Rust engine. Dart owns the
 ergonomic API, reactive state, secure secret storage, and the platform

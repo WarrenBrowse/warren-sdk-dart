@@ -86,9 +86,12 @@ vendoring it:
 
 - **Engine**: the native glue crate (`native/warren_sdk_frb`) depends on the
   Warren engine through a **pinned git dependency** (`warren-sdk-rs`, tag
-  `v0.0.5`), so builds are reproducible on any machine and in CI with no
+  `v0.0.13`), so builds are reproducible on any machine and in CI with no
   assumption about on-disk layout. To adopt a newer engine, move the tag in
-  `native/warren_sdk_frb/Cargo.toml` and re-run FRB codegen.
+  `native/warren_sdk_frb/Cargo.toml` and re-run FRB codegen. The obfuscated QUIC
+  Initial (the engine builds on the `warren-quinn` fork with Initial-fragmentation
+  on by default) is inherited through this pin, no patch is needed in the glue
+  crate.
 - **Golden vectors**: `vectors/` is a **git submodule** of the shared
   `warren-vectors` repository (the same single source of truth used by
   `warren-sdk-rs` and every sibling SDK, no duplication).
