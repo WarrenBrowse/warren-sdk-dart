@@ -7,7 +7,7 @@ architecture, while being robust, secure, high performance and built to last.
 
 This SDK does **not** reimplement the Warren protocol in Dart. It reuses the
 audited Rust engine (`warren-sdk-rs`, itself a clean-room, wire-compatible
-reimplementation of the frozen `warren-core` contracts) and adds an idiomatic,
+reimplementation of the frozen `warren-contract` client<->server contract) and adds an idiomatic,
 reactive, framework-agnostic Dart surface on top. See
 [DECISIONS.md](DECISIONS.md) for the rationale behind every choice referenced
 here.
