@@ -76,6 +76,19 @@ jobs:
       - name: authenticate cargo for the private engine dependency
         run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - run: flutter pub get
+      - name: checkout the engine siblings (warrenguard + warren-contract)
+        # v0.0.14's warren-contract carve-out declares warrenguard-wire as a repo-
+        # relative path dep, so native/warren_sdk_frb now patches warren-contract and
+        # warrenguard to these siblings. Clone them at the SDK's pinned revs before
+        # building (warrenguard: .warrenguard-expected-rev; warren-contract: the
+        # engine's warren-contract rev at tag v0.0.14).
+        run: |
+          set -euo pipefail
+          rm -rf ../warrenguard ../warren-contract
+          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" ../warrenguard
+          git -C ../warrenguard checkout --quiet 906ddc75a7a33a17ef744cf0b486e6ed4bc4ff4e
+          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" ../warren-contract
+          git -C ../warren-contract checkout --quiet 19b6a1c1aa3805211101daaa009ea9d3877cca20
       - name: build the native engine
         run: cargo build --release
         working-directory: native/warren_sdk_frb
@@ -108,6 +121,16 @@ jobs:
       - run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - run: flutter pub get
       - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
+      - name: checkout the engine siblings (warrenguard + warren-contract)
+        # Codegen macro-expands native/warren_sdk_frb, which since v0.0.14 patches
+        # warren-contract + warrenguard to local siblings (see the conformance job).
+        run: |
+          set -euo pipefail
+          rm -rf ../warrenguard ../warren-contract
+          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" ../warrenguard
+          git -C ../warrenguard checkout --quiet 906ddc75a7a33a17ef744cf0b486e6ed4bc4ff4e
+          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" ../warren-contract
+          git -C ../warren-contract checkout --quiet 19b6a1c1aa3805211101daaa009ea9d3877cca20
       - run: flutter_rust_bridge_codegen generate
       - name: fail if generated bindings drift from the committed ones
         run: git diff --exit-code

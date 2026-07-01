@@ -18,7 +18,7 @@ crate-type = ["cdylib", "staticlib"]
 # For local co-development against a working copy of the engine, use the
 # documented gitignored path override (see the repo README, "Local co-development")
 # so this pin stays the single source of truth for CI and releases.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.13" }
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.14" }
 
 flutter_rust_bridge = "=2.12.0"
 anyhow = "1"
@@ -37,3 +37,16 @@ opt-level = 3
 lto = "thin"
 codegen-units = 1
 strip = true
+
+# The engine's warren-contract carve-out (v0.0.14) declares `warrenguard-wire` as a
+# path dep relative to its own repo (`../warrenguard/...`), which escapes the git
+# checkout and cannot resolve from git alone. Repoint warren-contract at the sibling
+# and pin warrenguard-wire to that same sibling so the whole graph shares one copy.
+# This makes the crate require the `../../../warrenguard` and `../../../warren-contract`
+# siblings (as warren-core/warren-app already do); CI clones them before building.
+[patch."https://github.com/WarrenBrowse/warren-contract.git"]
+warren-contract = { path = "../../../warren-contract" }
+warren-discovery-core = { path = "../../../warren-contract/warren-discovery" }
+
+[patch."https://github.com/WarrenBrowse/warrenguard.git"]
+warrenguard-wire = { path = "../../../warrenguard/crates/warrenguard-wire" }

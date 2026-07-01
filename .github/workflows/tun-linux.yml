@@ -31,24 +31,27 @@ jobs:
       - name: authenticate cargo for the private engine dependency
         run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - run: flutter pub get
-      - name: build the in-process engine dylib (discovery)
-        run: cargo build --release
-        working-directory: native/warren_sdk_frb
-      - name: checkout the WarrenGuard engine sibling + reconstruct the quinn fork
-        # warrend builds against the engine's quinn fork and injects its obfuscated
-        # transport config; both resolve through the sibling `../warrenguard` that
-        # the SDK's git deps and warrend's `[patch]` point at. The fork is gitignored,
-        # so rebuild it with setup-quinn-fork.sh. Pinned to the SDK's
-        # `.warrenguard-version` so the patched engine crates match the SDK's git rev.
+      - name: checkout the engine siblings (warrenguard + warren-contract)
+        # Both warren_sdk_frb and warrend build against the engine's warrenguard
+        # crates and (since v0.0.14) the warren-contract carve-out, patched to these
+        # siblings; warrend also injects warrenguard's obfuscated transport config.
+        # Pinned to the SDK's revs (warrenguard: .warrenguard-expected-rev;
+        # warren-contract: the engine's warren-contract rev at tag v0.0.14). At these
+        # revs the quinn fork resolves as a plain git dep (no vendoring step).
         run: |
           set -euo pipefail
-          REV="16141d04c8c923771d6aedb756f258958e1cb600"
-          rm -rf ../warrenguard
+          rm -rf ../warrenguard ../warren-contract
           git clone --quiet \
             "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" \
             ../warrenguard
-          git -C ../warrenguard checkout --quiet "$REV"
-          ( cd ../warrenguard && ./bench/scripts/setup-quinn-fork.sh )
+          git -C ../warrenguard checkout --quiet 906ddc75a7a33a17ef744cf0b486e6ed4bc4ff4e
+          git clone --quiet \
+            "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" \
+            ../warren-contract
+          git -C ../warren-contract checkout --quiet 19b6a1c1aa3805211101daaa009ea9d3877cca20
+      - name: build the in-process engine dylib (discovery)
+        run: cargo build --release
+        working-directory: native/warren_sdk_frb
       - name: build the privileged daemon
         run: cargo build --release
         working-directory: native/warrend

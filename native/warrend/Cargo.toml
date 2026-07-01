@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.13", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.14", features = [
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
@@ -45,6 +45,14 @@ warrenguard-tls = { path = "../../../warrenguard/crates/warrenguard-tls" }
 warrenguard-natpmp-protocol = { path = "../../../warrenguard/crates/warrenguard-natpmp-protocol" }
 warrenguard-tun-core = { path = "../../../warrenguard/crates/warrenguard-tun-core" }
 warrenguard-tun-device = { path = "../../../warrenguard/crates/warrenguard-tun-device" }
+
+# The engine's warren-contract carve-out declares `warrenguard-wire` as a path dep
+# relative to its own repo (`../warrenguard/...`), which escapes the git checkout
+# and cannot resolve from git alone. Repoint warren-contract at the sibling so its
+# path dep lands on the same local warrenguard the block above already patches.
+[patch."https://github.com/WarrenBrowse/warren-contract.git"]
+warren-contract = { path = "../../../warren-contract" }
+warren-discovery-core = { path = "../../../warren-contract/warren-discovery" }
 
 [profile.release]
 opt-level = 3

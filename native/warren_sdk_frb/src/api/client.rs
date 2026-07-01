@@ -142,7 +142,13 @@ impl WarrenClientFrb {
     /// Redeems a voucher and returns the new expiry (Unix seconds).
     pub async fn redeem_voucher(&self, secret: String) -> Result<u64, WarrenFfiError> {
         let req = RegisterAccountRequest {
-            pubkey_ss58: self.address.clone(),
+            // The engine's request DTO now types the pubkey as the validated
+            // `PubkeySs58` newtype; `self.address` is an already-valid SS58 string.
+            pubkey_ss58: self
+                .address
+                .clone()
+                .try_into()
+                .map_err(|_| err(WarrenErrorKind::Identity, "invalid ss58 address"))?,
             voucher_secret: secret,
             referral_code: None,
         };
@@ -164,7 +170,9 @@ impl WarrenClientFrb {
         Ok(TunnelCheckDto {
             ip: resp.ip,
             is_exit: resp.is_exit,
-            country: resp.exit_country,
+            // The engine now types the country as the validated `CountryCode`
+            // newtype; the Dart-facing DTO keeps it a plain string.
+            country: resp.exit_country.map(String::from),
             city: resp.exit_city,
         })
     }
