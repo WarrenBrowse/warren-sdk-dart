@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.14", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.15", features = [
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
@@ -37,11 +37,18 @@ hex = "0.4"
 # internal path-deps) from the local checkout. Keep in lockstep with the SDK's git
 # deps. Without a sibling, drop this block and cargo fetches the pinned git rev.
 [patch."https://github.com/WarrenBrowse/warrenguard.git"]
+# Mirror EXACTLY the warrenguard git-deps declared by warren-sdk-rs (see its
+# Cargo.toml): every one must be patched to the local sibling, otherwise a
+# crate left on the git rev pulls a second copy of the engine (e.g. two
+# `warrenguard-transport-core`) and the build fails on type mismatches.
+warrenguard-backoff = { path = "../../../warrenguard/crates/warrenguard-backoff" }
 warrenguard-wire = { path = "../../../warrenguard/crates/warrenguard-wire" }
 warrenguard-identity = { path = "../../../warrenguard/crates/warrenguard-identity" }
 warrenguard-multihop = { path = "../../../warrenguard/crates/warrenguard-multihop" }
 warrenguard-daita = { path = "../../../warrenguard/crates/warrenguard-daita" }
 warrenguard-tls = { path = "../../../warrenguard/crates/warrenguard-tls" }
+warrenguard-transport = { path = "../../../warrenguard/crates/warrenguard-transport" }
+warrenguard-transport-core = { path = "../../../warrenguard/crates/warrenguard-transport-core" }
 warrenguard-natpmp-protocol = { path = "../../../warrenguard/crates/warrenguard-natpmp-protocol" }
 warrenguard-tun-core = { path = "../../../warrenguard/crates/warrenguard-tun-core" }
 warrenguard-tun-device = { path = "../../../warrenguard/crates/warrenguard-tun-device" }
