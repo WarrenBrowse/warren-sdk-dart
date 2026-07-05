@@ -35,10 +35,11 @@ abstract class WarrenSessionFrb implements RustOpaqueInterface {
   /// Forwards a tunnel-side port via NAT-PMP, re-mapped automatically across
   /// reconnects. `local_target` is the local `ip:port` inbound connections are
   /// relayed to. The exit must run a NAT-PMP gateway.
-  Future<WarrenForwardedPortFrb> forwardPort(
-      {required MapProtoDto proto,
-      required int internalPort,
-      required String localTarget});
+  Future<WarrenForwardedPortFrb> forwardPort({
+    required MapProtoDto proto,
+    required int internalPort,
+    required String localTarget,
+  });
 
   /// The bound local HTTP CONNECT endpoint, if one was requested.
   Future<String?> httpEndpoint();
@@ -64,7 +65,6 @@ enum ConnectionStateDto {
 
   /// Every attempt failed; the supervisor gave up.
   failed,
-  ;
 }
 
 /// Transport protocol for a forwarded port, mirrored to Dart as a plain enum.
@@ -74,5 +74,4 @@ enum MapProtoDto {
 
   /// UDP.
   udp,
-  ;
 }

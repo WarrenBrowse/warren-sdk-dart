@@ -27,34 +27,36 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
   ///
   /// Connect failures after this returns surface as connection state on the
   /// session, not as an error here.
-  Future<WarrenSessionFrb> connectProxy(
-      {required String exitPubkeyHex,
-      required String socks5Listen,
-      String? httpListen,
-      String? dnsServer});
+  Future<WarrenSessionFrb> connectProxy({
+    required String exitPubkeyHex,
+    required String socks5Listen,
+    String? httpListen,
+    String? dnsServer,
+  });
 
   /// Builds a client from a mnemonic and the account API configuration.
   ///
   /// The mnemonic is consumed here and not retained; the engine zeroizes the
   /// derived signing key on drop.
-  static Future<WarrenClientFrb> create(
-          {required String mnemonic,
-          required String apiBase,
-          required String serverPubkeyPin,
-          String? multihopRootPin,
-          required bool daita,
-          String? daitaMachine,
-          required bool requestIpv6,
-          String? stateDir}) =>
-      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCreate(
-          mnemonic: mnemonic,
-          apiBase: apiBase,
-          serverPubkeyPin: serverPubkeyPin,
-          multihopRootPin: multihopRootPin,
-          daita: daita,
-          daitaMachine: daitaMachine,
-          requestIpv6: requestIpv6,
-          stateDir: stateDir);
+  static Future<WarrenClientFrb> create({
+    required String mnemonic,
+    required String apiBase,
+    required String serverPubkeyPin,
+    String? multihopRootPin,
+    required bool daita,
+    String? daitaMachine,
+    required bool requestIpv6,
+    String? stateDir,
+  }) => WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCreate(
+    mnemonic: mnemonic,
+    apiBase: apiBase,
+    serverPubkeyPin: serverPubkeyPin,
+    multihopRootPin: multihopRootPin,
+    daita: daita,
+    daitaMachine: daitaMachine,
+    requestIpv6: requestIpv6,
+    stateDir: stateDir,
+  );
 
   /// Fetches and verifies the signed relay list, returning the exits.
   Future<List<ExitInfoDto>> listExits();
