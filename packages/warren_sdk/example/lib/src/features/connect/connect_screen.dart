@@ -148,6 +148,12 @@ class ConnectScreen extends ConsumerWidget {
           color: Colors.orange.shade700,
           secured: false,
         ),
+      Draining() => (
+          title: 'Switching server…',
+          icon: Icons.swap_horiz,
+          color: Colors.orange.shade700,
+          secured: false,
+        ),
       Connecting() => (
           title: 'Connecting…',
           icon: Icons.shield_outlined,

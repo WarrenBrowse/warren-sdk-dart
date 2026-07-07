@@ -62,6 +62,12 @@ enum ConnectionStateDto {
   /// A previous attempt failed; a retry is in flight after backoff.
   reconnecting,
 
+  /// The exit signalled a planned maintenance drain and the supervisor is
+  /// proactively migrating off it (ADR 36). Distinct from failure-driven
+  /// `Reconnecting` so an app can show a "switching server" hint; followed by
+  /// `Connected`.
+  draining,
+
   /// Every attempt failed; the supervisor gave up.
   failed,
   ;

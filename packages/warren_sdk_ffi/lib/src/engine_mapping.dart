@@ -22,6 +22,7 @@ ConnectionState mapConnectionState(ConnectionStateDto state) => switch (state) {
       ConnectionStateDto.connecting => const Connecting(),
       ConnectionStateDto.connected => const Connected(),
       ConnectionStateDto.reconnecting => const Reconnecting(),
+      ConnectionStateDto.draining => const Draining(),
       ConnectionStateDto.failed => const ConnectionFailed(
           code: 'tunnel/failed',
           message: 'the connection failed and will not be retried',

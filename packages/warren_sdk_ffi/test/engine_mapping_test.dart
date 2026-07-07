@@ -98,6 +98,12 @@ void main() {
         mapConnectionState(ConnectionStateDto.reconnecting),
         const Reconnecting(),
       );
+      // A maintenance drain must map to the distinct Draining state, not to the
+      // terminal ConnectionFailed it used to collapse into.
+      expect(
+        mapConnectionState(ConnectionStateDto.draining),
+        const Draining(),
+      );
       expect(
         mapConnectionState(ConnectionStateDto.failed),
         isA<ConnectionFailed>().having((s) => s.code, 'code', 'tunnel/failed'),

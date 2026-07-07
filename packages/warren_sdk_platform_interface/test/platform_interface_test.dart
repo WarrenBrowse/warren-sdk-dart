@@ -45,6 +45,9 @@ void main() {
       expect(const Connected().hashCode, const Connected().hashCode);
       expect(const Connecting(), isNot(equals(const Connected())));
       expect(const Reconnecting(), isNot(equals(const Disconnected())));
+      // Draining is distinct from the failure-driven Reconnecting.
+      expect(const Draining(), equals(const Draining()));
+      expect(const Draining(), isNot(equals(const Reconnecting())));
     });
 
     test('ConnectionFailed compares code and message', () {

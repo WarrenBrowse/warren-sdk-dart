@@ -21,6 +21,7 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         Connected,
         Connecting,
         Disconnected,
+        Draining,
         ExitInfo,
         ExitQuery,
         ForwardProtocol,

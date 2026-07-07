@@ -51,6 +51,20 @@ final class Reconnecting extends _SingletonState {
   String toString() => 'Reconnecting';
 }
 
+/// The current exit signalled a planned maintenance drain and the supervisor is
+/// proactively migrating to another exit (ADR 36).
+///
+/// Distinct from [Reconnecting]: the tunnel did not fail, it is being switched
+/// for maintenance, so an app can show a "switching server" hint rather than a
+/// connection-lost warning. Followed by [Connected].
+final class Draining extends _SingletonState {
+  /// Creates the draining state.
+  const Draining();
+
+  @override
+  String toString() => 'Draining';
+}
+
 /// The connection was torn down on purpose.
 final class Disconnected extends _SingletonState {
   /// Creates the disconnected state.

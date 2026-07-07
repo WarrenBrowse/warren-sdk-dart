@@ -1320,7 +1320,8 @@ impl SseDecode for crate::api::datapath::ConnectionStateDto {
             0 => crate::api::datapath::ConnectionStateDto::Connecting,
             1 => crate::api::datapath::ConnectionStateDto::Connected,
             2 => crate::api::datapath::ConnectionStateDto::Reconnecting,
-            3 => crate::api::datapath::ConnectionStateDto::Failed,
+            3 => crate::api::datapath::ConnectionStateDto::Draining,
+            4 => crate::api::datapath::ConnectionStateDto::Failed,
             _ => unreachable!("Invalid variant for ConnectionStateDto: {}", inner),
         };
     }
@@ -1707,7 +1708,8 @@ impl flutter_rust_bridge::IntoDart for crate::api::datapath::ConnectionStateDto 
             Self::Connecting => 0.into_dart(),
             Self::Connected => 1.into_dart(),
             Self::Reconnecting => 2.into_dart(),
-            Self::Failed => 3.into_dart(),
+            Self::Draining => 3.into_dart(),
+            Self::Failed => 4.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -1971,7 +1973,8 @@ impl SseEncode for crate::api::datapath::ConnectionStateDto {
                 crate::api::datapath::ConnectionStateDto::Connecting => 0,
                 crate::api::datapath::ConnectionStateDto::Connected => 1,
                 crate::api::datapath::ConnectionStateDto::Reconnecting => 2,
-                crate::api::datapath::ConnectionStateDto::Failed => 3,
+                crate::api::datapath::ConnectionStateDto::Draining => 3,
+                crate::api::datapath::ConnectionStateDto::Failed => 4,
                 _ => {
                     unimplemented!("");
                 }

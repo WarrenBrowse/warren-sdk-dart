@@ -24,6 +24,11 @@ pub enum ConnectionStateDto {
     Connected,
     /// A previous attempt failed; a retry is in flight after backoff.
     Reconnecting,
+    /// The exit signalled a planned maintenance drain and the supervisor is
+    /// proactively migrating off it (ADR 36). Distinct from failure-driven
+    /// `Reconnecting` so an app can show a "switching server" hint; followed by
+    /// `Connected`.
+    Draining,
     /// Every attempt failed; the supervisor gave up.
     Failed,
 }
@@ -33,9 +38,15 @@ fn to_dto(state: ConnectionState) -> ConnectionStateDto {
         ConnectionState::Connecting => ConnectionStateDto::Connecting,
         ConnectionState::Connected => ConnectionStateDto::Connected,
         ConnectionState::Reconnecting => ConnectionStateDto::Reconnecting,
-        // `ConnectionState` is `#[non_exhaustive]`; treat anything else (only
-        // `Failed` today) as a terminal failure rather than panicking.
-        _ => ConnectionStateDto::Failed,
+        // A maintenance drain is a planned migration, NOT a failure: the
+        // supervised proxy never gives up, so mapping this to `Failed` would show
+        // a spurious terminal error during a routine exit drain.
+        ConnectionState::Draining => ConnectionStateDto::Draining,
+        ConnectionState::Failed => ConnectionStateDto::Failed,
+        // `ConnectionState` is `#[non_exhaustive]`. A future lifecycle state is
+        // most likely transient, so fall back to `Reconnecting` rather than a
+        // terminal `Failed`.
+        _ => ConnectionStateDto::Reconnecting,
     }
 }
 

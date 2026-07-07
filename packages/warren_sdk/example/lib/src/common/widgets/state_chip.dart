@@ -59,6 +59,11 @@ class ConnectionStateChip extends StatelessWidget {
           icon: Icons.autorenew,
           color: Colors.orange.shade700,
         ),
+      Draining() => (
+          label: 'Switching server',
+          icon: Icons.swap_horiz,
+          color: scheme.tertiary,
+        ),
       ConnectionFailed(:final code) => (
           label: 'Failed ($code)',
           icon: Icons.error_outline,
