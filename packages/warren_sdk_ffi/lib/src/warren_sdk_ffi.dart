@@ -44,8 +44,7 @@ class WarrenRequestSignature {
 /// In-process engine implementation of [WarrenSdkPlatform] (Mode A).
 ///
 /// Delegates to the Warren Rust engine bound through `flutter_rust_bridge`. The
-/// native library is initialized lazily and once; identity (P1) is wired, while
-/// the client lifecycle (P2) and proxy datapath (P3) land in later phases.
+/// native library is initialized lazily and once.
 class WarrenSdkFfi extends WarrenSdkPlatform {
   /// Registers this implementation as the active platform, unless a privileged
   /// Mode B implementation has already taken over. Idempotent.
@@ -167,6 +166,7 @@ class WarrenSdkFfi extends WarrenSdkPlatform {
       final client = await rust_client.WarrenClientFrb.create(
         mnemonic: config.mnemonic,
         apiBase: config.apiBase.toString(),
+        apiAlternativeHosts: config.apiAlternativeHosts,
         serverPubkeyPin: config.serverPubkeyPin,
         multihopRootPin: config.multihopRootPin,
         daita: config.daita,

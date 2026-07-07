@@ -7,9 +7,12 @@ import 'models.dart';
 
 /// Immutable configuration for creating an engine client.
 ///
-/// The [mnemonic] is consumed once and zeroized in Rust; it is never retained in
-/// Dart. Obtain it from the platform secure store, pass it here, and drop your
-/// own reference.
+/// The [mnemonic] is sensitive. A Dart `String` cannot be zeroized, so the SDK
+/// never logs it and does not keep it longer than needed: the in-process engine
+/// derives the signing key and zeroizes it in Rust, keeping only the public
+/// address; the desktop daemon path holds it only until the client handle is
+/// disposed, to reconfigure the privileged daemon per session. Obtain it from
+/// the platform secure store, pass it here, and drop your own reference.
 @immutable
 class WarrenClientConfig {
   /// Creates a client configuration.
@@ -17,6 +20,7 @@ class WarrenClientConfig {
     required this.mnemonic,
     required this.apiBase,
     required this.serverPubkeyPin,
+    this.apiAlternativeHosts = const <String>[],
     this.multihopRootPin,
     this.daita = false,
     this.daitaMachine,
@@ -24,11 +28,16 @@ class WarrenClientConfig {
     this.stateDir,
   });
 
-  /// The 12-word BIP39 mnemonic. Consumed once, zeroized in Rust.
+  /// The 12-word BIP39 mnemonic. Sensitive; see the class doc for its handling.
   final String mnemonic;
 
   /// The account API base, for example `https://api.warrenbrowse.com`.
   final Uri apiBase;
+
+  /// Optional anti-censorship fallback hosts for the account API. When the
+  /// primary [apiBase] is blocked, the engine retries against these hosts (and a
+  /// no-SNI transport). Empty disables the fallback.
+  final List<String> apiAlternativeHosts;
 
   /// The pinned server public key (hex) used to verify the signed relay list.
   final String serverPubkeyPin;
@@ -58,6 +67,40 @@ class WarrenClientConfig {
   /// the TOFU server pin. Without it those live in memory only, so rollback
   /// protection does not survive a restart. Pass a private, app-owned path.
   final String? stateDir;
+
+  @override
+  bool operator ==(Object other) =>
+      other is WarrenClientConfig &&
+      other.mnemonic == mnemonic &&
+      other.apiBase == apiBase &&
+      other.serverPubkeyPin == serverPubkeyPin &&
+      _hostsEqual(other.apiAlternativeHosts, apiAlternativeHosts) &&
+      other.multihopRootPin == multihopRootPin &&
+      other.daita == daita &&
+      other.daitaMachine == daitaMachine &&
+      other.requestIpv6 == requestIpv6 &&
+      other.stateDir == stateDir;
+
+  @override
+  int get hashCode => Object.hash(
+        mnemonic,
+        apiBase,
+        serverPubkeyPin,
+        Object.hashAll(apiAlternativeHosts),
+        multihopRootPin,
+        daita,
+        daitaMachine,
+        requestIpv6,
+        stateDir,
+      );
+
+  static bool _hostsEqual(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }
 
 /// The federated-plugin contract every platform implementation satisfies.
@@ -118,6 +161,10 @@ abstract interface class WarrenClientHandle {
 
   /// Redeems a voucher secret, crediting the account.
   Future<void> redeemVoucher(String secret);
+
+  /// Permanently deletes the account bound to this identity. App stores require
+  /// an in-app account-deletion path.
+  Future<void> deleteAccount();
 
   /// Asks the account server what it observes for this connection: whether
   /// traffic egresses from a registered Warren exit, and which one.

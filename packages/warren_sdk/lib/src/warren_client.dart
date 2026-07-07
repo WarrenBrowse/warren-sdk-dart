@@ -38,6 +38,7 @@ class WarrenClient {
     required String mnemonic,
     required Uri apiBase,
     required String serverPubkeyPin,
+    List<String> apiAlternativeHosts = const <String>[],
     String? multihopRootPin,
     bool daita = false,
     String? daitaMachine,
@@ -53,6 +54,7 @@ class WarrenClient {
         mnemonic: mnemonic,
         apiBase: apiBase,
         serverPubkeyPin: serverPubkeyPin,
+        apiAlternativeHosts: apiAlternativeHosts,
         multihopRootPin: multihopRootPin,
         daita: daita,
         daitaMachine: daitaMachine,
@@ -72,6 +74,12 @@ class WarrenClient {
   ///
   /// Throws a [WarrenApiError] if the voucher is invalid or already used.
   Future<void> redeemVoucher(String secret) => _handle.redeemVoucher(secret);
+
+  /// Permanently deletes the account bound to this identity. App stores require
+  /// an in-app account-deletion path.
+  ///
+  /// Throws a [WarrenApiError] on a network or server failure.
+  Future<void> deleteAccount() => _handle.deleteAccount();
 
   /// Asks the account server what it observes for this connection: whether
   /// traffic egresses from a registered Warren exit, and which one. A

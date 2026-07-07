@@ -77,6 +77,36 @@ void main() {
     expect(await next, isA<ConnectionFailed>());
   });
 
+  test('reconnecting and disconnected states map to their subtypes', () async {
+    final states = client.states.take(2).toList();
+    daemonSends(const StateEvent(DaemonConnectionState.reconnecting));
+    daemonSends(const StateEvent(DaemonConnectionState.disconnected));
+    expect(await states, [const Reconnecting(), const Disconnected()]);
+  });
+
+  test('replays the latest state to a listener that attaches late', () async {
+    daemonSends(const StateEvent(DaemonConnectionState.connected));
+    await pumpEventQueue();
+
+    expect(await client.states.first, const Connected());
+  });
+
+  test('a malformed frame surfaces as a typed stream error', () async {
+    final caught = client.states.first.then<Object?>(
+      (_) => null,
+      onError: (Object e) => e,
+    );
+    incoming.add(FrameCodec.encode(utf8.encode('this is not json')));
+    expect(
+      await caught,
+      isA<WarrenTunnelError>().having(
+        (e) => e.code,
+        'code',
+        'ipc/malformed-frame',
+      ),
+    );
+  });
+
   test('an error event arrives as a typed stream error', () async {
     final caught = client.states.first.then<Object?>(
       (_) => null,

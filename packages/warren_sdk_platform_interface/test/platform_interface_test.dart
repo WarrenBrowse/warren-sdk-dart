@@ -20,9 +20,44 @@ void main() {
       });
     });
 
+    test('unsupported maps to WarrenUnsupportedError', () {
+      final error = warrenErrorOfKind(
+        'unsupported',
+        code: 'unsupported/x',
+        message: 'm',
+      );
+      expect(error, isA<WarrenUnsupportedError>());
+      expect(error.code, 'unsupported/x');
+    });
+
     test('an unknown kind falls back to WarrenTunnelError', () {
       final error = warrenErrorOfKind('bogus', code: 'c', message: 'm');
       expect(error, isA<WarrenTunnelError>());
+    });
+  });
+
+  group('ConnectionState equality', () {
+    test('payload-free states use value equality by runtime type', () {
+      expect(const Connected(), equals(const Connected()));
+      // A non-const instance still equals the canonical const one.
+      // ignore: prefer_const_constructors
+      expect(Connected(), equals(const Connected()));
+      expect(const Connected().hashCode, const Connected().hashCode);
+      expect(const Connecting(), isNot(equals(const Connected())));
+      expect(const Reconnecting(), isNot(equals(const Disconnected())));
+    });
+
+    test('ConnectionFailed compares code and message', () {
+      expect(
+        const ConnectionFailed(code: 'tunnel/failed', message: 'm'),
+        equals(const ConnectionFailed(code: 'tunnel/failed', message: 'm')),
+      );
+      expect(
+        const ConnectionFailed(code: 'tunnel/failed', message: 'm'),
+        isNot(
+          equals(const ConnectionFailed(code: 'tunnel/other', message: 'm')),
+        ),
+      );
     });
   });
 
@@ -70,9 +105,132 @@ void main() {
       expect(a, isNot(equals(c)));
     });
 
+    test('ExitInfo metadata participates in equality', () {
+      const base = ExitInfo(
+        id: 'x',
+        country: 'RO',
+        city: 'Bucharest',
+        supportsIpv6: true,
+        weight: 10,
+      );
+      const differentCover = ExitInfo(
+        id: 'x',
+        country: 'RO',
+        city: 'Bucharest',
+        supportsIpv6: true,
+        weight: 10,
+        coverDomain: 'cover.example',
+      );
+      const differentWeight = ExitInfo(
+        id: 'x',
+        country: 'RO',
+        city: 'Bucharest',
+        supportsIpv6: true,
+        weight: 11,
+      );
+      expect(base, isNot(equals(differentCover)));
+      expect(base, isNot(equals(differentWeight)));
+    });
+
+    test('ConnectOptions equality includes the failover exits', () {
+      const backup = ExitInfo(
+        id: 'e2',
+        country: 'RO',
+        city: 'Cluj',
+        supportsIpv6: false,
+      );
+      expect(
+        const ConnectOptions(failoverExits: [backup]),
+        equals(const ConnectOptions(failoverExits: [backup])),
+      );
+      expect(
+        const ConnectOptions(failoverExits: [backup]),
+        isNot(equals(const ConnectOptions())),
+      );
+    });
+
     test('SubscriptionInfo.isActive reflects a non-zero expiry', () {
       expect(const SubscriptionInfo(expiresAtUnix: 0).isActive, isFalse);
       expect(const SubscriptionInfo(expiresAtUnix: 1).isActive, isTrue);
+    });
+
+    test('SubscriptionInfo equality is value-based', () {
+      expect(
+        const SubscriptionInfo(expiresAtUnix: 5),
+        equals(const SubscriptionInfo(expiresAtUnix: 5)),
+      );
+      expect(
+        const SubscriptionInfo(expiresAtUnix: 5),
+        isNot(equals(const SubscriptionInfo(expiresAtUnix: 6))),
+      );
+    });
+
+    test('ConnectOptions equality is value-based', () {
+      expect(const ConnectOptions(), equals(const ConnectOptions()));
+      expect(
+        const ConnectOptions().hashCode,
+        const ConnectOptions().hashCode,
+      );
+      expect(
+        const ConnectOptions(httpListen: '127.0.0.1:8080'),
+        isNot(equals(const ConnectOptions())),
+      );
+    });
+
+    test('ExitQuery equality is value-based', () {
+      expect(
+        const ExitQuery(country: 'RO', requireIpv6: true),
+        equals(const ExitQuery(country: 'RO', requireIpv6: true)),
+      );
+      expect(
+        const ExitQuery(country: 'RO'),
+        isNot(equals(const ExitQuery(country: 'SE'))),
+      );
+    });
+
+    test('ProxyEndpoints equality is value-based', () {
+      expect(
+        const ProxyEndpoints(socks5: '127.0.0.1:1'),
+        equals(const ProxyEndpoints(socks5: '127.0.0.1:1')),
+      );
+      expect(
+        const ProxyEndpoints(socks5: '127.0.0.1:1'),
+        isNot(equals(const ProxyEndpoints(socks5: '127.0.0.1:2'))),
+      );
+    });
+
+    test('TunnelCheck equality is value-based', () {
+      expect(
+        const TunnelCheck(ip: '203.0.113.7', isExit: true, country: 'RO'),
+        equals(
+          const TunnelCheck(ip: '203.0.113.7', isExit: true, country: 'RO'),
+        ),
+      );
+      expect(
+        const TunnelCheck(ip: '203.0.113.7', isExit: true),
+        isNot(equals(const TunnelCheck(ip: '203.0.113.8', isExit: true))),
+      );
+    });
+
+    test('WarrenClientConfig equality is value-based', () {
+      final a = WarrenClientConfig(
+        mnemonic: 'm',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+      );
+      final b = WarrenClientConfig(
+        mnemonic: 'm',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+      );
+      final c = WarrenClientConfig(
+        mnemonic: 'other',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+      );
+      expect(a, equals(b));
+      expect(a.hashCode, b.hashCode);
+      expect(a, isNot(equals(c)));
     });
   });
 }

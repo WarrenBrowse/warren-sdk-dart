@@ -10,7 +10,7 @@ String redactAddress(String value) {
 
 /// Formats a Unix timestamp (seconds) as a local date-time, or a dash when zero.
 String formatUnixSeconds(int seconds) {
-  if (seconds <= 0) return '—';
+  if (seconds <= 0) return '-';
   final dt = DateTime.fromMillisecondsSinceEpoch(
     seconds * 1000,
     isUtc: true,

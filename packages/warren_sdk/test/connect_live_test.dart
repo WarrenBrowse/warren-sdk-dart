@@ -11,7 +11,7 @@ import 'support/engine.dart';
 /// Live proxy-datapath validation against a real exit.
 ///
 /// Skipped unless `WARREN_MNEMONIC`, `WARREN_API_BASE` and `WARREN_SERVER_PIN`
-/// are set. This is the P3 end-to-end gate: it opens a real multihop proxy and
+/// are set. This is the end-to-end gate: it opens a real multihop proxy and
 /// waits for the tunnel to come up. The fakes prove the facade wiring; only this
 /// confirms a real connection, the same rule the Rust engine follows.
 void main() {

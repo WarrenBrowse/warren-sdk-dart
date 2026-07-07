@@ -9,8 +9,23 @@ sealed class ConnectionState {
   const ConnectionState();
 }
 
+/// A connection state that carries no payload, so all instances are equal.
+///
+/// Value equality by runtime type, so a non-const instance still compares equal
+/// to the canonical const one.
+@immutable
+sealed class _SingletonState extends ConnectionState {
+  const _SingletonState();
+
+  @override
+  bool operator ==(Object other) => other.runtimeType == runtimeType;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+}
+
 /// The engine is establishing the tunnel (directory fetch, handshake).
-final class Connecting extends ConnectionState {
+final class Connecting extends _SingletonState {
   /// Creates the connecting state.
   const Connecting();
 
@@ -19,45 +34,25 @@ final class Connecting extends ConnectionState {
 }
 
 /// The tunnel is up and carrying traffic.
-final class Connected extends ConnectionState {
+final class Connected extends _SingletonState {
   /// Creates the connected state.
-  const Connected({this.sinceUnix});
-
-  /// When the tunnel came up, as a Unix timestamp in seconds, if known.
-  final int? sinceUnix;
-
-  @override
-  bool operator ==(Object other) =>
-      other is Connected && other.sinceUnix == sinceUnix;
-
-  @override
-  int get hashCode => sinceUnix.hashCode;
+  const Connected();
 
   @override
   String toString() => 'Connected';
 }
 
 /// The tunnel dropped and the supervisor is rebuilding it with backoff.
-final class Reconnecting extends ConnectionState {
+final class Reconnecting extends _SingletonState {
   /// Creates the reconnecting state.
-  const Reconnecting({this.attempt = 1});
-
-  /// The 1-based reconnect attempt number.
-  final int attempt;
+  const Reconnecting();
 
   @override
-  bool operator ==(Object other) =>
-      other is Reconnecting && other.attempt == attempt;
-
-  @override
-  int get hashCode => attempt.hashCode;
-
-  @override
-  String toString() => 'Reconnecting(attempt: $attempt)';
+  String toString() => 'Reconnecting';
 }
 
 /// The connection was torn down on purpose.
-final class Disconnected extends ConnectionState {
+final class Disconnected extends _SingletonState {
   /// Creates the disconnected state.
   const Disconnected();
 

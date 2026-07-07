@@ -30,14 +30,7 @@ final class WarrenIdentityError extends WarrenError {
 /// An account API call failed (network, auth, server, or fallback exhaustion).
 final class WarrenApiError extends WarrenError {
   /// Creates an API error.
-  const WarrenApiError({
-    required super.code,
-    required super.message,
-    this.httpStatus,
-  });
-
-  /// The HTTP status code, when the failure was an HTTP response.
-  final int? httpStatus;
+  const WarrenApiError({required super.code, required super.message});
 }
 
 /// Relay-list verification or exit selection failed (bad signature, rollback,
@@ -70,9 +63,8 @@ final class WarrenUnsupportedError extends WarrenError {
 /// [code] and redacted [message].
 ///
 /// Every engine boundary (in-process bridge, desktop daemon, mobile extension)
-/// reports the same five categories; this picks the subtype so each boundary
-/// does not reimplement the mapping. An unknown kind falls back to
-/// [WarrenTunnelError].
+/// reports the same categories; this picks the subtype so each boundary does not
+/// reimplement the mapping. An unknown kind falls back to [WarrenTunnelError].
 WarrenError warrenErrorOfKind(
   String kind, {
   required String code,
@@ -84,5 +76,6 @@ WarrenError warrenErrorOfKind(
       'discovery' => WarrenDiscoveryError(code: code, message: message),
       'tunnel' => WarrenTunnelError(code: code, message: message),
       'privilege' => WarrenPrivilegeError(code: code, message: message),
+      'unsupported' => WarrenUnsupportedError(code: code, message: message),
       _ => WarrenTunnelError(code: code, message: message),
     };

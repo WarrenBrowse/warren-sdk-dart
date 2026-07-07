@@ -88,6 +88,9 @@ class _FakeClientHandle implements WarrenClientHandle {
   Future<void> redeemVoucher(String secret) async {}
 
   @override
+  Future<void> deleteAccount() async {}
+
+  @override
   Future<TunnelCheck> checkTunnel() async =>
       const TunnelCheck(ip: '203.0.113.7', isExit: true);
 

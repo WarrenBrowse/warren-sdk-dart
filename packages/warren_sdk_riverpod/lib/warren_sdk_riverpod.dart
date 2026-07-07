@@ -2,8 +2,8 @@
 ///
 /// These providers wrap the framework-agnostic `warren_sdk` facade. Adding this
 /// package is entirely optional; the SDK works with any state-management
-/// approach. Targets the modern Riverpod 3 API (no legacy `StateProvider` /
-/// `StateNotifierProvider` / `ChangeNotifierProvider`).
+/// approach. It uses modern Riverpod 3 with code generation (no legacy
+/// `StateProvider` / `StateNotifierProvider` / `ChangeNotifierProvider`).
 ///
 /// The app must supply a live client by overriding [warrenClientProvider] (the
 /// client needs the user's mnemonic and account configuration, which the SDK
@@ -27,35 +27,39 @@
 /// ```
 library;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:warren_sdk/warren_sdk.dart';
 
 export 'package:warren_sdk/warren_sdk.dart';
 
+part 'warren_sdk_riverpod.g.dart';
+
 /// The live [WarrenClient]. Must be overridden by the app (see library docs);
 /// the default throws to make a missing override obvious.
-final warrenClientProvider = FutureProvider<WarrenClient>((ref) {
+@riverpod
+Future<WarrenClient> warrenClient(Ref ref) {
   throw UnimplementedError(
     'Override warrenClientProvider with WarrenClient.create(...). '
     'See the warren_sdk_riverpod library documentation.',
   );
-});
+}
 
 /// The current subscription snapshot, refreshed on demand.
-final subscriptionProvider = FutureProvider<SubscriptionInfo>((ref) async {
+@riverpod
+Future<SubscriptionInfo> subscription(Ref ref) async {
   final client = await ref.watch(warrenClientProvider.future);
   return client.subscription();
-});
+}
 
 /// The verified list of available exits.
-final exitsProvider = FutureProvider<List<ExitInfo>>((ref) async {
+@riverpod
+Future<List<ExitInfo>> exits(Ref ref) async {
   final client = await ref.watch(warrenClientProvider.future);
   return client.listExits();
-});
+}
 
 /// The live connection state for a [WarrenSession]. Pass the active session as
 /// the family argument; the provider mirrors its broadcast state stream.
-final connectionStateProvider =
-    StreamProvider.family<ConnectionState, WarrenSession>((ref, session) {
-  return session.states;
-});
+@riverpod
+Stream<ConnectionState> connectionState(Ref ref, WarrenSession session) =>
+    session.states;

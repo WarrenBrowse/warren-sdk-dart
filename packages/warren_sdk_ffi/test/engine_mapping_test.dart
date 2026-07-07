@@ -40,17 +40,23 @@ void main() {
 
   group('exitInfoFromDto', () {
     test('maps the public exit fields', () {
-      const dto = ExitInfoDto(
+      final dto = ExitInfoDto(
         id: 'exit-1',
         country: 'RO',
         city: 'Bucharest',
         supportsIpv6: true,
+        coverDomain: 'cover.example.com',
+        weight: BigInt.from(42),
+        isActive: true,
       );
       final info = exitInfoFromDto(dto);
       expect(info.id, 'exit-1');
       expect(info.country, 'RO');
       expect(info.city, 'Bucharest');
       expect(info.supportsIpv6, isTrue);
+      expect(info.coverDomain, 'cover.example.com');
+      expect(info.weight, 42);
+      expect(info.isActive, isTrue);
     });
   });
 

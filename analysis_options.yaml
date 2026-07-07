@@ -8,8 +8,6 @@ analyzer:
     strict-inference: true
     strict-raw-types: true
   errors:
-    # Treat missing documentation on public API as a warning, not silent.
-    public_member_api_docs: warning
     # A redacted-only no-log discipline: forbid leaving debug prints in code.
     avoid_print: error
   exclude:
@@ -36,6 +34,9 @@ linter:
     - comment_references
     - directives_ordering
     - prefer_relative_imports
+    # Every public member must carry a `///` doc; the workspace ships this way and
+    # the rule keeps it that way (flutter_lints does not enable it on its own).
+    - public_member_api_docs
     - require_trailing_commas
     - sort_pub_dependencies
     - unawaited_futures

@@ -31,6 +31,9 @@ class FfiClientHandle implements WarrenClientHandle {
       _mapped(() => _client.redeemVoucher(secret: secret));
 
   @override
+  Future<void> deleteAccount() => _mapped(_client.deleteAccount);
+
+  @override
   Future<TunnelCheck> checkTunnel() =>
       _mapped(() async => tunnelCheckFromDto(await _client.check()));
 
@@ -61,6 +64,8 @@ class FfiClientHandle implements WarrenClientHandle {
         }
         final session = await _client.connectProxy(
           exitPubkeyHex: exit.id,
+          failoverExitPubkeysHex:
+              options.failoverExits.map((e) => e.id).toList(growable: false),
           socks5Listen: options.socks5Listen,
           httpListen: options.httpListen,
           dnsServer: options.dnsServer,
@@ -81,6 +86,11 @@ class FfiClientHandle implements WarrenClientHandle {
   }
 
   Future<T> _mapped<T>(Future<T> Function() body) async {
+    // A dropped Rust opaque would otherwise surface a raw FRB disposal exception
+    // instead of a clean, secret-free signal.
+    if (_disposed) {
+      throw StateError('FfiClientHandle used after dispose()');
+    }
     try {
       return await body();
     } on WarrenFfiError catch (error) {
@@ -91,23 +101,28 @@ class FfiClientHandle implements WarrenClientHandle {
 
 /// A live proxy session backed by the in-process engine.
 ///
-/// The connection-state stream is a broadcast view over the engine's transition
-/// stream, so the latest state reaches every listener.
+/// The connection-state stream is a replaying broadcast view over the engine's
+/// transition stream, so every listener, including one that attaches after the
+/// tunnel is already up, observes the current state.
 class FfiSessionHandle implements WarrenSessionHandle {
   /// Wraps an opaque engine session and its resolved local endpoints.
-  FfiSessionHandle(this._session, this._endpoints);
+  FfiSessionHandle(
+    rust_session.WarrenSessionFrb session,
+    this._endpoints,
+  )   : _session = session,
+        _states = LatestBroadcast(
+          session.states().map(mapConnectionState),
+        );
 
   final rust_session.WarrenSessionFrb _session;
   final ProxyEndpoints _endpoints;
-
-  late final Stream<ConnectionState> _states =
-      _session.states().map(mapConnectionState).asBroadcastStream();
+  final LatestBroadcast<ConnectionState> _states;
 
   @override
   ProxyEndpoints? get endpoints => _endpoints;
 
   @override
-  Stream<ConnectionState> get states => _states;
+  Stream<ConnectionState> get states => _states.stream;
 
   @override
   Future<WarrenForwardedPort> forwardPort(
@@ -130,28 +145,44 @@ class FfiSessionHandle implements WarrenSessionHandle {
   }
 
   @override
-  Future<void> disconnect() => _session.disconnect();
+  Future<void> disconnect() async {
+    await _states.close();
+    try {
+      await _session.disconnect();
+    } on WarrenFfiError catch (error) {
+      throw mapEngineError(error);
+    }
+  }
 }
 
 /// A self-healing forwarded port backed by the in-process engine.
 class FfiForwardedPort implements WarrenForwardedPort {
   /// Wraps an opaque engine forwarded port and its resolved internal port.
-  FfiForwardedPort(this._port, this.internalPort);
+  FfiForwardedPort(
+    rust_session.WarrenForwardedPortFrb port,
+    this.internalPort,
+  )   : _port = port,
+        _externalPorts = LatestBroadcast(port.externalPorts());
 
   final rust_session.WarrenForwardedPortFrb _port;
+  final LatestBroadcast<int?> _externalPorts;
 
   @override
   final int internalPort;
-
-  late final Stream<int?> _externalPorts =
-      _port.externalPorts().asBroadcastStream();
 
   @override
   Future<int?> externalPort() => _port.externalPort();
 
   @override
-  Stream<int?> get externalPorts => _externalPorts;
+  Stream<int?> get externalPorts => _externalPorts.stream;
 
   @override
-  Future<void> dispose() async => _port.shutdown();
+  Future<void> dispose() async {
+    await _externalPorts.close();
+    try {
+      await _port.shutdown();
+    } on WarrenFfiError catch (error) {
+      throw mapEngineError(error);
+    }
+  }
 }

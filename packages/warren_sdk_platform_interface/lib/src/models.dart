@@ -24,6 +24,9 @@ class ExitInfo {
     required this.country,
     required this.city,
     required this.supportsIpv6,
+    this.coverDomain,
+    this.weight = 0,
+    this.isActive = true,
   });
 
   /// Stable hex identifier of the exit node.
@@ -38,16 +41,38 @@ class ExitInfo {
   /// Whether the exit can route IPv6 egress.
   final bool supportsIpv6;
 
+  /// The exit's X.509 cover domain, when it advertises one. Cover-domain exits
+  /// need dialing support the engine does not provide yet, so an app can filter
+  /// them out (a non-null value means the exit is not currently reachable).
+  final String? coverDomain;
+
+  /// Relative selection weight advertised for load balancing (0 when unknown).
+  final int weight;
+
+  /// Whether the relay list marks this exit active.
+  final bool isActive;
+
   @override
   bool operator ==(Object other) =>
       other is ExitInfo &&
       other.id == id &&
       other.country == country &&
       other.city == city &&
-      other.supportsIpv6 == supportsIpv6;
+      other.supportsIpv6 == supportsIpv6 &&
+      other.coverDomain == coverDomain &&
+      other.weight == weight &&
+      other.isActive == isActive;
 
   @override
-  int get hashCode => Object.hash(id, country, city, supportsIpv6);
+  int get hashCode => Object.hash(
+        id,
+        country,
+        city,
+        supportsIpv6,
+        coverDomain,
+        weight,
+        isActive,
+      );
 
   @override
   String toString() => 'ExitInfo($city, $country)';
@@ -72,6 +97,16 @@ class ExitQuery {
 
   /// Require IPv6 egress support.
   final bool? requireIpv6;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ExitQuery &&
+      other.country == country &&
+      other.city == city &&
+      other.requireIpv6 == requireIpv6;
+
+  @override
+  int get hashCode => Object.hash(country, city, requireIpv6);
 }
 
 /// Options that tune a connection. Sensible defaults match the engine.
@@ -83,6 +118,7 @@ class ConnectOptions {
     this.httpListen,
     this.dnsServer,
     this.dnsOverTunnel = true,
+    this.failoverExits = const <ExitInfo>[],
   });
 
   /// Proxy-mode only: the local SOCKS5 listen address. `:0` picks a free port.
@@ -100,6 +136,38 @@ class ConnectOptions {
   /// mode always resolves names remotely at the exit (SOCKS5/HTTP CONNECT), so
   /// this flag has no effect there.
   final bool dnsOverTunnel;
+
+  /// Proxy-mode only: additional exits, in priority order, the datapath fails
+  /// over to when the primary exit cannot (re)establish. Empty means no failover
+  /// (a single broken exit then leaves the session reconnecting). The primary
+  /// exit passed to `connect` is always tried first.
+  final List<ExitInfo> failoverExits;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ConnectOptions &&
+      other.socks5Listen == socks5Listen &&
+      other.httpListen == httpListen &&
+      other.dnsServer == dnsServer &&
+      other.dnsOverTunnel == dnsOverTunnel &&
+      _listEquals(other.failoverExits, failoverExits);
+
+  @override
+  int get hashCode => Object.hash(
+        socks5Listen,
+        httpListen,
+        dnsServer,
+        dnsOverTunnel,
+        Object.hashAll(failoverExits),
+      );
+}
+
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 /// Transport protocol for an inbound forwarded port.
@@ -122,6 +190,13 @@ class ProxyEndpoints {
 
   /// The bound local HTTP CONNECT endpoint, if enabled.
   final String? http;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ProxyEndpoints && other.socks5 == socks5 && other.http == http;
+
+  @override
+  int get hashCode => Object.hash(socks5, http);
 }
 
 /// Account subscription state.
@@ -134,7 +209,19 @@ class SubscriptionInfo {
   final int expiresAtUnix;
 
   /// Whether the subscription is currently active.
+  ///
+  /// The engine reports `0` when there is no active subscription and a non-zero
+  /// expiry otherwise, so this trusts that backend contract rather than
+  /// re-deciding activeness against the local clock (which could disagree with
+  /// a server-side grace period).
   bool get isActive => expiresAtUnix > 0;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SubscriptionInfo && other.expiresAtUnix == expiresAtUnix;
+
+  @override
+  int get hashCode => expiresAtUnix.hashCode;
 }
 
 /// The account server's view of the caller's connection, from a signed
@@ -161,4 +248,15 @@ class TunnelCheck {
 
   /// Exit city, when known.
   final String? city;
+
+  @override
+  bool operator ==(Object other) =>
+      other is TunnelCheck &&
+      other.ip == ip &&
+      other.isExit == isExit &&
+      other.country == country &&
+      other.city == city;
+
+  @override
+  int get hashCode => Object.hash(ip, isExit, country, city);
 }

@@ -142,8 +142,8 @@ class ConnectScreen extends ConsumerWidget {
           color: Colors.green.shade600,
           secured: true,
         ),
-      Reconnecting(:final attempt) => (
-          title: 'Reconnecting (#$attempt)…',
+      Reconnecting() => (
+          title: 'Reconnecting…',
           icon: Icons.shield_outlined,
           color: Colors.orange.shade700,
           secured: false,

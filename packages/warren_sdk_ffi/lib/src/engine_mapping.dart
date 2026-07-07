@@ -34,6 +34,9 @@ ExitInfo exitInfoFromDto(ExitInfoDto dto) => ExitInfo(
       country: dto.country,
       city: dto.city,
       supportsIpv6: dto.supportsIpv6,
+      coverDomain: dto.coverDomain,
+      weight: dto.weight.toInt(),
+      isActive: dto.isActive,
     );
 
 /// Maps the engine tunnel-check DTO to the public [TunnelCheck].

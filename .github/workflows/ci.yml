@@ -47,6 +47,14 @@ jobs:
           flutter-version: 3.44.2
           channel: stable
       - run: flutter pub get
+      # The Riverpod providers are code-generated; the committed *.g.dart must not
+      # drift from the annotated source.
+      - name: riverpod codegen is up to date
+        working-directory: packages/warren_sdk_riverpod
+        run: |
+          set -euo pipefail
+          dart run build_runner build
+          git diff --exit-code
       - run: flutter test
         working-directory: packages/warren_sdk_ffi
       - run: flutter test

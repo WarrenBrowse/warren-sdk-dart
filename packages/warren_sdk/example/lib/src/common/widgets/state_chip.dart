@@ -54,8 +54,8 @@ class ConnectionStateChip extends StatelessWidget {
           icon: Icons.shield_outlined,
           color: Colors.green.shade600,
         ),
-      Reconnecting(:final attempt) => (
-          label: 'Reconnecting #$attempt',
+      Reconnecting() => (
+          label: 'Reconnecting',
           icon: Icons.autorenew,
           color: Colors.orange.shade700,
         ),

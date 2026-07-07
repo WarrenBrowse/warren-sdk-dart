@@ -120,6 +120,43 @@ void main() {
       expect(handle.redeemedSecret, 'VOUCHER-123');
     });
 
+    test('deleteAccount forwards to the handle', () async {
+      final client = await create();
+      await client.deleteAccount();
+      expect(handle.accountDeleted, isTrue);
+    });
+
+    test('create forwards the API alternative hosts', () async {
+      await WarrenClient.create(
+        mnemonic: 'm',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+        apiAlternativeHosts: const ['fallback1.example', 'fallback2.example'],
+      );
+      expect(
+        platform.lastConfig?.apiAlternativeHosts,
+        ['fallback1.example', 'fallback2.example'],
+      );
+    });
+
+    test('connect carries failover exits in the options', () async {
+      final client = await create();
+      final exit = (await client.listExits()).single;
+      const backup = ExitInfo(
+        id: 'e2',
+        country: 'RO',
+        city: 'Cluj',
+        supportsIpv6: false,
+      );
+
+      await client.connect(
+        exit,
+        options: const ConnectOptions(failoverExits: [backup]),
+      );
+
+      expect(handle.connectedOptions?.failoverExits, [backup]);
+    });
+
     test('listExits returns the verified exits', () async {
       final client = await create();
       final exits = await client.listExits();
@@ -142,10 +179,34 @@ void main() {
       final session = await client.connect(exit);
       expect(handle.connectedExit, exit);
       expect(session.endpoints?.socks5, '127.0.0.1:1080');
-      expect(await session.states.first, const Connected(sinceUnix: 7));
+      expect(await session.states.first, const Connected());
 
       await session.disconnect();
       expect(handle.session.disconnected, isTrue);
+    });
+
+    test('connect forwards the mode and options to the handle', () async {
+      final client = await create();
+      final exit = (await client.listExits()).single;
+      const options = ConnectOptions(
+        socks5Listen: '127.0.0.1:9000',
+        httpListen: '127.0.0.1:9001',
+      );
+
+      await client.connect(exit, mode: ConnectMode.systemVpn, options: options);
+
+      expect(handle.connectedMode, ConnectMode.systemVpn);
+      expect(handle.connectedOptions, options);
+    });
+
+    test('create forwards the state directory', () async {
+      await WarrenClient.create(
+        mnemonic: 'm',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+        stateDir: '/tmp/warren-state',
+      );
+      expect(platform.lastConfig?.stateDir, '/tmp/warren-state');
     });
 
     test('forwardPort delegates to the session handle', () async {
@@ -193,8 +254,7 @@ class _FakeSessionHandle implements WarrenSessionHandle {
       const ProxyEndpoints(socks5: '127.0.0.1:1080');
 
   @override
-  Stream<ConnectionState> get states =>
-      Stream.value(const Connected(sinceUnix: 7));
+  Stream<ConnectionState> get states => Stream.value(const Connected());
 
   ForwardProtocol? forwardedProto;
   int? forwardedInternalPort;
@@ -235,6 +295,8 @@ class _FakeClientHandle implements WarrenClientHandle {
   String? redeemedSecret;
   bool disposed = false;
   ExitInfo? connectedExit;
+  ConnectMode? connectedMode;
+  ConnectOptions? connectedOptions;
   final _FakeSessionHandle session = _FakeSessionHandle();
 
   @override
@@ -249,6 +311,11 @@ class _FakeClientHandle implements WarrenClientHandle {
 
   @override
   Future<void> redeemVoucher(String secret) async => redeemedSecret = secret;
+
+  bool accountDeleted = false;
+
+  @override
+  Future<void> deleteAccount() async => accountDeleted = true;
 
   @override
   Future<TunnelCheck> checkTunnel() async =>
@@ -271,6 +338,8 @@ class _FakeClientHandle implements WarrenClientHandle {
     ConnectOptions options,
   ) async {
     connectedExit = exit;
+    connectedMode = mode;
+    connectedOptions = options;
     return session;
   }
 

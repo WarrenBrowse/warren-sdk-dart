@@ -34,6 +34,13 @@ void main() {
     test('an unknown event type throws', () {
       expect(() => mapMobileEvent({'type': 'nope'}), throwsFormatException);
     });
+
+    test('an unknown state name throws', () {
+      expect(
+        () => mapMobileEvent({'type': 'state', 'state': 'bogus'}),
+        throwsFormatException,
+      );
+    });
   });
 
   group('MobileVpnController method calls', () {

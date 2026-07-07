@@ -41,9 +41,11 @@ class DesktopWarrenSdkPlatform extends WarrenSdkPlatform {
   final Duration _connectTimeout;
 
   /// Registers a desktop platform as the active [WarrenSdkPlatform.instance],
-  /// wrapping the in-process engine. Idempotent in spirit: call it once at
-  /// startup, before `WarrenClient.create`. The daemon at [socketPath] is only
-  /// contacted when a system-VPN connection is actually opened.
+  /// wrapping the in-process engine. Call it once at startup, before
+  /// `WarrenClient.create`. Idempotent: a second call with no explicit [inner]
+  /// is a no-op, so it never nests one desktop platform inside another. The
+  /// daemon at [socketPath] is only contacted when a system-VPN connection is
+  /// actually opened.
   ///
   /// [inner] and [daemonConnector] are test seams; production leaves them null.
   static void registerWith({
@@ -56,6 +58,7 @@ class DesktopWarrenSdkPlatform extends WarrenSdkPlatform {
     if (inner != null) {
       base = inner;
     } else {
+      if (WarrenSdkPlatform.instance is DesktopWarrenSdkPlatform) return;
       WarrenSdkFfi.ensureRegistered();
       base = WarrenSdkPlatform.instance;
     }
@@ -119,9 +122,10 @@ class DesktopClientHandle implements WarrenClientHandle {
   final Future<DaemonClient> Function() _daemonConnector;
 
   /// Held only to configure the privileged daemon when a system-VPN session is
-  /// opened (the daemon derives and zeroizes the key, and never logs it). It is
-  /// released when this handle is disposed.
-  final ConfigureRequest _configure;
+  /// opened (the daemon derives and zeroizes the key, and never logs it). Nulled
+  /// on [dispose] so the SDK stops referencing the mnemonic; a Dart `String`
+  /// cannot itself be zeroized.
+  ConfigureRequest? _configure;
   final Duration _connectTimeout;
 
   @override
@@ -134,13 +138,19 @@ class DesktopClientHandle implements WarrenClientHandle {
   Future<void> redeemVoucher(String secret) => _inner.redeemVoucher(secret);
 
   @override
+  Future<void> deleteAccount() => _inner.deleteAccount();
+
+  @override
   Future<TunnelCheck> checkTunnel() => _inner.checkTunnel();
 
   @override
   Future<List<ExitInfo>> listExits() => _inner.listExits();
 
   @override
-  Future<void> dispose() => _inner.dispose();
+  Future<void> dispose() async {
+    _configure = null;
+    await _inner.dispose();
+  }
 
   @override
   Future<WarrenSessionHandle> connect(
@@ -150,6 +160,11 @@ class DesktopClientHandle implements WarrenClientHandle {
   ) async {
     if (mode == ConnectMode.proxy) {
       return _inner.connect(exit, mode, options);
+    }
+
+    final configure = _configure;
+    if (configure == null) {
+      throw StateError('DesktopClientHandle used after dispose()');
     }
 
     final DaemonClient daemon;
@@ -166,13 +181,23 @@ class DesktopClientHandle implements WarrenClientHandle {
       );
     }
 
-    // Subscribe before sending so a fast Connected (broadcast, no replay) is not
-    // missed between the request and the first listen.
+    // The daemon state stream replays its latest value on listen, so subscribing
+    // here catches a fast Connected. If the daemon closes the socket before the
+    // tunnel comes up, the stream ends with no match; orElse turns that into a
+    // typed privilege error rather than a bare StateError.
     final settled = daemon.states
-        .firstWhere((s) => s is Connected || s is ConnectionFailed)
+        .firstWhere(
+          (s) => s is Connected || s is ConnectionFailed,
+          orElse: () => throw const WarrenPrivilegeError(
+            code: 'privilege/daemon-closed',
+            message:
+                'the Warren system-VPN daemon closed the connection before '
+                'the tunnel came up',
+          ),
+        )
         .timeout(_connectTimeout);
     daemon
-      ..configure(_configure)
+      ..configure(configure)
       ..connect(
         ConnectRequest(
           exitPubkeyHex: exit.id,

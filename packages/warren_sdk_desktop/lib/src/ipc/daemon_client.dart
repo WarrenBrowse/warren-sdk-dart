@@ -22,6 +22,7 @@ class DaemonClient {
   })  : _send = send,
         _reader = reader ?? FrameReader(),
         _onClose = onClose {
+    _latestStates = LatestBroadcast(_states.stream);
     _subscription = incoming.listen(
       _onChunk,
       onError: _states.addError,
@@ -35,10 +36,12 @@ class DaemonClient {
   late final StreamSubscription<List<int>> _subscription;
   final StreamController<ConnectionState> _states =
       StreamController<ConnectionState>.broadcast();
+  late final LatestBroadcast<ConnectionState> _latestStates;
 
-  /// Connection-state transitions reported by the daemon. An [ErrorEvent] from
-  /// the daemon arrives as a stream error carrying the mapped [WarrenError].
-  Stream<ConnectionState> get states => _states.stream;
+  /// Connection-state transitions reported by the daemon (broadcast, latest on
+  /// listen). An [ErrorEvent] from the daemon arrives as a stream error carrying
+  /// the mapped [WarrenError].
+  Stream<ConnectionState> get states => _latestStates.stream;
 
   /// Binds an identity and account API in the daemon.
   void configure(ConfigureRequest request) => _sendMessage(request);
@@ -53,6 +56,7 @@ class DaemonClient {
   /// state stream.
   Future<void> close() async {
     await _subscription.cancel();
+    await _latestStates.close();
     await _onClose?.call();
     if (!_states.isClosed) await _states.close();
   }
@@ -63,21 +67,41 @@ class DaemonClient {
   }
 
   void _onChunk(List<int> chunk) {
-    for (final payload in _reader.addChunk(chunk)) {
-      final json = jsonDecode(utf8.decode(payload)) as Map<String, Object?>;
-      final message = DaemonMessage.fromJson(json);
-      switch (message) {
-        case StateEvent(:final state):
-          _states.add(_toConnectionState(state));
-        case ErrorEvent():
-          _states.addError(_toError(message));
-        case ConfigureRequest():
-        case ConnectRequest():
-        case DisconnectRequest():
-          // Requests never flow daemon to app; ignore defensively.
-          break;
+    try {
+      for (final payload in _reader.addChunk(chunk)) {
+        final json = jsonDecode(utf8.decode(payload)) as Map<String, Object?>;
+        final message = DaemonMessage.fromJson(json);
+        switch (message) {
+          case StateEvent(:final state):
+            _states.add(_toConnectionState(state));
+          case ErrorEvent():
+            _states.addError(_toError(message));
+          case ConfigureRequest():
+          case ConnectRequest():
+          case DisconnectRequest():
+            // Requests never flow daemon to app; ignore defensively.
+            break;
+        }
       }
+    } on FormatException {
+      _addFrameError();
+    } on TypeError {
+      _addFrameError();
     }
+  }
+
+  // A corrupt or oversized frame (bad JSON, wrong shape, unknown discriminator,
+  // or over the size cap) means a broken daemon stream. Surface it as a typed
+  // stream error instead of letting it escape as an uncaught zone error. The
+  // frame bytes are never echoed: they could carry the peer's data.
+  void _addFrameError() {
+    if (_states.isClosed) return;
+    _states.addError(
+      const WarrenTunnelError(
+        code: 'ipc/malformed-frame',
+        message: 'the daemon sent a malformed control frame',
+      ),
+    );
   }
 }
 

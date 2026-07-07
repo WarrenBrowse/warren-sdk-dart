@@ -81,8 +81,8 @@ void main() {
         directIp = await fetchIp(tries: 2);
 
         // The signed /v1/check call: a backend-authoritative view. In proxy mode
-        // the account call is direct (not proxied), so this exercises the new
-        // bridge binding and must return the server's observation.
+        // the account call is direct (not proxied), so this must return the
+        // server's observation.
         serverCheck = await client.checkTunnel();
 
         final session = await client.connect(

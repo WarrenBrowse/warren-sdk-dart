@@ -28,13 +28,13 @@ void main() {
 
   group('formatUnixSeconds', () {
     test('returns a dash for zero (no subscription)', () {
-      expect(formatUnixSeconds(0), '—');
+      expect(formatUnixSeconds(0), '-');
     });
 
     test('formats a real timestamp', () {
       // 2021-01-01T00:00:00Z; exact local rendering depends on the zone, but it
       // must be a full date-time, not the dash sentinel.
-      expect(formatUnixSeconds(1609459200), isNot('—'));
+      expect(formatUnixSeconds(1609459200), isNot('-'));
     });
   });
 }

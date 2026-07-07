@@ -42,7 +42,7 @@ Future<void> pumpUntil(
         .whereType<String>()
         .toList();
     throw TestFailure(
-      '${reason ?? 'timed out'} — on screen: $visible',
+      '${reason ?? 'timed out'} - on screen: $visible',
     );
   }
 }

@@ -11,7 +11,7 @@ import 'support/engine.dart';
 /// Live account-API validation against a real Warren API and exit.
 ///
 /// Skipped unless `WARREN_MNEMONIC`, `WARREN_API_BASE` and `WARREN_SERVER_PIN`
-/// are set, so CI and offline runs stay green. This is the P2 "live happy-path"
+/// are set, so CI and offline runs stay green. This is the live happy-path
 /// gate: the in-repo fakes prove the orchestration, but the real account path is
 /// only confirmed here, the same rule the Rust engine follows.
 void main() {

@@ -36,10 +36,14 @@ void main() {
       expect(handle.address, 'wbADDRESS');
       await handle.subscription();
       await handle.listExits();
+      await handle.deleteAccount();
       await handle.dispose();
 
       final calls = inner.handle.calls;
-      expect(calls, containsAll(['subscription', 'listExits', 'dispose']));
+      expect(
+        calls,
+        containsAll(['subscription', 'listExits', 'deleteAccount', 'dispose']),
+      );
     });
 
     test('identity helpers forward to the inner platform', () async {
@@ -193,6 +197,76 @@ void main() {
       expect(daemon.received().whereType<DisconnectRequest>(), isNotEmpty);
       expect(daemon.closed, isTrue);
     });
+
+    test('forwardPort is not available on the system-VPN datapath', () async {
+      final daemon = _FakeDaemon(
+        reply: const StateEvent(DaemonConnectionState.connected),
+      );
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => daemon.client,
+      );
+      final handle = await platform.createClient(config);
+      final session = await handle.connect(
+        exit,
+        ConnectMode.systemVpn,
+        const ConnectOptions(),
+      );
+
+      await expectLater(
+        session.forwardPort(ForwardProtocol.tcp, 8080, '127.0.0.1:8080'),
+        throwsA(
+          isA<WarrenUnsupportedError>().having(
+            (e) => e.code,
+            'code',
+            'forward/system-vpn-unavailable',
+          ),
+        ),
+      );
+    });
+
+    test('a daemon that closes before connecting throws a privilege error',
+        () async {
+      final incoming = StreamController<List<int>>();
+      // The socket closes as soon as we send: the state stream ends with no
+      // Connected, which must become a typed privilege error, not a StateError.
+      final daemon = DaemonClient(
+        incoming: incoming.stream,
+        send: (_) => unawaited(incoming.close()),
+      );
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => daemon,
+      );
+      final handle = await platform.createClient(config);
+
+      await expectLater(
+        handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions()),
+        throwsA(
+          isA<WarrenPrivilegeError>().having(
+            (e) => e.code,
+            'code',
+            'privilege/daemon-closed',
+          ),
+        ),
+      );
+    });
+
+    test('after dispose, a system-VPN connect is rejected', () async {
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => throw StateError('daemon not used'),
+      );
+      final handle = await platform.createClient(config);
+      await handle.dispose();
+
+      // The handle nulled its configure request (with the mnemonic) on dispose,
+      // so a later system-VPN connect must not proceed.
+      await expectLater(
+        handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions()),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 
   group('registerWith installs the desktop platform', () {
@@ -203,6 +277,22 @@ void main() {
         daemonConnector: () async => throw StateError('not used'),
       );
       expect(WarrenSdkPlatform.instance, isA<DesktopWarrenSdkPlatform>());
+    });
+
+    test('a second call with no explicit inner is a no-op, not a re-wrap', () {
+      DesktopWarrenSdkPlatform.registerWith(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => throw StateError('not used'),
+      );
+      final first = WarrenSdkPlatform.instance;
+
+      DesktopWarrenSdkPlatform.registerWith(
+        daemonConnector: () async => throw StateError('not used'),
+      );
+
+      // Idempotent: the second call leaves the same instance, never nesting one
+      // desktop platform inside another.
+      expect(identical(WarrenSdkPlatform.instance, first), isTrue);
     });
   });
 }
@@ -248,6 +338,8 @@ class _FakeInnerHandle implements WarrenClientHandle {
 
   @override
   Future<void> redeemVoucher(String secret) async => calls.add('redeem');
+  @override
+  Future<void> deleteAccount() async => calls.add('deleteAccount');
   @override
   Future<TunnelCheck> checkTunnel() async {
     calls.add('checkTunnel');
