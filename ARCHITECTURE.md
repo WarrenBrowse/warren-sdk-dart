@@ -105,20 +105,21 @@ isolated and independently testable, and consumers depend on exactly one package
   warren_sdk_riverpod --> warren_sdk            <- the ONLY package apps add
    (Riverpod 3          (facade: framework-agnostic
     providers)           pure-Dart API, models, streams)
-                               |
-                               v
-                 warren_sdk_platform_interface
-              (abstract surface, models, events,
-               the federated-plugin contract)
-              /            |                 \
-   implements |  implements |       implements |
-              v             v                  v
-   warren_sdk_ffi   warren_sdk_<desktop>   warren_sdk_<mobile>
-   (Mode A: FRB     (Mode B: daemon IPC    (Mode B: NetworkExtension /
-    in-process)      client)                VpnService)
-              \             |                  /
-               \           native engine      /
-                v          embedding         v
+                            |        |
+       endorses the default |        v
+       Mode A engine ------>|   warren_sdk_platform_interface
+                            |   (abstract surface, models, events,
+                            v    the federated-plugin contract)
+              /------- warren_sdk_ffi -------\
+   implements |         (Mode A: FRB          | reused by
+   the surface|          in-process)          | the desktop client
+              v             ^                 v
+   warren_sdk_<mobile>      | reuses    warren_sdk_<desktop>
+   (Mode B: NetworkExt /    | the in-   (Mode B: daemon IPC
+    VpnService)             | proc      client + endorsed
+              \             | control   proxy control plane)
+               \            | plane      /
+                v           |           v
               warren-sdk-frb      warren daemon / extension
               (Rust, wraps        (Rust binary / lib, wraps
                warren-sdk)         warren-sdk + warren-tun)
@@ -127,10 +128,20 @@ isolated and independently testable, and consumers depend on exactly one package
                         warren-sdk-rs (the shared Rust engine)
 ```
 
+Two edges are pragmatic and worth calling out explicitly. `warren_sdk` has a
+direct dependency on `warren_sdk_ffi`: the FFI implementation is the **endorsed
+default** (Mode A works on every platform with no privileged process), so the
+facade wires it in rather than leaving the consumer to register a platform.
+`warren_sdk_desktop` also depends on `warren_sdk_ffi`: the daemon only owns the
+privileged datapath, and it reuses the in-process engine for the control plane
+(identity, account, proxy mode). Both mean the native engine is a transitive
+dependency of any consumer, which is the intended cost of a batteries-included
+default.
+
 | Package | Responsibility | Pure Dart? |
 |---|---|---|
-| `warren_sdk` | App-facing facade: `WarrenClient`, models, connection-state `Stream`s, errors. Framework-agnostic. | yes |
-| `warren_sdk_platform_interface` | The federated-plugin contract: abstract methods, shared models and events. | yes |
+| `warren_sdk` | App-facing facade: `WarrenClient`, models, connection-state `Stream`s, errors. Framework-agnostic (no state-management dependency). Endorses `warren_sdk_ffi` as the default Mode A engine. | Dart (pulls the FFI plugin transitively) |
+| `warren_sdk_platform_interface` | The federated-plugin contract: abstract methods, shared models and events. Library code imports no Flutter; the package depends on the Flutter SDK only for its plugin base class and test harness. | Dart (Flutter SDK dep, Flutter-free code) |
 | `warren_sdk_ffi` | Mode A in-process engine via `flutter_rust_bridge` + cargokit build. Default implementation. | Dart + Rust glue |
 | `warren_sdk_riverpod` | Optional Riverpod 3 providers wrapping the facade. Never required. | yes |
 | `warren_sdk_android` | Mode B: `VpnService` + JNI to the engine. | Dart + Kotlin |
@@ -160,9 +171,13 @@ choosing it is the consumer's call, never the SDK's.
 ## Secrets and no-log discipline
 
 - The 12-word mnemonic is read through the platform secure store
-  (`flutter_secure_storage`: Keychain, Keystore, libsecret, DPAPI), passed once
-  into the engine, and **zeroized in Rust**. Dart keeps only the derived public
-  address, never the seed or signing key.
+  (`flutter_secure_storage`: Keychain, Keystore, libsecret, DPAPI) and passed
+  into the engine, which derives the signing key and **zeroizes it in Rust**,
+  keeping only the derived public address. A Dart `String` cannot be zeroized, so
+  the SDK never logs the mnemonic and does not retain it beyond what a mode needs:
+  the in-process (Mode A) path holds no reference after the client is built; the
+  desktop Mode B path holds it only until the client handle is disposed, to
+  reconfigure the privileged daemon per session.
 - No identity material (pubkey, address, IP, nonce, seed) is ever logged in
   clear, on either side of the bridge. This mirrors the Rust engine's no-log
   rule.

@@ -44,4 +44,4 @@ the engine directly:
 (cd packages/warren_sdk && flutter test)   # loads the cargo-built library
 ```
 
-This is exactly what CI does for the golden-vector replay (roadmap P7).
+This is exactly what CI does for the golden-vector replay.

@@ -8,11 +8,23 @@ client.
 
 ## Transport
 
-- Linux/macOS: a Unix domain socket, owned `root:root`, mode `0600` (or a group
-  the user is in). Windows: a named pipe with an equivalent ACL.
-- The socket path is fixed per OS (for example `/run/warren/warrend.sock`).
+- Linux/macOS: a Unix domain socket. The daemon restricts it to its owner
+  (mode `0660`) and, when launched via `sudo`, hands ownership to the invoking
+  user (`SUDO_UID:SUDO_GID`) so an unprivileged app can drive it. Windows: a named
+  pipe with an equivalent ACL.
+- Filesystem permissions are only a backstop: the daemon authenticates every
+  connection's peer uid (`getpeereid` / `SO_PEERCRED`) and accepts only the
+  authorized owner, so a shared group or a permissive umask cannot let another
+  user drive the root daemon.
+- The daemon serves exactly one session at a time. A second, concurrent
+  connection is refused (it receives a `privilege` error and is dropped) rather
+  than allowed to tear down the live tunnel; only the owner connection's close
+  reverts routing.
+- The daemon default dev socket path is `/tmp/warren-sdk-daemon.sock`; production
+  uses a root-owned path (for example `/run/warren/warrend.sock`). The app default
+  is `defaultDaemonSocketPath`.
 - Framing: each message is a 4-byte big-endian length prefix followed by that
-  many bytes of UTF-8 JSON. See `FrameCodec` / `FrameReader`.
+  many bytes of UTF-8 JSON, capped at 16 MiB. See `FrameCodec` / `FrameReader`.
 
 ## Messages
 
@@ -20,7 +32,7 @@ App to daemon (requests):
 
 | `type` | Fields | Meaning |
 |---|---|---|
-| `configure` | `mnemonic`, `apiBase`, `serverPubkeyPin`, `multihopRootPin?` | Bind identity + account API. The daemon derives and zeroizes the key; it never logs the mnemonic. |
+| `configure` | `mnemonic`, `apiBase`, `serverPubkeyPin`, `multihopRootPin?`, `daita?`, `daitaMachine?`, `requestIpv6?` | Bind identity + account API and the client build options. The daemon derives and zeroizes the key; it never logs the mnemonic. |
 | `connect` | `exitPubkeyHex`, `dnsOverTunnel` | Bring up a system-VPN session to the exit (Ed25519 id from `listExits`). |
 | `disconnect` | none | Tear the session down. |
 
@@ -36,7 +48,8 @@ Daemon to app (events):
 The daemon embeds the audited engine (`warren-sdk` + `warren-tun`) and is the
 only component that needs privilege. It must:
 
-1. Authenticate the peer (socket permissions) before honoring `configure`.
+1. Authenticate the peer by uid (`getpeereid` / `SO_PEERCRED`), not by socket
+   permissions alone, before honoring `configure`, and refuse any second session.
 2. Build the engine client and the multihop tunnel, mapping engine errors to the
    `error` event categories above.
 3. Own the TUN device, split-default routing, DNS push and the killswitch, and

@@ -45,6 +45,13 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       (`api.warrenbrowse.com`): `test/account_live_test.dart` passes (create,
       subscription, listExits). Run with `WARREN_MNEMONIC`, `WARREN_API_BASE`,
       `WARREN_SERVER_PIN` set.
+- [x] Account deletion: `WarrenClient.deleteAccount` (signed `DELETE /v1/account`)
+      for app-store compliance. Unit-tested through the facade.
+- [x] Anti-censorship API fallback: `WarrenClient.create(apiAlternativeHosts: ...)`
+      wires the engine's alternative-host + no-SNI retry machinery.
+- [ ] Remaining account endpoints (Apple IAP init/check, `pull_pending_voucher`,
+      support/incident reports) exist in the engine but are not bridged yet; they
+      are platform-specific or secondary to the proxy integration.
 
 ## P3: Proxy datapath (Mode A, the default mode)
 
@@ -54,6 +61,12 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       `disconnect`.
 - [x] Multihop support surfaced: proxy mode always uses the supervised multihop
       datapath, which real exits require.
+- [x] Exit failover surfaced: `ConnectOptions.failoverExits` drives the engine's
+      `start_proxy_multihop_supervised_failover` over a prioritized candidate list,
+      so one broken exit no longer wedges the session. Unit-tested through the
+      facade; a live multi-exit rotation is still pending.
+- [x] Exit metadata surfaced on `ExitInfo` (`coverDomain`, `weight`, `isActive`)
+      so an app can pre-filter undialable (cover-domain) or inactive exits.
 - [x] DNS-over-tunnel: the engine resolves at the exit gateway by default
       (`ProxyConfig.dns_server = None`).
 - [x] IPv6 unblocked: `WarrenClient.create(requestIpv6: ...)` (default on) asks
@@ -121,11 +134,14 @@ The first vertical slice, mirroring how the Rust engine started with identity.
 - [x] DAITA exposed via `WarrenClient.create` (`daita`, `daitaMachine`). The
       engine configures DAITA at client-build time, so it lives on the client
       config, not `ConnectOptions`; forwarding is unit-tested.
-- [ ] NAT-PMP port forward surfaced (inbound listener / local relay). Deferred:
-      the engine exposes `forward_port` only on the non-supervised `ProxyHandle`,
-      while the SDK uses the self-healing `SupervisedProxyHandle` (auto-reconnect)
-      which does not. Surfacing it needs an engine addition or a non-supervised
-      connect mode, and is live-gated (needs a real exit and an external peer).
+- [x] NAT-PMP port forward surfaced: `WarrenSession.forwardPort` returns a
+      self-healing `WarrenForwardedPort` (external-port watch stream) over the
+      supervised datapath. Unit-tested through the facade; a live validation
+      against a real exit with an external peer is still pending.
+- [x] Backend-authoritative connectivity check: `WarrenClient.checkTunnel`
+      (signed `GET /v1/check`) reports whether traffic egresses a registered exit
+      and which one. In proxy mode the control-plane call is direct, so the
+      data-plane leak check probes through the local proxy (see the example app).
 
 ## P7: Optional integrations and polish
 
