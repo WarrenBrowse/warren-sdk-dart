@@ -103,18 +103,20 @@ jobs:
           echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
       - run: flutter pub get
       - name: checkout the engine siblings (warrenguard + warren-contract)
-        # v0.0.14's warren-contract carve-out declares warrenguard-wire as a repo-
-        # relative path dep, so native/warren_sdk_frb now patches warren-contract and
-        # warrenguard to these siblings. Clone them at the SDK's pinned revs before
-        # building (warrenguard: .warrenguard-expected-rev; warren-contract: the
-        # engine's warren-contract rev at tag v0.0.14).
+        # native/warren_sdk_frb patches warren-contract and warrenguard to these
+        # siblings, so they must be at the SAME revs the engine's own build uses,
+        # otherwise the QUIC types split (warrenguard on warren-quinn fork.5 vs the
+        # engine on fork.6) and warren-transport fails to compile. These are the
+        # engine tag v0.0.15's .warrenguard-version (2453c431) and
+        # .warren-contract-version (7f4edeb6); bump them in lockstep with the
+        # warren-sdk tag in native/warren_sdk_frb/Cargo.toml.
         run: |
           set -euo pipefail
           rm -rf ../warrenguard ../warren-contract
           git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" ../warrenguard
-          git -C ../warrenguard checkout --quiet 906ddc75a7a33a17ef744cf0b486e6ed4bc4ff4e
+          git -C ../warrenguard checkout --quiet 2453c431c28bc305866928aed16b7ecf3346ad08
           git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" ../warren-contract
-          git -C ../warren-contract checkout --quiet 19b6a1c1aa3805211101daaa009ea9d3877cca20
+          git -C ../warren-contract checkout --quiet 7f4edeb6a74bf70c8268c55076b9e576900c7528
       - name: build the native engine
         run: cargo build --release
         working-directory: native/warren_sdk_frb
@@ -165,9 +167,9 @@ jobs:
           set -euo pipefail
           rm -rf ../warrenguard ../warren-contract
           git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" ../warrenguard
-          git -C ../warrenguard checkout --quiet 906ddc75a7a33a17ef744cf0b486e6ed4bc4ff4e
+          git -C ../warrenguard checkout --quiet 2453c431c28bc305866928aed16b7ecf3346ad08
           git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" ../warren-contract
-          git -C ../warren-contract checkout --quiet 19b6a1c1aa3805211101daaa009ea9d3877cca20
+          git -C ../warren-contract checkout --quiet 7f4edeb6a74bf70c8268c55076b9e576900c7528
       - run: flutter_rust_bridge_codegen generate
       - name: fail if generated bindings drift from the committed ones
         run: git diff --exit-code
