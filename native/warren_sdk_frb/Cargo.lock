@@ -2880,7 +2880,6 @@ dependencies = [
  "ed25519-dalek",
  "hex",
  "serde",
- "serde_json",
  "sha2",
  "thiserror 2.0.18",
  "warrenguard-wire",
@@ -3210,7 +3209,6 @@ dependencies = [
  "warrenguard-tls",
  "warrenguard-transport-core",
  "warrenguard-wire",
- "zeroize",
 ]
 
 [[package]]
