@@ -89,7 +89,13 @@ jobs:
           token: ${{ secrets.VECTORS_TOKEN }}
       - run: flutter pub get
       - name: build the native engine
-        run: cargo build --release
+        # --locked: the build must use the committed Cargo.lock exactly, never
+        # silently update it. This is the reproducibility guard AND the signal that
+        # a resync is due: bumping the engine tag changes the resolved graph, so if
+        # the committed lock was not resynced this fails fast with "the lock file
+        # needs to be updated but --locked was passed" (fix: see the README's
+        # "Bumping the engine" steps).
+        run: cargo build --release --locked
         working-directory: native/warren_sdk_frb
       - name: replay golden vectors through the Dart facade
         run: flutter test

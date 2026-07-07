@@ -86,12 +86,13 @@ vendoring it:
 
 - **Engine**: the native glue crate (`native/warren_sdk_frb`) depends on the
   Warren engine through a **pinned git dependency** (`warren-sdk-rs`, tag
-  `v0.0.13`), so builds are reproducible on any machine and in CI with no
-  assumption about on-disk layout. To adopt a newer engine, move the tag in
-  `native/warren_sdk_frb/Cargo.toml` and re-run FRB codegen. The obfuscated QUIC
-  Initial (the engine builds on the `warren-quinn` fork with Initial-fragmentation
-  on by default) is inherited through this pin, no patch is needed in the glue
-  crate.
+  `v0.0.15`), so builds are reproducible on any machine and in CI with no
+  assumption about on-disk layout. The obfuscated QUIC Initial (the engine builds
+  on the `warren-quinn` fork with Initial-fragmentation on by default) is inherited
+  through this pin. The glue crate does `[patch]` `warren-contract` + `warrenguard`
+  to sibling checkouts (the engine's `warren-contract` carve-out has a repo-relative
+  path dep that cannot resolve from a bare git fetch); CI provides those siblings
+  automatically (see [Bumping the engine](#bumping-the-engine)).
 - **Golden vectors**: `vectors/` is a **git submodule** of the shared
   `warren-vectors` repository (the same single source of truth used by
   `warren-sdk-rs` and every sibling SDK, no duplication).
@@ -138,14 +139,38 @@ the file to go back to the pinned git dependency. `native/**/.cargo/` is
 gitignored for exactly this purpose (the daemon crate `native/warrend` uses the
 same mechanism).
 
+### Bumping the engine
+
+The engine tag in `native/warren_sdk_frb/Cargo.toml` is the **single source of
+truth**. `warrenguard` and `warren-contract` are not pinned separately: CI reads
+the revs from that tag's `.warrenguard-version` / `.warren-contract-version` and
+checks the siblings out at them (`.github/actions/setup-engine-build`), the same
+files the engine's own build uses. So a bump is:
+
+```bash
+# 1. Move the tag in native/warren_sdk_frb/Cargo.toml (e.g. v0.0.15 -> v0.0.16).
+# 2. Resync the committed lock to the new engine graph (isolated, reproducible):
+scripts/resync-engine-lock.sh
+# 3. Re-run FRB codegen in case the engine's exposed API changed:
+flutter_rust_bridge_codegen generate
+# 4. Commit Cargo.toml + Cargo.lock + any regenerated bindings together.
+```
+
+The sibling revs must stay in lockstep with the tag: the engine builds on the
+`warren-quinn` fork, and a mismatched `warrenguard` (a different fork revision)
+makes the QUIC types collide and `warren-transport` fail to compile. The
+conformance job builds with `cargo build --locked`, so an un-resynced lock fails
+CI fast with an explicit message rather than silently drifting.
+
 ### CI
 
-`.github/workflows/ci.yml` runs, on GitHub-hosted runners: format + analyze, the
-engine-free unit tests, the golden-vector conformance replay (which builds the
-engine), and an FRB-codegen drift check. The conformance and drift jobs fetch the
-private engine (cargo git dependency) and the vectors submodule, so they need a
-`VECTORS_TOKEN` secret: a PAT with read access to **both** `warren-sdk-rs` and
-`warren-vectors`.
+`.github/workflows/ci.yml` runs, on the WarrenBrowse self-hosted runners: format
++ analyze, the engine-free unit tests, the golden-vector conformance replay (which
+builds the engine), and an FRB-codegen drift check. The conformance and drift jobs
+fetch the private engine (cargo git dependency), its `warrenguard` /
+`warren-contract` siblings and the vectors submodule, so they need a
+`VECTORS_TOKEN` **repo-level** secret: a PAT with read access to `warren-sdk-rs`,
+`warrenguard`, `warren-contract` and `warren-vectors`.
 
 See [CLAUDE.md](CLAUDE.md) for the engineering conventions (TDD, English-only, no
 em-dash, no-log discipline, wire compatibility) shared with the Rust engine.
