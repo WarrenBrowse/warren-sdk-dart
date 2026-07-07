@@ -1,4 +1,4 @@
-//! Stateless identity helpers (roadmap P1).
+//! Stateless identity helpers.
 //!
 //! Thin delegation to `warren_sdk::identity`. These are pure and pinned by the
 //! shared golden vectors, so the Dart surface stays wire-identical to every
@@ -6,6 +6,7 @@
 
 use anyhow::{anyhow, Result};
 use warren_sdk::identity::{ss58, WarrenIdentity};
+use zeroize::Zeroize;
 
 /// Authentication material for a signed Warren API request.
 ///
@@ -36,9 +37,12 @@ pub fn generate_mnemonic() -> String {
 /// Returns a redacted error if the mnemonic is malformed (no secret material is
 /// included in the message).
 pub fn address_from_mnemonic(mnemonic: String) -> Result<String> {
-    let identity =
-        WarrenIdentity::from_mnemonic(&mnemonic).map_err(|_| anyhow!("invalid mnemonic"))?;
-    Ok(identity.address())
+    let mut mnemonic = mnemonic;
+    let address =
+        WarrenIdentity::from_mnemonic(&mnemonic).map(|identity| identity.address());
+    // Wipe the bridge-side copy once the address is derived, error path included.
+    mnemonic.zeroize();
+    address.map_err(|_| anyhow!("invalid mnemonic"))
 }
 
 /// Encodes a 32-byte public key (hex) to its SS58 `wb...` address.

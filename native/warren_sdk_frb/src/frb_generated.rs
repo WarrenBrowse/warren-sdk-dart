@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 467754991;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1424306548;
 
 // Section: executor
 
@@ -181,6 +181,7 @@ fn wire__crate__api__client__WarrenClientFrb_connect_proxy_impl(
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
             >>::sse_decode(&mut deserializer);
             let api_exit_pubkey_hex = <String>::sse_decode(&mut deserializer);
+            let api_failover_exit_pubkeys_hex = <Vec<String>>::sse_decode(&mut deserializer);
             let api_socks5_listen = <String>::sse_decode(&mut deserializer);
             let api_http_listen = <Option<String>>::sse_decode(&mut deserializer);
             let api_dns_server = <Option<String>>::sse_decode(&mut deserializer);
@@ -208,6 +209,7 @@ fn wire__crate__api__client__WarrenClientFrb_connect_proxy_impl(
                         let output_ok = crate::api::client::WarrenClientFrb::connect_proxy(
                             &*api_that_guard,
                             api_exit_pubkey_hex,
+                            api_failover_exit_pubkeys_hex,
                             api_socks5_listen,
                             api_http_listen,
                             api_dns_server,
@@ -245,6 +247,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_mnemonic = <String>::sse_decode(&mut deserializer);
             let api_api_base = <String>::sse_decode(&mut deserializer);
+            let api_api_alternative_hosts = <Vec<String>>::sse_decode(&mut deserializer);
             let api_server_pubkey_pin = <String>::sse_decode(&mut deserializer);
             let api_multihop_root_pin = <Option<String>>::sse_decode(&mut deserializer);
             let api_daita = <bool>::sse_decode(&mut deserializer);
@@ -258,6 +261,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
                         let output_ok = crate::api::client::WarrenClientFrb::create(
                             api_mnemonic,
                             api_api_base,
+                            api_api_alternative_hosts,
                             api_server_pubkey_pin,
                             api_multihop_root_pin,
                             api_daita,
@@ -266,6 +270,63 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
                             api_state_dir,
                         )
                         .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_delete_account_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_delete_account",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::error::WarrenFfiError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::client::WarrenClientFrb::delete_account(&*api_that_guard)
+                                .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1272,11 +1333,17 @@ impl SseDecode for crate::api::client::ExitInfoDto {
         let mut var_country = <String>::sse_decode(deserializer);
         let mut var_city = <String>::sse_decode(deserializer);
         let mut var_supportsIpv6 = <bool>::sse_decode(deserializer);
+        let mut var_coverDomain = <Option<String>>::sse_decode(deserializer);
+        let mut var_weight = <u64>::sse_decode(deserializer);
+        let mut var_isActive = <bool>::sse_decode(deserializer);
         return crate::api::client::ExitInfoDto {
             id: var_id,
             country: var_country,
             city: var_city,
             supports_ipv6: var_supportsIpv6,
+            cover_domain: var_coverDomain,
+            weight: var_weight,
+            is_active: var_isActive,
         };
     }
 }
@@ -1285,6 +1352,18 @@ impl SseDecode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_i32::<NativeEndian>().unwrap()
+    }
+}
+
+impl SseDecode for Vec<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<String>::sse_decode(deserializer));
+        }
+        return ans_;
     }
 }
 
@@ -1465,88 +1544,94 @@ fn pde_ffi_dispatcher_primary_impl(
         4 => {
             wire__crate__api__client__WarrenClientFrb_create_impl(port, ptr, rust_vec_len, data_len)
         }
-        5 => wire__crate__api__client__WarrenClientFrb_list_exits_impl(
+        5 => wire__crate__api__client__WarrenClientFrb_delete_account_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__client__WarrenClientFrb_redeem_voucher_impl(
+        6 => wire__crate__api__client__WarrenClientFrb_list_exits_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__client__WarrenClientFrb_subscription_expiry_impl(
+        7 => wire__crate__api__client__WarrenClientFrb_redeem_voucher_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        8 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_port_impl(
+        8 => wire__crate__api__client__WarrenClientFrb_subscription_expiry_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_ports_impl(
+        9 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_port_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => wire__crate__api__datapath__WarrenForwardedPortFrb_internal_port_impl(
+        10 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_ports_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        11 => wire__crate__api__datapath__WarrenForwardedPortFrb_shutdown_impl(
+        11 => wire__crate__api__datapath__WarrenForwardedPortFrb_internal_port_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
+        12 => wire__crate__api__datapath__WarrenForwardedPortFrb_shutdown_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_impl(
+        13 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
+        14 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
+        15 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
+        16 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__identity__address_from_mnemonic_impl(
+        17 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__identity__address_from_mnemonic_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        19 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1646,6 +1731,9 @@ impl flutter_rust_bridge::IntoDart for crate::api::client::ExitInfoDto {
             self.country.into_into_dart().into_dart(),
             self.city.into_into_dart().into_dart(),
             self.supports_ipv6.into_into_dart().into_dart(),
+            self.cover_domain.into_into_dart().into_dart(),
+            self.weight.into_into_dart().into_dart(),
+            self.is_active.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1900,6 +1988,9 @@ impl SseEncode for crate::api::client::ExitInfoDto {
         <String>::sse_encode(self.country, serializer);
         <String>::sse_encode(self.city, serializer);
         <bool>::sse_encode(self.supports_ipv6, serializer);
+        <Option<String>>::sse_encode(self.cover_domain, serializer);
+        <u64>::sse_encode(self.weight, serializer);
+        <bool>::sse_encode(self.is_active, serializer);
     }
 }
 
@@ -1907,6 +1998,16 @@ impl SseEncode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_i32::<NativeEndian>(self).unwrap();
+    }
+}
+
+impl SseEncode for Vec<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <String>::sse_encode(item, serializer);
+        }
     }
 }
 

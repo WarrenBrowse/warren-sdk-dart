@@ -22,6 +22,7 @@ enum WarrenErrorKind {
 
   /// A privileged-mode failure (daemon or extension unavailable).
   privilege,
+  ;
 }
 
 /// A categorized, redacted failure surfaced to Dart.
@@ -32,7 +33,10 @@ class WarrenFfiError implements FrbException {
   /// A redacted, human-readable description. Safe to log and display.
   final String message;
 
-  const WarrenFfiError({required this.kind, required this.message});
+  const WarrenFfiError({
+    required this.kind,
+    required this.message,
+  });
 
   @override
   int get hashCode => kind.hashCode ^ message.hashCode;

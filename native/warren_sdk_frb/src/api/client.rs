@@ -1,4 +1,4 @@
-//! Stateful engine client wrapper (roadmap P2, account API).
+//! Stateful engine client wrapper for the account API.
 //!
 //! Holds a live `warren-sdk` client behind an opaque handle and exposes the
 //! account surface (subscription, voucher redemption, exit listing). All
@@ -10,10 +10,11 @@ use std::sync::Arc;
 
 use warren_sdk::api::dto::RegisterAccountRequest;
 use warren_sdk::api::ClientError;
-use warren_sdk::discovery::Relay;
+use warren_sdk::discovery::{Relay, VerifiedExit};
 use warren_sdk::identity::WarrenIdentity;
 use warren_sdk::net::ProxyConfig;
 use warren_sdk::{DefaultClient, FileGenerationStore, FileServerKeyStore, SdkError, WarrenClient};
+use zeroize::Zeroize;
 
 use crate::api::datapath::WarrenSessionFrb;
 use crate::api::error::{WarrenErrorKind, WarrenFfiError};
@@ -27,7 +28,7 @@ fn err(kind: WarrenErrorKind, message: impl Into<String>) -> WarrenFfiError {
 
 /// An exit advertised by the verified signed relay list. Only fields the relay
 /// list actually carries are surfaced; port-forwarding is negotiated per
-/// connection (not known at listing time) and load is not advertised.
+/// connection (not known at listing time).
 pub struct ExitInfoDto {
     /// Stable, operator-assigned exit identifier (survives key rotation).
     pub id: String,
@@ -37,6 +38,14 @@ pub struct ExitInfoDto {
     pub city: String,
     /// Whether the exit attests IPv6 egress.
     pub supports_ipv6: bool,
+    /// The exit's X.509 cover domain (ADR-0004 mimicry), when it advertises one.
+    /// Such exits require cover-cert dialing the engine does not do yet, so an app
+    /// can use this to pre-filter exits it cannot reach.
+    pub cover_domain: Option<String>,
+    /// Relative selection weight the relay list advertises for load balancing.
+    pub weight: u64,
+    /// Whether the relay list marks the exit currently active.
+    pub is_active: bool,
 }
 
 /// The account server's view of the caller's connection, from a signed
@@ -64,9 +73,11 @@ impl WarrenClientFrb {
     ///
     /// The mnemonic is consumed here and not retained; the engine zeroizes the
     /// derived signing key on drop.
+    #[allow(clippy::too_many_arguments)]
     pub async fn create(
         mnemonic: String,
         api_base: String,
+        api_alternative_hosts: Vec<String>,
         server_pubkey_pin: String,
         multihop_root_pin: Option<String>,
         daita: bool,
@@ -74,14 +85,24 @@ impl WarrenClientFrb {
         request_ipv6: bool,
         state_dir: Option<String>,
     ) -> Result<WarrenClientFrb, WarrenFfiError> {
-        let identity = WarrenIdentity::from_mnemonic(&mnemonic)
-            .map_err(|_| err(WarrenErrorKind::Identity, "invalid mnemonic"))?;
+        let mut mnemonic = mnemonic;
+        let identity_result = WarrenIdentity::from_mnemonic(&mnemonic);
+        // The engine keeps only the zeroized derived key; wipe the bridge-side
+        // copy immediately, on the error path too.
+        mnemonic.zeroize();
+        let identity =
+            identity_result.map_err(|_| err(WarrenErrorKind::Identity, "invalid mnemonic"))?;
         let address = identity.address();
 
         let mut builder = WarrenClient::builder()
             .identity(identity)
             .api_base(api_base)
             .server_pubkey_pin(server_pubkey_pin);
+        if !api_alternative_hosts.is_empty() {
+            // Anti-censorship fallback: the engine tries these hosts (and a no-SNI
+            // retry transport) when the primary API base is blocked.
+            builder = builder.api_alternative_hosts(api_alternative_hosts);
+        }
         if let Some(root) = multihop_root_pin {
             builder = builder.multihop_root_pubkey_pin(root);
         }
@@ -142,8 +163,8 @@ impl WarrenClientFrb {
     /// Redeems a voucher and returns the new expiry (Unix seconds).
     pub async fn redeem_voucher(&self, secret: String) -> Result<u64, WarrenFfiError> {
         let req = RegisterAccountRequest {
-            // The engine's request DTO now types the pubkey as the validated
-            // `PubkeySs58` newtype; `self.address` is an already-valid SS58 string.
+            // The request DTO's pubkey is the validated `PubkeySs58` newtype;
+            // `self.address` is already a valid SS58 string, so this cannot fail.
             pubkey_ss58: self
                 .address
                 .clone()
@@ -170,8 +191,8 @@ impl WarrenClientFrb {
         Ok(TunnelCheckDto {
             ip: resp.ip,
             is_exit: resp.is_exit,
-            // The engine now types the country as the validated `CountryCode`
-            // newtype; the Dart-facing DTO keeps it a plain string.
+            // The engine types the country as the `CountryCode` newtype; the
+            // Dart-facing DTO keeps it a plain string.
             country: resp.exit_country.map(String::from),
             city: resp.exit_city,
         })
@@ -187,29 +208,39 @@ impl WarrenClientFrb {
     /// `exit_pubkey_hex` (the `id` from [`list_exits`]), binding the local
     /// listeners. Proxy mode always uses multihop, which real exits require.
     ///
+    /// When `failover_exit_pubkeys_hex` is non-empty the datapath runs over the
+    /// prioritized list `[exit_pubkey_hex, ..failover]`: it sticks with the first
+    /// exit that connects and only rotates to the next candidate when the current
+    /// one fails to (re)establish, so one broken exit no longer wedges the session.
+    ///
     /// Connect failures after this returns surface as connection state on the
     /// session, not as an error here.
     pub async fn connect_proxy(
         &self,
         exit_pubkey_hex: String,
+        failover_exit_pubkeys_hex: Vec<String>,
         socks5_listen: String,
         http_listen: Option<String>,
         dns_server: Option<String>,
     ) -> Result<WarrenSessionFrb, WarrenFfiError> {
-        let target: [u8; 32] = hex::decode(&exit_pubkey_hex)
-            .ok()
-            .and_then(|bytes| bytes.try_into().ok())
-            .ok_or_else(|| err(WarrenErrorKind::Discovery, "invalid exit id"))?;
-
-        let exits = self
+        let directory = self
             .inner
             .fetch_multihop_directory()
             .await
             .map_err(map_sdk_error)?;
-        let exit = exits
-            .into_iter()
-            .find(|candidate| candidate.exit_ed25519_pubkey == target)
-            .ok_or_else(|| err(WarrenErrorKind::Discovery, "exit not in multihop directory"))?;
+        let resolve = |hex_id: &str| -> Result<VerifiedExit, WarrenFfiError> {
+            let target: [u8; 32] = hex::decode(hex_id)
+                .ok()
+                .and_then(|bytes| bytes.try_into().ok())
+                .ok_or_else(|| err(WarrenErrorKind::Discovery, "invalid exit id"))?;
+            directory
+                .iter()
+                .find(|candidate| candidate.exit_ed25519_pubkey == target)
+                .cloned()
+                .ok_or_else(|| err(WarrenErrorKind::Discovery, "exit not in multihop directory"))
+        };
+
+        let primary = resolve(&exit_pubkey_hex)?;
 
         let cfg = ProxyConfig {
             socks5: socks5_listen
@@ -232,12 +263,33 @@ impl WarrenClientFrb {
             },
         };
 
-        let handle = self
-            .inner
-            .start_proxy_multihop_supervised(&exit, &cfg)
-            .await
-            .map_err(map_sdk_error)?;
+        let handle = if failover_exit_pubkeys_hex.is_empty() {
+            self.inner
+                .start_proxy_multihop_supervised(&primary, &cfg)
+                .await
+                .map_err(map_sdk_error)?
+        } else {
+            let mut candidates = Vec::with_capacity(1 + failover_exit_pubkeys_hex.len());
+            candidates.push(primary);
+            for hex_id in &failover_exit_pubkeys_hex {
+                candidates.push(resolve(hex_id)?);
+            }
+            self.inner
+                .start_proxy_multihop_supervised_failover(&candidates, &cfg)
+                .await
+                .map_err(map_sdk_error)?
+        };
         Ok(WarrenSessionFrb::new(handle))
+    }
+
+    /// Permanently deletes the account bound to this identity (signed
+    /// `DELETE /v1/account`). App stores require an in-app account-deletion path.
+    pub async fn delete_account(&self) -> Result<(), WarrenFfiError> {
+        self.inner
+            .api()
+            .delete_account()
+            .await
+            .map_err(map_client_error)
     }
 }
 
@@ -250,6 +302,9 @@ fn relay_to_dto(relay: &Relay) -> ExitInfoDto {
         country: relay.location().country_code().to_owned(),
         city: relay.location().city().to_owned(),
         supports_ipv6: relay.ipv6_egress(),
+        cover_domain: relay.cover_domain().map(str::to_owned),
+        weight: relay.weight(),
+        is_active: relay.is_active(),
     }
 }
 

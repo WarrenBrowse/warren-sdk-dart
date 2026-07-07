@@ -23,6 +23,8 @@ warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = 
 flutter_rust_bridge = "=2.12.0"
 anyhow = "1"
 hex = "0.4"
+# Wipe the bridge-side mnemonic copy after the engine has derived from it.
+zeroize = "1"
 # Only to name the engine's `watch::Receiver<ConnectionState>` in the session
 # handle; no runtime is created here (flutter_rust_bridge owns it).
 tokio = { version = "1", features = ["sync"] }

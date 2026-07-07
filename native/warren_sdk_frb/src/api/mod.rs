@@ -1,9 +1,9 @@
 //! The flutter_rust_bridge API surface.
 //!
-//! Organized by concern, mirroring the engine layers and the roadmap phases:
-//! - [`identity`]: stateless identity helpers (P1).
-//! - [`client`]: the account API over a live engine client (P2).
-//! - [`datapath`]: the proxy session and its connection-state stream (P3).
+//! Organized by concern, mirroring the engine layers:
+//! - [`identity`]: stateless identity helpers.
+//! - [`client`]: the account API over a live engine client.
+//! - [`datapath`]: the proxy session and its connection-state stream.
 //! - [`error`]: the typed error mirrored to Dart.
 
 pub mod client;

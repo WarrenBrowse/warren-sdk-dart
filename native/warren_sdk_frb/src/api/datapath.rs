@@ -1,4 +1,4 @@
-//! Proxy datapath session (roadmap P3).
+//! Proxy datapath session.
 //!
 //! Wraps the engine's self-healing supervised proxy behind an opaque handle and
 //! streams its connection-state transitions across the bridge. The datapath

@@ -18,15 +18,13 @@ Future<String> generateMnemonic() =>
 /// Returns a redacted error if the mnemonic is malformed (no secret material is
 /// included in the message).
 Future<String> addressFromMnemonic({required String mnemonic}) =>
-    WarrenRustBridge.instance.api.crateApiIdentityAddressFromMnemonic(
-      mnemonic: mnemonic,
-    );
+    WarrenRustBridge.instance.api
+        .crateApiIdentityAddressFromMnemonic(mnemonic: mnemonic);
 
 /// Encodes a 32-byte public key (hex) to its SS58 `wb...` address.
-Future<String> ss58Encode({required String publicKeyHex}) => WarrenRustBridge
-    .instance
-    .api
-    .crateApiIdentitySs58Encode(publicKeyHex: publicKeyHex);
+Future<String> ss58Encode({required String publicKeyHex}) =>
+    WarrenRustBridge.instance.api
+        .crateApiIdentitySs58Encode(publicKeyHex: publicKeyHex);
 
 /// Decodes an SS58 `wb...` address back to its public key hex.
 Future<String> ss58Decode({required String address}) =>
@@ -39,21 +37,20 @@ Future<String> ss58Decode({required String address}) =>
 /// golden vectors across the bridge, pinning the wire format and the binary body
 /// marshalling. `seed_hex` is 32 bytes (64 hex chars); `nonce_hex` is 16 bytes
 /// (32 hex chars). Errors are redacted: no seed or signature is echoed.
-Future<SignedRequest> signRequest({
-  required String seedHex,
-  required String method,
-  required String path,
-  required List<int> body,
-  required BigInt timestamp,
-  required String nonceHex,
-}) => WarrenRustBridge.instance.api.crateApiIdentitySignRequest(
-  seedHex: seedHex,
-  method: method,
-  path: path,
-  body: body,
-  timestamp: timestamp,
-  nonceHex: nonceHex,
-);
+Future<SignedRequest> signRequest(
+        {required String seedHex,
+        required String method,
+        required String path,
+        required List<int> body,
+        required BigInt timestamp,
+        required String nonceHex}) =>
+    WarrenRustBridge.instance.api.crateApiIdentitySignRequest(
+        seedHex: seedHex,
+        method: method,
+        path: path,
+        body: body,
+        timestamp: timestamp,
+        nonceHex: nonceHex);
 
 /// Authentication material for a signed Warren API request.
 ///

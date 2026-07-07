@@ -3079,6 +3079,7 @@ dependencies = [
  "hex",
  "tokio",
  "warren-sdk",
+ "zeroize",
 ]
 
 [[package]]
@@ -3209,6 +3210,7 @@ dependencies = [
  "warrenguard-tls",
  "warrenguard-transport-core",
  "warrenguard-wire",
+ "zeroize",
 ]
 
 [[package]]

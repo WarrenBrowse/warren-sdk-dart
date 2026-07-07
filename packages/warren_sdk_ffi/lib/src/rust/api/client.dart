@@ -25,38 +25,48 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
   /// `exit_pubkey_hex` (the `id` from [`list_exits`]), binding the local
   /// listeners. Proxy mode always uses multihop, which real exits require.
   ///
+  /// When `failover_exit_pubkeys_hex` is non-empty the datapath runs over the
+  /// prioritized list `[exit_pubkey_hex, ..failover]`: it sticks with the first
+  /// exit that connects and only rotates to the next candidate when the current
+  /// one fails to (re)establish, so one broken exit no longer wedges the session.
+  ///
   /// Connect failures after this returns surface as connection state on the
   /// session, not as an error here.
-  Future<WarrenSessionFrb> connectProxy({
-    required String exitPubkeyHex,
-    required String socks5Listen,
-    String? httpListen,
-    String? dnsServer,
-  });
+  Future<WarrenSessionFrb> connectProxy(
+      {required String exitPubkeyHex,
+      required List<String> failoverExitPubkeysHex,
+      required String socks5Listen,
+      String? httpListen,
+      String? dnsServer});
 
   /// Builds a client from a mnemonic and the account API configuration.
   ///
   /// The mnemonic is consumed here and not retained; the engine zeroizes the
   /// derived signing key on drop.
-  static Future<WarrenClientFrb> create({
-    required String mnemonic,
-    required String apiBase,
-    required String serverPubkeyPin,
-    String? multihopRootPin,
-    required bool daita,
-    String? daitaMachine,
-    required bool requestIpv6,
-    String? stateDir,
-  }) => WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCreate(
-    mnemonic: mnemonic,
-    apiBase: apiBase,
-    serverPubkeyPin: serverPubkeyPin,
-    multihopRootPin: multihopRootPin,
-    daita: daita,
-    daitaMachine: daitaMachine,
-    requestIpv6: requestIpv6,
-    stateDir: stateDir,
-  );
+  static Future<WarrenClientFrb> create(
+          {required String mnemonic,
+          required String apiBase,
+          required List<String> apiAlternativeHosts,
+          required String serverPubkeyPin,
+          String? multihopRootPin,
+          required bool daita,
+          String? daitaMachine,
+          required bool requestIpv6,
+          String? stateDir}) =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCreate(
+          mnemonic: mnemonic,
+          apiBase: apiBase,
+          apiAlternativeHosts: apiAlternativeHosts,
+          serverPubkeyPin: serverPubkeyPin,
+          multihopRootPin: multihopRootPin,
+          daita: daita,
+          daitaMachine: daitaMachine,
+          requestIpv6: requestIpv6,
+          stateDir: stateDir);
+
+  /// Permanently deletes the account bound to this identity (signed
+  /// `DELETE /v1/account`). App stores require an in-app account-deletion path.
+  Future<void> deleteAccount();
 
   /// Fetches and verifies the signed relay list, returning the exits.
   Future<List<ExitInfoDto>> listExits();
@@ -70,7 +80,7 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
 
 /// An exit advertised by the verified signed relay list. Only fields the relay
 /// list actually carries are surfaced; port-forwarding is negotiated per
-/// connection (not known at listing time) and load is not advertised.
+/// connection (not known at listing time).
 class ExitInfoDto {
   /// Stable, operator-assigned exit identifier (survives key rotation).
   final String id;
@@ -84,16 +94,36 @@ class ExitInfoDto {
   /// Whether the exit attests IPv6 egress.
   final bool supportsIpv6;
 
+  /// The exit's X.509 cover domain (ADR-0004 mimicry), when it advertises one.
+  /// Such exits require cover-cert dialing the engine does not do yet, so an app
+  /// can use this to pre-filter exits it cannot reach.
+  final String? coverDomain;
+
+  /// Relative selection weight the relay list advertises for load balancing.
+  final BigInt weight;
+
+  /// Whether the relay list marks the exit currently active.
+  final bool isActive;
+
   const ExitInfoDto({
     required this.id,
     required this.country,
     required this.city,
     required this.supportsIpv6,
+    this.coverDomain,
+    required this.weight,
+    required this.isActive,
   });
 
   @override
   int get hashCode =>
-      id.hashCode ^ country.hashCode ^ city.hashCode ^ supportsIpv6.hashCode;
+      id.hashCode ^
+      country.hashCode ^
+      city.hashCode ^
+      supportsIpv6.hashCode ^
+      coverDomain.hashCode ^
+      weight.hashCode ^
+      isActive.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -103,7 +133,10 @@ class ExitInfoDto {
           id == other.id &&
           country == other.country &&
           city == other.city &&
-          supportsIpv6 == other.supportsIpv6;
+          supportsIpv6 == other.supportsIpv6 &&
+          coverDomain == other.coverDomain &&
+          weight == other.weight &&
+          isActive == other.isActive;
 }
 
 /// The account server's view of the caller's connection, from a signed
