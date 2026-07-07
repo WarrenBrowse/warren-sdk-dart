@@ -2755,11 +2755,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "hex",
+ "libc",
  "serde",
  "serde_json",
  "tokio",
  "warren-sdk",
  "warrenguard-transport-core",
+ "zeroize",
 ]
 
 [[package]]
@@ -2890,6 +2892,7 @@ dependencies = [
  "warrenguard-tls",
  "warrenguard-transport-core",
  "warrenguard-wire",
+ "zeroize",
 ]
 
 [[package]]

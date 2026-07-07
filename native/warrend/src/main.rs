@@ -1,9 +1,11 @@
 //! Warren SDK desktop system-VPN daemon (Mode B).
 //!
 //! Owns the privileged TUN datapath through the audited `warren-sdk` engine and
-//! serves the SDK IPC protocol (see [`protocol`]) over a Unix socket. One IPC
-//! connection drives one session: the tunnel is torn down when the connection
-//! closes, so a crashed app never leaves the datapath up (fail-closed).
+//! serves the SDK IPC protocol (see [`protocol`]) over a Unix socket. Exactly one
+//! IPC connection, from the authorized owner uid, drives one session: the tunnel
+//! is torn down when that connection closes, so a crashed app never leaves the
+//! datapath up (fail-closed). A second, concurrent connection is refused rather
+//! than allowed to tear down the live session.
 //!
 //! The active tunnel is held in a shared slot and torn down on SIGINT/SIGTERM as
 //! well, so stopping the daemon always restores the host's routing and pf state.
@@ -13,6 +15,7 @@
 
 mod protocol;
 
+use std::os::fd::AsRawFd;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -22,6 +25,7 @@ use tokio::net::{UnixListener, UnixStream};
 use warren_sdk::discovery::VerifiedExit;
 use warren_sdk::identity::WarrenIdentity;
 use warren_sdk::{DefaultClient, SdkError, TunDatapathHandle, WarrenClient};
+use zeroize::Zeroize;
 
 use protocol::{ConnState, Event, Request};
 
@@ -47,6 +51,14 @@ async fn main() -> Result<()> {
     restrict_socket(&socket_path)?;
     eprintln!("warrend listening on {socket_path}");
 
+    // The only peer allowed to drive the root daemon: the invoking user under
+    // sudo, otherwise root itself. Filesystem permissions are a backstop, not the
+    // trust boundary; every connection is checked against this uid.
+    let authorized_uid = std::env::var("SUDO_UID")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+        .unwrap_or_else(|| unsafe { libc::geteuid() });
+
     let tunnel: SharedTunnel = Arc::new(Mutex::new(None));
 
     // Restore the network on a shutdown signal before exiting (a SIGKILL still
@@ -63,22 +75,77 @@ async fn main() -> Result<()> {
         });
     }
 
+    // One session owner at a time. Only the owner connection's close tears the
+    // tunnel down; extra connections are refused so a rogue open/close cannot
+    // revert routing and leak the owner's traffic.
+    let mut has_owner = false;
     loop {
         let (mut stream, _) = listener.accept().await?;
+
+        match peer_uid(&stream) {
+            Some(uid) if uid == authorized_uid => {}
+            _ => {
+                let _ = send(&mut stream, &Event::error("privilege", "unauthorized peer")).await;
+                continue;
+            }
+        }
+
+        if has_owner {
+            let _ = send(
+                &mut stream,
+                &Event::error("privilege", "the daemon already has an active session"),
+            )
+            .await;
+            continue;
+        }
+        has_owner = true;
+
         let tunnel = Arc::clone(&tunnel);
         let socket_path = socket_path.clone();
         tokio::spawn(async move {
             if let Err(error) = serve_connection(&mut stream, &tunnel).await {
                 eprintln!("warrend: connection ended: {error}");
             }
-            // One app drives one daemon: when that connection closes, tear the
-            // tunnel down and exit, so a stopped client never leaves a privileged
-            // daemon (or a captured network) behind.
+            // The owner connection closed: tear the tunnel down and exit, so a
+            // stopped client never leaves a privileged daemon (or a captured
+            // network) behind.
             drop(tunnel.lock().expect("tunnel mutex").take());
             std::fs::remove_file(&socket_path).ok();
             std::process::exit(0);
         });
     }
+}
+
+/// The uid of the process on the other end of the control socket, or `None` if it
+/// cannot be determined.
+#[cfg(target_os = "linux")]
+fn peer_uid(stream: &UnixStream) -> Option<u32> {
+    let mut cred = libc::ucred {
+        pid: 0,
+        uid: 0,
+        gid: 0,
+    };
+    let mut len = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+    let rc = unsafe {
+        libc::getsockopt(
+            stream.as_raw_fd(),
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            &mut cred as *mut _ as *mut libc::c_void,
+            &mut len,
+        )
+    };
+    (rc == 0).then_some(cred.uid)
+}
+
+/// The uid of the process on the other end of the control socket, or `None` if it
+/// cannot be determined.
+#[cfg(not(target_os = "linux"))]
+fn peer_uid(stream: &UnixStream) -> Option<u32> {
+    let mut uid: libc::uid_t = 0;
+    let mut gid: libc::gid_t = 0;
+    let rc = unsafe { libc::getpeereid(stream.as_raw_fd(), &mut uid, &mut gid) };
+    (rc == 0).then_some(uid)
 }
 
 async fn shutdown_signal() {
@@ -119,8 +186,13 @@ struct Session {
 
 async fn serve_connection(stream: &mut UnixStream, tunnel: &SharedTunnel) -> Result<()> {
     let mut session = Session::default();
-    while let Some(frame) = read_frame(stream).await? {
-        let request: Request = match serde_json::from_slice(&frame) {
+    while let Some(mut frame) = read_frame(stream).await? {
+        // A configure frame carries the raw mnemonic; wipe the buffer as soon as
+        // it is parsed so the seed does not linger on the heap of this root
+        // process (parsing has already copied any fields it keeps).
+        let parsed = serde_json::from_slice::<Request>(&frame);
+        frame.zeroize();
+        let request: Request = match parsed {
             Ok(request) => request,
             Err(_) => {
                 send(stream, &Event::error("tunnel", "malformed request")).await?;
@@ -144,7 +216,7 @@ async fn handle(
 ) -> Result<Option<Event>, Event> {
     match request {
         Request::Configure {
-            mnemonic,
+            mut mnemonic,
             api_base,
             server_pubkey_pin,
             multihop_root_pin,
@@ -152,7 +224,11 @@ async fn handle(
             daita_machine,
             request_ipv6,
         } => {
-            let identity = WarrenIdentity::from_mnemonic(&mnemonic)
+            let identity_result = WarrenIdentity::from_mnemonic(&mnemonic);
+            // The engine keeps only the zeroized derived key; wipe our own copy
+            // whether or not derivation succeeded.
+            mnemonic.zeroize();
+            let identity = identity_result
                 .map_err(|_| Event::error("identity", "invalid mnemonic"))?;
             let mut builder = WarrenClient::builder()
                 .identity(identity)
@@ -275,4 +351,19 @@ async fn send(stream: &mut UnixStream, event: &Event) -> Result<()> {
     stream.write_all(&payload).await?;
     stream.flush().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn peer_uid_reports_the_connected_process_uid() {
+        // Both ends of a socketpair belong to this process, so the peer uid the
+        // daemon reads must be our own euid. A broken read would return None or a
+        // different uid and let the authorization gate misfire.
+        let (end, _other) = UnixStream::pair().expect("socketpair");
+        let expected = unsafe { libc::geteuid() };
+        assert_eq!(peer_uid(&end), Some(expected));
+    }
 }

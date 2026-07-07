@@ -31,6 +31,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
 hex = "0.4"
+# Peer-credential check on the control socket (getpeereid / SO_PEERCRED).
+libc = "0.2"
+# Wipe the mnemonic and the raw request frame from the daemon's memory after use.
+zeroize = "1"
 
 # The SDK declares the engine crates as git deps; this daemon has warrenguard as a
 # sibling, so resolve them (and their transitive engine deps, via the sibling's own

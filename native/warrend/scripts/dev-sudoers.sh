@@ -13,7 +13,10 @@ set -euo pipefail
 # service), never a dev sudoers drop-in.
 #
 # The rule pins the absolute warrend binary path: no general privilege
-# escalation. Validated with `visudo -c` before install.
+# escalation. Validated with `visudo -c` before install. The trailing `*` allows
+# the single socket-path argument (each rooted test uses a fresh temp socket, so
+# the path cannot be pinned); the daemon itself authenticates the connecting
+# peer's uid, so the socket location is not the trust boundary.
 #
 # Usage:  ./scripts/dev-sudoers.sh            # install
 #         ./scripts/dev-sudoers.sh --remove   # uninstall
