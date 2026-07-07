@@ -82,7 +82,25 @@ jobs:
           flutter-version: 3.44.2
           channel: stable
       - name: authenticate cargo for the private engine dependency
-        run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/" && git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+        # CI authenticates to GitHub with an HTTPS token, not an SSH key, so the
+        # cargo git-fetch of the private warren-sdk-rs dep fails without a
+        # credential. Two things are required, and both were missing:
+        #   1. CARGO_NET_GIT_FETCH_WITH_CLI: cargo's built-in libgit2/gitoxide
+        #      fetcher ignores url.insteadOf, so the token rewrite is silently
+        #      skipped and the fetch dies "could not read Username for
+        #      https://github.com". Only the git CLI honours insteadOf.
+        #   2. --add both forms on ONE key: a plain `git config` overwrite of the
+        #      same key twice keeps only the last value (the ssh:// rewrite),
+        #      dropping the https:// one, so the https git-dep never got the token.
+        # ~/.gitconfig persists on the self-hosted runner, so unset-all before
+        # re-adding to stay idempotent across runs (scoped to the WarrenBrowse org).
+        env:
+          ENGINE_TOKEN: ${{ secrets.VECTORS_TOKEN }}
+        run: |
+          git config --global --unset-all url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf 2>/dev/null || true
+          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "ssh://git@github.com/WarrenBrowse/"
+          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "https://github.com/WarrenBrowse/"
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
       - run: flutter pub get
       - name: checkout the engine siblings (warrenguard + warren-contract)
         # v0.0.14's warren-contract carve-out declares warrenguard-wire as a repo-
@@ -126,7 +144,18 @@ jobs:
           # Pinned to the fvm-pinned version (.fvmrc) for reproducible CI.
           flutter-version: 3.44.2
           channel: stable
-      - run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/" && git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+      - name: authenticate cargo for the private engine dependency
+        # Same requirement as the conformance job: cargo's built-in fetcher
+        # ignores url.insteadOf (so CARGO_NET_GIT_FETCH_WITH_CLI is mandatory) and
+        # both URL forms must be --add'd to one key, not overwritten. The macro
+        # expansion pass (`cargo expand`) fetches the private warren-sdk-rs dep.
+        env:
+          ENGINE_TOKEN: ${{ secrets.VECTORS_TOKEN }}
+        run: |
+          git config --global --unset-all url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf 2>/dev/null || true
+          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "ssh://git@github.com/WarrenBrowse/"
+          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "https://github.com/WarrenBrowse/"
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
       - run: flutter pub get
       - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
       - name: checkout the engine siblings (warrenguard + warren-contract)
