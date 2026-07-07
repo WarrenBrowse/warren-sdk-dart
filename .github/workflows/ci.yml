@@ -81,42 +81,13 @@ jobs:
           # Pinned to the fvm-pinned version (.fvmrc) for reproducible CI.
           flutter-version: 3.44.2
           channel: stable
-      - name: authenticate cargo for the private engine dependency
-        # CI authenticates to GitHub with an HTTPS token, not an SSH key, so the
-        # cargo git-fetch of the private warren-sdk-rs dep fails without a
-        # credential. Two things are required, and both were missing:
-        #   1. CARGO_NET_GIT_FETCH_WITH_CLI: cargo's built-in libgit2/gitoxide
-        #      fetcher ignores url.insteadOf, so the token rewrite is silently
-        #      skipped and the fetch dies "could not read Username for
-        #      https://github.com". Only the git CLI honours insteadOf.
-        #   2. --add both forms on ONE key: a plain `git config` overwrite of the
-        #      same key twice keeps only the last value (the ssh:// rewrite),
-        #      dropping the https:// one, so the https git-dep never got the token.
-        # ~/.gitconfig persists on the self-hosted runner, so unset-all before
-        # re-adding to stay idempotent across runs (scoped to the WarrenBrowse org).
-        env:
-          ENGINE_TOKEN: ${{ secrets.VECTORS_TOKEN }}
-        run: |
-          git config --global --unset-all url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf 2>/dev/null || true
-          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "ssh://git@github.com/WarrenBrowse/"
-          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "https://github.com/WarrenBrowse/"
-          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
+      # Authorize cargo for the private git-deps and clone warrenguard +
+      # warren-contract siblings at the revs the pinned engine tag expects
+      # (derived from the tag, never hardcoded). See the composite action.
+      - uses: ./.github/actions/setup-engine-build
+        with:
+          token: ${{ secrets.VECTORS_TOKEN }}
       - run: flutter pub get
-      - name: checkout the engine siblings (warrenguard + warren-contract)
-        # native/warren_sdk_frb patches warren-contract and warrenguard to these
-        # siblings, so they must be at the SAME revs the engine's own build uses,
-        # otherwise the QUIC types split (warrenguard on warren-quinn fork.5 vs the
-        # engine on fork.6) and warren-transport fails to compile. These are the
-        # engine tag v0.0.15's .warrenguard-version (2453c431) and
-        # .warren-contract-version (7f4edeb6); bump them in lockstep with the
-        # warren-sdk tag in native/warren_sdk_frb/Cargo.toml.
-        run: |
-          set -euo pipefail
-          rm -rf ../warrenguard ../warren-contract
-          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" ../warrenguard
-          git -C ../warrenguard checkout --quiet 2453c431c28bc305866928aed16b7ecf3346ad08
-          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" ../warren-contract
-          git -C ../warren-contract checkout --quiet 7f4edeb6a74bf70c8268c55076b9e576900c7528
       - name: build the native engine
         run: cargo build --release
         working-directory: native/warren_sdk_frb
@@ -146,30 +117,15 @@ jobs:
           # Pinned to the fvm-pinned version (.fvmrc) for reproducible CI.
           flutter-version: 3.44.2
           channel: stable
-      - name: authenticate cargo for the private engine dependency
-        # Same requirement as the conformance job: cargo's built-in fetcher
-        # ignores url.insteadOf (so CARGO_NET_GIT_FETCH_WITH_CLI is mandatory) and
-        # both URL forms must be --add'd to one key, not overwritten. The macro
-        # expansion pass (`cargo expand`) fetches the private warren-sdk-rs dep.
-        env:
-          ENGINE_TOKEN: ${{ secrets.VECTORS_TOKEN }}
-        run: |
-          git config --global --unset-all url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf 2>/dev/null || true
-          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "ssh://git@github.com/WarrenBrowse/"
-          git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "https://github.com/WarrenBrowse/"
-          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
+      # Codegen macro-expands native/warren_sdk_frb (a `cargo expand` pass that
+      # fetches warren-sdk-rs and [patch]es warrenguard + warren-contract to
+      # siblings), so it needs the same cargo auth + engine-pinned siblings as the
+      # conformance job.
+      - uses: ./.github/actions/setup-engine-build
+        with:
+          token: ${{ secrets.VECTORS_TOKEN }}
       - run: flutter pub get
       - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
-      - name: checkout the engine siblings (warrenguard + warren-contract)
-        # Codegen macro-expands native/warren_sdk_frb, which since v0.0.14 patches
-        # warren-contract + warrenguard to local siblings (see the conformance job).
-        run: |
-          set -euo pipefail
-          rm -rf ../warrenguard ../warren-contract
-          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" ../warrenguard
-          git -C ../warrenguard checkout --quiet 2453c431c28bc305866928aed16b7ecf3346ad08
-          git clone --quiet "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" ../warren-contract
-          git -C ../warren-contract checkout --quiet 7f4edeb6a74bf70c8268c55076b9e576900c7528
       - run: flutter_rust_bridge_codegen generate
       - name: fail if generated bindings drift from the committed ones
         run: git diff --exit-code

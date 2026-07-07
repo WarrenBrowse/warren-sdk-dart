@@ -1,0 +1,75 @@
+name: Set up native engine build
+description: >
+  Prepare a job to build native/warren_sdk_frb against the private Warren engine:
+  (1) authorize cargo to fetch the private WarrenBrowse git-deps over HTTPS, and
+  (2) clone warrenguard + warren-contract as siblings at the exact revs the pinned
+  warren-sdk-rs engine tag expects.
+
+  The engine tag in native/warren_sdk_frb/Cargo.toml is the SINGLE SOURCE OF TRUTH:
+  the sibling revs are read from that tag's .warrenguard-version /
+  .warren-contract-version marker files (the same files the engine's own
+  checkout-engine action reads), so bumping the engine tag is the only change a
+  future engine upgrade needs. No sibling rev is hardcoded here.
+inputs:
+  token:
+    description: >
+      PAT with Contents:read on warren-sdk-rs, warrenguard and warren-contract
+      (the workflow's VECTORS_TOKEN).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: authorize cargo for private WarrenBrowse git-deps
+      # CI authenticates with an HTTPS token, not an SSH key. Two things are both
+      # required, and were the original cause of the red CI:
+      #   1. CARGO_NET_GIT_FETCH_WITH_CLI: cargo's built-in libgit2/gitoxide fetcher
+      #      ignores url.insteadOf, so without it the token rewrite is silently
+      #      skipped and the fetch dies "could not read Username for github.com".
+      #      Only the git CLI honours the rewrite.
+      #   2. --add BOTH URL forms to one key (not a plain overwrite, which keeps
+      #      only the last value): the ssh:// form covers the warren-quinn fork
+      #      git-dep, the https:// form covers warren-sdk-rs.
+      # ~/.gitconfig persists on the self-hosted runner, so unset-all before
+      # re-adding to stay idempotent (scoped to the WarrenBrowse org only).
+      shell: bash
+      env:
+        ENGINE_TOKEN: ${{ inputs.token }}
+      run: |
+        git config --global --unset-all url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf 2>/dev/null || true
+        git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "ssh://git@github.com/WarrenBrowse/"
+        git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "https://github.com/WarrenBrowse/"
+        echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
+    - name: checkout engine siblings at the engine tag's pinned revs
+      # native/warren_sdk_frb [patch]es warren-contract + warrenguard to these
+      # siblings, so they MUST match the revs the engine's own build uses, else the
+      # QUIC types split (e.g. warrenguard on warren-quinn fork.5 while the engine is
+      # on fork.6) and warren-transport fails to compile. Derive both revs from the
+      # pinned engine tag so they can never drift out of lockstep again.
+      shell: bash
+      env:
+        ENGINE_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        ENGINE_TAG="$(sed -n 's/^[[:space:]]*warren-sdk[[:space:]]*=.*warren-sdk-rs\.git.*tag[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' native/warren_sdk_frb/Cargo.toml)"
+        if [ -z "${ENGINE_TAG}" ]; then
+          echo "::error::could not parse the warren-sdk engine tag from native/warren_sdk_frb/Cargo.toml"; exit 1
+        fi
+        echo "==> engine tag: ${ENGINE_TAG}"
+        # A shallow tag clone is enough to read the two version marker files.
+        PIN="${RUNNER_TEMP:-/tmp}/warren-engine-pin"
+        rm -rf "${PIN}"
+        git clone --quiet --depth 1 --branch "${ENGINE_TAG}" \
+          "https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/warren-sdk-rs.git" "${PIN}"
+        WG_REV="$(tr -d '[:space:]' < "${PIN}/.warrenguard-version")"
+        WC_REV="$(tr -d '[:space:]' < "${PIN}/.warren-contract-version")"
+        rm -rf "${PIN}"
+        if [ -z "${WG_REV}" ] || [ -z "${WC_REV}" ]; then
+          echo "::error::engine tag ${ENGINE_TAG} is missing .warrenguard-version / .warren-contract-version"; exit 1
+        fi
+        echo "==> warrenguard rev:     ${WG_REV}"
+        echo "==> warren-contract rev: ${WC_REV}"
+        rm -rf ../warrenguard ../warren-contract
+        git clone --quiet "https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/warrenguard.git" ../warrenguard
+        git -C ../warrenguard checkout --quiet "${WG_REV}"
+        git clone --quiet "https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/warren-contract.git" ../warren-contract
+        git -C ../warren-contract checkout --quiet "${WC_REV}"
