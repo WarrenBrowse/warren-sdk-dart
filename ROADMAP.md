@@ -131,6 +131,11 @@ The first vertical slice, mirroring how the Rust engine started with identity.
 - [x] Reconnect/backoff supervision surfaced as state-stream transitions: the
       proxy datapath is supervised, so `Reconnecting` is emitted between epochs
       (mapped and tested).
+- [x] Planned-maintenance migration surfaced as a distinct `Draining` state
+      (ADR 36): when an exit signals a drain the supervisor migrates proactively,
+      so the app can show "switching server" instead of a spurious failure. The
+      engine emitted this already; the bridge previously collapsed it into
+      `Failed` and now maps it correctly (regression-tested).
 - [x] DAITA exposed via `WarrenClient.create` (`daita`, `daitaMachine`). The
       engine configures DAITA at client-build time, so it lives on the client
       config, not `ConnectOptions`; forwarding is unit-tested.
