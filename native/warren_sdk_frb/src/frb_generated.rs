@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1424306548;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1656400600;
 
 // Section: executor
 
@@ -681,6 +681,71 @@ fn wire__crate__api__datapath__WarrenForwardedPortFrb_internal_port_impl(
         },
     )
 }
+fn wire__crate__api__datapath__WarrenForwardedPortFrb_outcomes_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenForwardedPortFrb_outcomes",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenForwardedPortFrb>,
+            >>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<
+                crate::api::datapath::PortFollowOutcomeDto,
+                flutter_rust_bridge::for_generated::SseCodec,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = Result::<_, ()>::Ok({
+                            crate::api::datapath::WarrenForwardedPortFrb::outcomes(
+                                &*api_that_guard,
+                                api_sink,
+                            )
+                            .await;
+                        })?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__datapath__WarrenForwardedPortFrb_shutdown_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -840,6 +905,69 @@ fn wire__crate__api__datapath__WarrenSessionFrb_forward_port_impl(
         },
     )
 }
+fn wire__crate__api__datapath__WarrenSessionFrb_forward_port_with_policy_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenSessionFrb_forward_port_with_policy",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenSessionFrb>,
+            >>::sse_decode(&mut deserializer);
+            let api_proto = <crate::api::datapath::MapProtoDto>::sse_decode(&mut deserializer);
+            let api_internal_port = <u16>::sse_decode(&mut deserializer);
+            let api_local_target = <String>::sse_decode(&mut deserializer);
+            let api_policy =
+                <crate::api::datapath::PortFollowPolicyDto>::sse_decode(&mut deserializer);
+            let api_pinned_external_port = <Option<u16>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::error::WarrenFfiError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok =
+                        crate::api::datapath::WarrenSessionFrb::forward_port_with_policy(
+                            &*api_that_guard,
+                            api_proto,
+                            api_internal_port,
+                            api_local_target,
+                            api_policy,
+                            api_pinned_external_port,
+                        )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -887,6 +1015,71 @@ fn wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
                     )?;
                     Ok(output_ok)
                 })())
+            }
+        },
+    )
+}
+fn wire__crate__api__datapath__WarrenSessionFrb_migration_events_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenSessionFrb_migration_events",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenSessionFrb>,
+            >>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<
+                crate::api::datapath::MigrationEventDto,
+                flutter_rust_bridge::for_generated::SseCodec,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = Result::<_, ()>::Ok({
+                            crate::api::datapath::WarrenSessionFrb::migration_events(
+                                &*api_that_guard,
+                                api_sink,
+                            )
+                            .await;
+                        })?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
             }
         },
     )
@@ -1289,7 +1482,33 @@ impl SseDecode
     }
 }
 
+impl SseDecode
+    for StreamSink<
+        crate::api::datapath::MigrationEventDto,
+        flutter_rust_bridge::for_generated::SseCodec,
+    >
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return StreamSink::deserialize(inner);
+    }
+}
+
 impl SseDecode for StreamSink<Option<u16>, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return StreamSink::deserialize(inner);
+    }
+}
+
+impl SseDecode
+    for StreamSink<
+        crate::api::datapath::PortFollowOutcomeDto,
+        flutter_rust_bridge::for_generated::SseCodec,
+    >
+{
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <String>::sse_decode(deserializer);
@@ -1404,6 +1623,33 @@ impl SseDecode for crate::api::datapath::MapProtoDto {
     }
 }
 
+impl SseDecode for crate::api::datapath::MigrationEventDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_deadlineUnixSecs = <u64>::sse_decode(deserializer);
+        let mut var_reasonCode = <u8>::sse_decode(deserializer);
+        let mut var_outcome = <crate::api::datapath::MigrationOutcomeDto>::sse_decode(deserializer);
+        return crate::api::datapath::MigrationEventDto {
+            deadline_unix_secs: var_deadlineUnixSecs,
+            reason_code: var_reasonCode,
+            outcome: var_outcome,
+        };
+    }
+}
+
+impl SseDecode for crate::api::datapath::MigrationOutcomeDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::datapath::MigrationOutcomeDto::Migrating,
+            1 => crate::api::datapath::MigrationOutcomeDto::Completed,
+            2 => crate::api::datapath::MigrationOutcomeDto::CancelledPortConflict,
+            _ => unreachable!("Invalid variant for MigrationOutcomeDto: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1423,6 +1669,48 @@ impl SseDecode for Option<u16> {
         } else {
             return None;
         }
+    }
+}
+
+impl SseDecode for crate::api::datapath::PortFollowOutcomeDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_kind =
+            <crate::api::datapath::PortFollowOutcomeKindDto>::sse_decode(deserializer);
+        let mut var_previousPort = <Option<u16>>::sse_decode(deserializer);
+        let mut var_port = <Option<u16>>::sse_decode(deserializer);
+        return crate::api::datapath::PortFollowOutcomeDto {
+            kind: var_kind,
+            previous_port: var_previousPort,
+            port: var_port,
+        };
+    }
+}
+
+impl SseDecode for crate::api::datapath::PortFollowOutcomeKindDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::datapath::PortFollowOutcomeKindDto::Kept,
+            1 => crate::api::datapath::PortFollowOutcomeKindDto::Changed,
+            2 => crate::api::datapath::PortFollowOutcomeKindDto::ConflictStayed,
+            3 => crate::api::datapath::PortFollowOutcomeKindDto::Failed,
+            _ => unreachable!("Invalid variant for PortFollowOutcomeKindDto: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::datapath::PortFollowPolicyDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::datapath::PortFollowPolicyDto::FollowBestEffort,
+            1 => crate::api::datapath::PortFollowPolicyDto::KeepPortOrStay,
+            2 => crate::api::datapath::PortFollowPolicyDto::Disabled,
+            _ => unreachable!("Invalid variant for PortFollowPolicyDto: {}", inner),
+        };
     }
 }
 
@@ -1587,52 +1875,70 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__datapath__WarrenForwardedPortFrb_shutdown_impl(
+        12 => wire__crate__api__datapath__WarrenForwardedPortFrb_outcomes_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
+        13 => wire__crate__api__datapath__WarrenForwardedPortFrb_shutdown_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_impl(
+        14 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
+        15 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
+        16 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_with_policy_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
+        17 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__identity__address_from_mnemonic_impl(
+        18 => wire__crate__api__datapath__WarrenSessionFrb_migration_events_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
-        22 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        20 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        21 => wire__crate__api__identity__address_from_mnemonic_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        22 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
+        24 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1769,6 +2075,117 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::MapProtoDto>
     for crate::api::datapath::MapProtoDto
 {
     fn into_into_dart(self) -> crate::api::datapath::MapProtoDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::datapath::MigrationEventDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.deadline_unix_secs.into_into_dart().into_dart(),
+            self.reason_code.into_into_dart().into_dart(),
+            self.outcome.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::datapath::MigrationEventDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::MigrationEventDto>
+    for crate::api::datapath::MigrationEventDto
+{
+    fn into_into_dart(self) -> crate::api::datapath::MigrationEventDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::datapath::MigrationOutcomeDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Migrating => 0.into_dart(),
+            Self::Completed => 1.into_dart(),
+            Self::CancelledPortConflict => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::datapath::MigrationOutcomeDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::MigrationOutcomeDto>
+    for crate::api::datapath::MigrationOutcomeDto
+{
+    fn into_into_dart(self) -> crate::api::datapath::MigrationOutcomeDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::datapath::PortFollowOutcomeDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.kind.into_into_dart().into_dart(),
+            self.previous_port.into_into_dart().into_dart(),
+            self.port.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::datapath::PortFollowOutcomeDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::PortFollowOutcomeDto>
+    for crate::api::datapath::PortFollowOutcomeDto
+{
+    fn into_into_dart(self) -> crate::api::datapath::PortFollowOutcomeDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::datapath::PortFollowOutcomeKindDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Kept => 0.into_dart(),
+            Self::Changed => 1.into_dart(),
+            Self::ConflictStayed => 2.into_dart(),
+            Self::Failed => 3.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::datapath::PortFollowOutcomeKindDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::PortFollowOutcomeKindDto>
+    for crate::api::datapath::PortFollowOutcomeKindDto
+{
+    fn into_into_dart(self) -> crate::api::datapath::PortFollowOutcomeKindDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::datapath::PortFollowPolicyDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::FollowBestEffort => 0.into_dart(),
+            Self::KeepPortOrStay => 1.into_dart(),
+            Self::Disabled => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::datapath::PortFollowPolicyDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::PortFollowPolicyDto>
+    for crate::api::datapath::PortFollowPolicyDto
+{
+    fn into_into_dart(self) -> crate::api::datapath::PortFollowPolicyDto {
         self
     }
 }
@@ -1944,7 +2361,31 @@ impl SseEncode
     }
 }
 
+impl SseEncode
+    for StreamSink<
+        crate::api::datapath::MigrationEventDto,
+        flutter_rust_bridge::for_generated::SseCodec,
+    >
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        unimplemented!("")
+    }
+}
+
 impl SseEncode for StreamSink<Option<u16>, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        unimplemented!("")
+    }
+}
+
+impl SseEncode
+    for StreamSink<
+        crate::api::datapath::PortFollowOutcomeDto,
+        flutter_rust_bridge::for_generated::SseCodec,
+    >
+{
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         unimplemented!("")
@@ -2050,6 +2491,32 @@ impl SseEncode for crate::api::datapath::MapProtoDto {
     }
 }
 
+impl SseEncode for crate::api::datapath::MigrationEventDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u64>::sse_encode(self.deadline_unix_secs, serializer);
+        <u8>::sse_encode(self.reason_code, serializer);
+        <crate::api::datapath::MigrationOutcomeDto>::sse_encode(self.outcome, serializer);
+    }
+}
+
+impl SseEncode for crate::api::datapath::MigrationOutcomeDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::datapath::MigrationOutcomeDto::Migrating => 0,
+                crate::api::datapath::MigrationOutcomeDto::Completed => 1,
+                crate::api::datapath::MigrationOutcomeDto::CancelledPortConflict => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2067,6 +2534,50 @@ impl SseEncode for Option<u16> {
         if let Some(value) = self {
             <u16>::sse_encode(value, serializer);
         }
+    }
+}
+
+impl SseEncode for crate::api::datapath::PortFollowOutcomeDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::api::datapath::PortFollowOutcomeKindDto>::sse_encode(self.kind, serializer);
+        <Option<u16>>::sse_encode(self.previous_port, serializer);
+        <Option<u16>>::sse_encode(self.port, serializer);
+    }
+}
+
+impl SseEncode for crate::api::datapath::PortFollowOutcomeKindDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::datapath::PortFollowOutcomeKindDto::Kept => 0,
+                crate::api::datapath::PortFollowOutcomeKindDto::Changed => 1,
+                crate::api::datapath::PortFollowOutcomeKindDto::ConflictStayed => 2,
+                crate::api::datapath::PortFollowOutcomeKindDto::Failed => 3,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::api::datapath::PortFollowPolicyDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::datapath::PortFollowPolicyDto::FollowBestEffort => 0,
+                crate::api::datapath::PortFollowPolicyDto::KeepPortOrStay => 1,
+                crate::api::datapath::PortFollowPolicyDto::Disabled => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
     }
 }
 

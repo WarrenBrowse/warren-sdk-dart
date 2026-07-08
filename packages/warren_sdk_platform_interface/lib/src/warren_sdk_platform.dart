@@ -4,6 +4,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'connection_state.dart';
 import 'errors.dart';
 import 'models.dart';
+import 'port_follow.dart';
 
 /// Immutable configuration for creating an engine client.
 ///
@@ -193,16 +194,29 @@ abstract interface class WarrenSessionHandle {
   /// The live connection-state stream (broadcast, latest-state on listen).
   Stream<ConnectionState> get states;
 
+  /// The maintenance-migration event stream (broadcast, latest event on
+  /// listen; nothing is delivered before the first drain advisory). Richer
+  /// than the bare [Draining] connection state: each [MigrationEvent] carries
+  /// the drain deadline, the reason and the outcome, including a migration
+  /// cancelled for a pinned-port conflict.
+  Stream<MigrationEvent> get migrationEvents;
+
   /// Forwards an inbound tunnel-side [internalPort] to a local [localTarget]
   /// (`ip:port`) via NAT-PMP, re-mapped automatically across reconnects.
+  ///
+  /// [policy] controls how the external port follows the client across
+  /// reconnects and maintenance migrations; [pinnedExternalPort] pins it for
+  /// [PortFollowPolicy.keepPortOrStay] (`null` pins the first granted port).
   ///
   /// Proxy mode only, and only against an exit that runs a NAT-PMP gateway.
   /// Throws [WarrenUnsupportedError] in system-VPN mode.
   Future<WarrenForwardedPort> forwardPort(
     ForwardProtocol proto,
     int internalPort,
-    String localTarget,
-  );
+    String localTarget, {
+    PortFollowPolicy policy = PortFollowPolicy.followBestEffort,
+    int? pinnedExternalPort,
+  });
 
   /// Tears the connection down.
   Future<void> disconnect();
@@ -222,6 +236,12 @@ abstract interface class WarrenForwardedPort {
   /// A broadcast stream of external-port changes (re-mappings), latest on
   /// listen.
   Stream<int?> get externalPorts;
+
+  /// A broadcast stream of follow outcomes (latest on listen; nothing is
+  /// delivered before the first establish attempt completes): what happened to
+  /// this rule's external port on each (re)establish, so an app can surface
+  /// "port re-mapped", "new auto port" or "conflict, port held".
+  Stream<PortFollowOutcome> get outcomes;
 
   /// Tears the forward down.
   Future<void> dispose();

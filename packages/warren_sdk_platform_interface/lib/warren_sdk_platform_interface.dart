@@ -11,4 +11,5 @@ export 'src/connection_state.dart';
 export 'src/errors.dart';
 export 'src/latest_broadcast.dart';
 export 'src/models.dart';
+export 'src/port_follow.dart';
 export 'src/warren_sdk_platform.dart';

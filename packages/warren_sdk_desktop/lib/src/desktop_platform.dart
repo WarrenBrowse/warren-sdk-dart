@@ -243,12 +243,20 @@ class DaemonSessionHandle implements WarrenSessionHandle {
   @override
   Stream<ConnectionState> get states => _daemon.states;
 
+  // The daemon datapath is not supervised yet (Mode B supervision is a
+  // separate milestone), so it emits no migration events; an empty stream is
+  // honest and keeps UI code portable across modes.
+  @override
+  Stream<MigrationEvent> get migrationEvents => const Stream.empty();
+
   @override
   Future<WarrenForwardedPort> forwardPort(
     ForwardProtocol proto,
     int internalPort,
-    String localTarget,
-  ) async =>
+    String localTarget, {
+    PortFollowPolicy policy = PortFollowPolicy.followBestEffort,
+    int? pinnedExternalPort,
+  }) async =>
       throw const WarrenUnsupportedError(
         code: 'forward/system-vpn-unavailable',
         message: 'Inbound port forwarding is a proxy-mode feature; it is not '

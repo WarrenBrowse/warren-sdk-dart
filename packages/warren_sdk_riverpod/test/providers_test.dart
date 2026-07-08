@@ -65,11 +65,16 @@ class _FakeSessionHandle implements WarrenSessionHandle {
       Stream.fromIterable([const Connecting(), const Connected()]);
 
   @override
+  Stream<MigrationEvent> get migrationEvents => const Stream.empty();
+
+  @override
   Future<WarrenForwardedPort> forwardPort(
     ForwardProtocol proto,
     int internalPort,
-    String localTarget,
-  ) =>
+    String localTarget, {
+    PortFollowPolicy policy = PortFollowPolicy.followBestEffort,
+    int? pinnedExternalPort,
+  }) =>
       throw UnimplementedError();
 
   @override

@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `new`, `new`, `to_dto`, `to_engine`
+// These functions are ignored because they are not marked as `pub`: `migration_to_dto`, `new`, `new`, `outcome_to_dto`, `to_dto`, `to_engine`, `to_engine`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenForwardedPortFrb>>
 abstract class WarrenForwardedPortFrb implements RustOpaqueInterface {
@@ -21,6 +21,12 @@ abstract class WarrenForwardedPortFrb implements RustOpaqueInterface {
 
   /// The local internal port being forwarded.
   Future<int> internalPort();
+
+  /// Streams follow outcomes (doc 59): what happened to this rule's external
+  /// port on each (re)establish (kept, changed, held back by a conflict, or
+  /// failed). Emits the latest outcome first, if any, so a late listener is
+  /// not left without one.
+  Stream<PortFollowOutcomeDto> outcomes();
 
   /// Tears the forward down. Idempotent: a second call is a no-op.
   Future<void> shutdown();
@@ -40,8 +46,25 @@ abstract class WarrenSessionFrb implements RustOpaqueInterface {
       required int internalPort,
       required String localTarget});
 
+  /// Like [`Self::forward_port`], with an explicit follow policy (doc 59).
+  /// `pinned_external_port` pins the external port for `KeepPortOrStay`;
+  /// `None` pins the first port the exit grants. Observe what happened on
+  /// each rebuild via [`WarrenForwardedPortFrb::outcomes`].
+  Future<WarrenForwardedPortFrb> forwardPortWithPolicy(
+      {required MapProtoDto proto,
+      required int internalPort,
+      required String localTarget,
+      required PortFollowPolicyDto policy,
+      int? pinnedExternalPort});
+
   /// The bound local HTTP CONNECT endpoint, if one was requested.
   Future<String?> httpEndpoint();
+
+  /// Streams maintenance-migration events (doc 59): the drain advisory's
+  /// deadline and reason plus the outcome (migrating, completed, cancelled
+  /// for a pinned-port conflict). Emits the latest event first, if any, so a
+  /// late listener still sees an in-flight migration.
+  Stream<MigrationEventDto> migrationEvents();
 
   /// The bound local SOCKS5 endpoint, for example `127.0.0.1:51234`.
   Future<String> socks5Endpoint();
@@ -80,5 +103,120 @@ enum MapProtoDto {
 
   /// UDP.
   udp,
+  ;
+}
+
+/// A maintenance-migration lifecycle event: the drain advisory's fields plus
+/// where the migration stands, richer than the bare `Draining` state.
+class MigrationEventDto {
+  /// Unix seconds after which the draining exit hard-closes stragglers;
+  /// `u64::MAX` means a soft drain with no deadline.
+  final BigInt deadlineUnixSecs;
+
+  /// Opaque operator reason code from the drain advisory (0 = maintenance).
+  final int reasonCode;
+
+  /// Where the migration stands.
+  final MigrationOutcomeDto outcome;
+
+  const MigrationEventDto({
+    required this.deadlineUnixSecs,
+    required this.reasonCode,
+    required this.outcome,
+  });
+
+  @override
+  int get hashCode =>
+      deadlineUnixSecs.hashCode ^ reasonCode.hashCode ^ outcome.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MigrationEventDto &&
+          runtimeType == other.runtimeType &&
+          deadlineUnixSecs == other.deadlineUnixSecs &&
+          reasonCode == other.reasonCode &&
+          outcome == other.outcome;
+}
+
+/// Progress of one maintenance migration, mirrored as a plain enum.
+enum MigrationOutcomeDto {
+  /// The drain advisory arrived; the supervisor is moving off the exit.
+  migrating,
+
+  /// The post-drain reconnect landed on the new exit.
+  completed,
+
+  /// Every candidate conflicted with a pinned port rule: the migration was
+  /// cancelled and the client stays on the draining exit, keeping its port.
+  cancelledPortConflict,
+  ;
+}
+
+/// What happened to a forwarded port on its latest (re)establish.
+class PortFollowOutcomeDto {
+  /// The outcome discriminant.
+  final PortFollowOutcomeKindDto kind;
+
+  /// For `Changed`: the previous external port, absent on the first grant.
+  final int? previousPort;
+
+  /// For `Kept`/`Changed`: the granted external port. For `ConflictStayed`:
+  /// the pinned port that stays requested. Absent for `Failed`.
+  final int? port;
+
+  const PortFollowOutcomeDto({
+    required this.kind,
+    this.previousPort,
+    this.port,
+  });
+
+  @override
+  int get hashCode => kind.hashCode ^ previousPort.hashCode ^ port.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PortFollowOutcomeDto &&
+          runtimeType == other.runtimeType &&
+          kind == other.kind &&
+          previousPort == other.previousPort &&
+          port == other.port;
+}
+
+/// Discriminant of a [`PortFollowOutcomeDto`]. Flattened (kind plus optional
+/// ports) instead of a payload-carrying enum so the bridge stays on plain
+/// generated data classes like the rest of this API.
+enum PortFollowOutcomeKindDto {
+  /// The previously-granted external port was re-granted on this exit.
+  kept,
+
+  /// The exit granted a different external port (first grant, server pick,
+  /// or a best-effort degrade after a conflict).
+  changed,
+
+  /// A pinned port was refused and the rule did not degrade: no mapping
+  /// exists this epoch, the pin stays requested for the next one.
+  conflictStayed,
+
+  /// The mapping could not be established this epoch; the supervisor keeps
+  /// retrying.
+  failed,
+  ;
+}
+
+/// How a forwarded port follows the client across reconnects and maintenance
+/// migrations, mirrored for Dart as a plain enum (doc 59).
+enum PortFollowPolicyDto {
+  /// Re-suggest the last granted external port; on a conflict degrade once to
+  /// a server-assigned port instead of failing (the default).
+  followBestEffort,
+
+  /// Never degrade silently: on a conflict the mapping stays unset for the
+  /// epoch and the pin is re-requested on the next one.
+  keepPortOrStay,
+
+  /// No follow: every epoch asks for a fresh server-assigned port.
+  disabled,
   ;
 }

@@ -84,6 +84,138 @@ void main() {
     });
   });
 
+  group('mapMigrationEvent', () {
+    test('maps each outcome and keeps the advisory fields', () {
+      final dto = MigrationEventDto(
+        deadlineUnixSecs: BigInt.from(1767225600),
+        reasonCode: 3,
+        outcome: MigrationOutcomeDto.completed,
+      );
+      expect(
+        mapMigrationEvent(dto),
+        const MigrationEvent(
+          deadlineUnixSecs: 1767225600,
+          reasonCode: 3,
+          outcome: MigrationOutcome.completed,
+        ),
+      );
+      expect(
+        mapMigrationEvent(
+          MigrationEventDto(
+            deadlineUnixSecs: BigInt.from(1767225600),
+            reasonCode: 0,
+            outcome: MigrationOutcomeDto.migrating,
+          ),
+        ).outcome,
+        MigrationOutcome.migrating,
+      );
+      expect(
+        mapMigrationEvent(
+          MigrationEventDto(
+            deadlineUnixSecs: BigInt.from(1767225600),
+            reasonCode: 0,
+            outcome: MigrationOutcomeDto.cancelledPortConflict,
+          ),
+        ).outcome,
+        MigrationOutcome.cancelledPortConflict,
+      );
+    });
+
+    test('the u64::MAX sentinel becomes a null soft-drain deadline', () {
+      final dto = MigrationEventDto(
+        // u64::MAX on the wire means "soft drain, no hard-close deadline".
+        deadlineUnixSecs: (BigInt.one << 64) - BigInt.one,
+        reasonCode: 0,
+        outcome: MigrationOutcomeDto.migrating,
+      );
+      expect(mapMigrationEvent(dto).deadlineUnixSecs, isNull);
+    });
+  });
+
+  group('mapPortFollowOutcome', () {
+    test('maps each kind to its sealed subtype', () {
+      expect(
+        mapPortFollowOutcome(
+          const PortFollowOutcomeDto(
+            kind: PortFollowOutcomeKindDto.kept,
+            port: 51820,
+          ),
+        ),
+        const PortKept(port: 51820),
+      );
+      expect(
+        mapPortFollowOutcome(
+          const PortFollowOutcomeDto(
+            kind: PortFollowOutcomeKindDto.changed,
+            previousPort: 51820,
+            port: 40000,
+          ),
+        ),
+        const PortChanged(previousPort: 51820, port: 40000),
+      );
+      expect(
+        mapPortFollowOutcome(
+          const PortFollowOutcomeDto(
+            kind: PortFollowOutcomeKindDto.conflictStayed,
+            port: 51820,
+          ),
+        ),
+        const PortConflictStayed(pinnedPort: 51820),
+      );
+      expect(
+        mapPortFollowOutcome(
+          const PortFollowOutcomeDto(kind: PortFollowOutcomeKindDto.failed),
+        ),
+        const PortFollowFailed(),
+      );
+    });
+
+    test('a first grant maps to PortChanged with no previous port', () {
+      expect(
+        mapPortFollowOutcome(
+          const PortFollowOutcomeDto(
+            kind: PortFollowOutcomeKindDto.changed,
+            port: 40000,
+          ),
+        ),
+        const PortChanged(port: 40000),
+      );
+    });
+
+    test('a port-bearing kind missing its port degrades to failed', () {
+      // A malformed event must never throw in the mapping layer: the safe
+      // reading of an outcome without its port is "not established, retrying".
+      for (final kind in [
+        PortFollowOutcomeKindDto.kept,
+        PortFollowOutcomeKindDto.changed,
+        PortFollowOutcomeKindDto.conflictStayed,
+      ]) {
+        expect(
+          mapPortFollowOutcome(PortFollowOutcomeDto(kind: kind)),
+          const PortFollowFailed(),
+          reason: '$kind without a port must degrade to PortFollowFailed',
+        );
+      }
+    });
+  });
+
+  group('portFollowPolicyToDto', () {
+    test('maps each public policy to its bridge value', () {
+      expect(
+        portFollowPolicyToDto(PortFollowPolicy.followBestEffort),
+        PortFollowPolicyDto.followBestEffort,
+      );
+      expect(
+        portFollowPolicyToDto(PortFollowPolicy.keepPortOrStay),
+        PortFollowPolicyDto.keepPortOrStay,
+      );
+      expect(
+        portFollowPolicyToDto(PortFollowPolicy.disabled),
+        PortFollowPolicyDto.disabled,
+      );
+    });
+  });
+
   group('mapConnectionState', () {
     test('maps each engine state to its sealed subtype', () {
       expect(

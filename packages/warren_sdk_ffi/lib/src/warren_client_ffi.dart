@@ -112,11 +112,15 @@ class FfiSessionHandle implements WarrenSessionHandle {
   )   : _session = session,
         _states = LatestBroadcast(
           session.states().map(mapConnectionState),
+        ),
+        _migrationEvents = LatestBroadcast(
+          session.migrationEvents().map(mapMigrationEvent),
         );
 
   final rust_session.WarrenSessionFrb _session;
   final ProxyEndpoints _endpoints;
   final LatestBroadcast<ConnectionState> _states;
+  final LatestBroadcast<MigrationEvent> _migrationEvents;
 
   @override
   ProxyEndpoints? get endpoints => _endpoints;
@@ -125,18 +129,25 @@ class FfiSessionHandle implements WarrenSessionHandle {
   Stream<ConnectionState> get states => _states.stream;
 
   @override
+  Stream<MigrationEvent> get migrationEvents => _migrationEvents.stream;
+
+  @override
   Future<WarrenForwardedPort> forwardPort(
     ForwardProtocol proto,
     int internalPort,
-    String localTarget,
-  ) async {
+    String localTarget, {
+    PortFollowPolicy policy = PortFollowPolicy.followBestEffort,
+    int? pinnedExternalPort,
+  }) async {
     try {
-      final port = await _session.forwardPort(
+      final port = await _session.forwardPortWithPolicy(
         proto: proto == ForwardProtocol.udp
             ? rust_session.MapProtoDto.udp
             : rust_session.MapProtoDto.tcp,
         internalPort: internalPort,
         localTarget: localTarget,
+        policy: portFollowPolicyToDto(policy),
+        pinnedExternalPort: pinnedExternalPort,
       );
       return FfiForwardedPort(port, await port.internalPort());
     } on WarrenFfiError catch (error) {
@@ -147,6 +158,7 @@ class FfiSessionHandle implements WarrenSessionHandle {
   @override
   Future<void> disconnect() async {
     await _states.close();
+    await _migrationEvents.close();
     try {
       await _session.disconnect();
     } on WarrenFfiError catch (error) {
@@ -162,10 +174,14 @@ class FfiForwardedPort implements WarrenForwardedPort {
     rust_session.WarrenForwardedPortFrb port,
     this.internalPort,
   )   : _port = port,
-        _externalPorts = LatestBroadcast(port.externalPorts());
+        _externalPorts = LatestBroadcast(port.externalPorts()),
+        _outcomes = LatestBroadcast(
+          port.outcomes().map(mapPortFollowOutcome),
+        );
 
   final rust_session.WarrenForwardedPortFrb _port;
   final LatestBroadcast<int?> _externalPorts;
+  final LatestBroadcast<PortFollowOutcome> _outcomes;
 
   @override
   final int internalPort;
@@ -177,8 +193,12 @@ class FfiForwardedPort implements WarrenForwardedPort {
   Stream<int?> get externalPorts => _externalPorts.stream;
 
   @override
+  Stream<PortFollowOutcome> get outcomes => _outcomes.stream;
+
+  @override
   Future<void> dispose() async {
     await _externalPorts.close();
+    await _outcomes.close();
     try {
       await _port.shutdown();
     } on WarrenFfiError catch (error) {

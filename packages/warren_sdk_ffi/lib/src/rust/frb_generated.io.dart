@@ -87,8 +87,16 @@ abstract class WarrenRustBridgeApiImplPlatform
       dco_decode_StreamSink_connection_state_dto_Sse(dynamic raw);
 
   @protected
+  RustStreamSink<MigrationEventDto>
+      dco_decode_StreamSink_migration_event_dto_Sse(dynamic raw);
+
+  @protected
   RustStreamSink<int?> dco_decode_StreamSink_opt_box_autoadd_u_16_Sse(
       dynamic raw);
+
+  @protected
+  RustStreamSink<PortFollowOutcomeDto>
+      dco_decode_StreamSink_port_follow_outcome_dto_Sse(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -124,10 +132,25 @@ abstract class WarrenRustBridgeApiImplPlatform
   MapProtoDto dco_decode_map_proto_dto(dynamic raw);
 
   @protected
+  MigrationEventDto dco_decode_migration_event_dto(dynamic raw);
+
+  @protected
+  MigrationOutcomeDto dco_decode_migration_outcome_dto(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
+
+  @protected
+  PortFollowOutcomeDto dco_decode_port_follow_outcome_dto(dynamic raw);
+
+  @protected
+  PortFollowOutcomeKindDto dco_decode_port_follow_outcome_kind_dto(dynamic raw);
+
+  @protected
+  PortFollowPolicyDto dco_decode_port_follow_policy_dto(dynamic raw);
 
   @protected
   SignedRequest dco_decode_signed_request(dynamic raw);
@@ -210,8 +233,18 @@ abstract class WarrenRustBridgeApiImplPlatform
           SseDeserializer deserializer);
 
   @protected
+  RustStreamSink<MigrationEventDto>
+      sse_decode_StreamSink_migration_event_dto_Sse(
+          SseDeserializer deserializer);
+
+  @protected
   RustStreamSink<int?> sse_decode_StreamSink_opt_box_autoadd_u_16_Sse(
       SseDeserializer deserializer);
+
+  @protected
+  RustStreamSink<PortFollowOutcomeDto>
+      sse_decode_StreamSink_port_follow_outcome_dto_Sse(
+          SseDeserializer deserializer);
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
@@ -248,10 +281,30 @@ abstract class WarrenRustBridgeApiImplPlatform
   MapProtoDto sse_decode_map_proto_dto(SseDeserializer deserializer);
 
   @protected
+  MigrationEventDto sse_decode_migration_event_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  MigrationOutcomeDto sse_decode_migration_outcome_dto(
+      SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
   int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
+
+  @protected
+  PortFollowOutcomeDto sse_decode_port_follow_outcome_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  PortFollowOutcomeKindDto sse_decode_port_follow_outcome_kind_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  PortFollowPolicyDto sse_decode_port_follow_policy_dto(
+      SseDeserializer deserializer);
 
   @protected
   SignedRequest sse_decode_signed_request(SseDeserializer deserializer);
@@ -334,8 +387,16 @@ abstract class WarrenRustBridgeApiImplPlatform
       RustStreamSink<ConnectionStateDto> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_StreamSink_migration_event_dto_Sse(
+      RustStreamSink<MigrationEventDto> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_StreamSink_opt_box_autoadd_u_16_Sse(
       RustStreamSink<int?> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_StreamSink_port_follow_outcome_dto_Sse(
+      RustStreamSink<PortFollowOutcomeDto> self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -374,10 +435,30 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_map_proto_dto(MapProtoDto self, SseSerializer serializer);
 
   @protected
+  void sse_encode_migration_event_dto(
+      MigrationEventDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_migration_outcome_dto(
+      MigrationOutcomeDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_port_follow_outcome_dto(
+      PortFollowOutcomeDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_port_follow_outcome_kind_dto(
+      PortFollowOutcomeKindDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_port_follow_policy_dto(
+      PortFollowPolicyDto self, SseSerializer serializer);
 
   @protected
   void sse_encode_signed_request(SignedRequest self, SseSerializer serializer);

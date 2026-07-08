@@ -221,9 +221,51 @@ void main() {
       );
       expect(handle.session.forwardedProto, ForwardProtocol.tcp);
       expect(handle.session.forwardedInternalPort, 8080);
+      // Omitting the policy must mean best-effort follow, the doc 59 default.
+      expect(handle.session.forwardedPolicy, PortFollowPolicy.followBestEffort);
+      expect(handle.session.forwardedPinnedExternalPort, isNull);
       expect(forward.internalPort, 8080);
       expect(await forward.externalPort(), 41234);
       await forward.dispose();
+    });
+
+    test('forwardPort passes the follow policy and the pinned port through',
+        () async {
+      final client = await create();
+      final exit = (await client.listExits()).single;
+      final session = await client.connect(exit);
+
+      final forward = await session.forwardPort(
+        ForwardProtocol.udp,
+        51820,
+        '127.0.0.1:51820',
+        policy: PortFollowPolicy.keepPortOrStay,
+        pinnedExternalPort: 51820,
+      );
+      expect(handle.session.forwardedPolicy, PortFollowPolicy.keepPortOrStay);
+      expect(handle.session.forwardedPinnedExternalPort, 51820);
+      expect(await forward.outcomes.first, const PortChanged(port: 41234));
+      await forward.dispose();
+    });
+
+    test('migrationEvents delegates to the session handle', () async {
+      final client = await create();
+      final exit = (await client.listExits()).single;
+      final session = await client.connect(exit);
+
+      handle.session.migrationEvent = const MigrationEvent(
+        deadlineUnixSecs: 1767225600,
+        reasonCode: 0,
+        outcome: MigrationOutcome.cancelledPortConflict,
+      );
+      expect(
+        await session.migrationEvents.first,
+        const MigrationEvent(
+          deadlineUnixSecs: 1767225600,
+          reasonCode: 0,
+          outcome: MigrationOutcome.cancelledPortConflict,
+        ),
+      );
     });
 
     test('dispose releases the handle', () async {
@@ -256,17 +298,30 @@ class _FakeSessionHandle implements WarrenSessionHandle {
   @override
   Stream<ConnectionState> get states => Stream.value(const Connected());
 
+  MigrationEvent? migrationEvent;
+
+  @override
+  Stream<MigrationEvent> get migrationEvents => migrationEvent == null
+      ? const Stream.empty()
+      : Stream.value(migrationEvent!);
+
   ForwardProtocol? forwardedProto;
   int? forwardedInternalPort;
+  PortFollowPolicy? forwardedPolicy;
+  int? forwardedPinnedExternalPort;
 
   @override
   Future<WarrenForwardedPort> forwardPort(
     ForwardProtocol proto,
     int internalPort,
-    String localTarget,
-  ) async {
+    String localTarget, {
+    PortFollowPolicy policy = PortFollowPolicy.followBestEffort,
+    int? pinnedExternalPort,
+  }) async {
     forwardedProto = proto;
     forwardedInternalPort = internalPort;
+    forwardedPolicy = policy;
+    forwardedPinnedExternalPort = pinnedExternalPort;
     return _FakeForwardedPort(internalPort);
   }
 
@@ -285,6 +340,10 @@ class _FakeForwardedPort implements WarrenForwardedPort {
 
   @override
   Stream<int?> get externalPorts => Stream.value(41234);
+
+  @override
+  Stream<PortFollowOutcome> get outcomes =>
+      Stream.value(const PortChanged(port: 41234));
 
   @override
   Future<void> dispose() async {}
