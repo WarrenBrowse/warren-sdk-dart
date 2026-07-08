@@ -47,6 +47,13 @@ echo "==> warren-contract rev: ${WC_REV}"
 # relative paths expect exists) with the two siblings beside it at the pinned
 # revs. Nothing here touches the repo's own working tree or your siblings.
 git -C "${REPO_ROOT}" worktree add --quiet --detach "${WORKTREE}" HEAD
+# The documented flow edits the engine tag in Cargo.toml BEFORE running this
+# script, so the bump is usually uncommitted: carry the live manifest and lock
+# into the worktree, otherwise the lock is regenerated for HEAD's OLD tag while
+# the siblings are cloned at the NEW tag's pins (a mismatched franken-lock that
+# only CI catches).
+cp "${CARGO_TOML}" "${WORKTREE}/native/warren_sdk_frb/Cargo.toml"
+cp "${FRB_DIR}/Cargo.lock" "${WORKTREE}/native/warren_sdk_frb/Cargo.lock"
 git clone --quiet --filter=blob:none "${BASE}warrenguard.git" "${TMP}/warrenguard"
 git -C "${TMP}/warrenguard" checkout --quiet "${WG_REV}"
 git clone --quiet --filter=blob:none "${BASE}warren-contract.git" "${TMP}/warren-contract"
