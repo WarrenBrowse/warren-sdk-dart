@@ -121,8 +121,12 @@ impl WarrenClientFrb {
             // key cannot slip past on the next launch. Mirrors the engine FFI's
             // `with_persistence`; the filenames must match for state continuity.
             let dir = Path::new(&dir);
-            let io_err =
-                |_| err(WarrenErrorKind::Api, "persistence state directory is not usable");
+            let io_err = |_| {
+                err(
+                    WarrenErrorKind::Api,
+                    "persistence state directory is not usable",
+                )
+            };
             std::fs::create_dir_all(dir).map_err(io_err)?;
             let relay_gen =
                 FileGenerationStore::new(dir.join("relay_generation")).map_err(io_err)?;
@@ -256,9 +260,10 @@ impl WarrenClientFrb {
             // Optional resolver override (IPv4, port 53 implied) for exits that
             // disable the default tunnel DNS; otherwise the engine default.
             dns_server: match dns_server {
-                Some(addr) => Some(addr.parse::<std::net::Ipv4Addr>().map_err(|_| {
-                    err(WarrenErrorKind::Tunnel, "invalid dns server address")
-                })?),
+                Some(addr) => Some(
+                    addr.parse::<std::net::Ipv4Addr>()
+                        .map_err(|_| err(WarrenErrorKind::Tunnel, "invalid dns server address"))?,
+                ),
                 None => None,
             },
         };

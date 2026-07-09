@@ -25,9 +25,14 @@ anyhow = "1"
 hex = "0.4"
 # Wipe the bridge-side mnemonic copy after the engine has derived from it.
 zeroize = "1"
-# Only to name the engine's `watch::Receiver<ConnectionState>` in the session
-# handle; no runtime is created here (flutter_rust_bridge owns it).
-tokio = { version = "1", features = ["sync"] }
+# `sync` names the engine's `watch::Receiver<ConnectionState>` in the session
+# handle; `net`/`time` back the in-tunnel egress liveness probe (doc 62
+# item 5), which runs on the runtime flutter_rust_bridge owns (none is
+# created here).
+tokio = { version = "1", features = ["sync", "net", "time", "rt"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["sync", "net", "time", "rt", "rt-multi-thread", "macros"] }
 
 # `frb_expand` is set by flutter_rust_bridge_codegen during its cargo-expand pass
 # to exclude the generated module; register it so it is not an unexpected cfg.

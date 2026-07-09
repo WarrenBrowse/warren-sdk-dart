@@ -38,8 +38,7 @@ pub fn generate_mnemonic() -> String {
 /// included in the message).
 pub fn address_from_mnemonic(mnemonic: String) -> Result<String> {
     let mut mnemonic = mnemonic;
-    let address =
-        WarrenIdentity::from_mnemonic(&mnemonic).map(|identity| identity.address());
+    let address = WarrenIdentity::from_mnemonic(&mnemonic).map(|identity| identity.address());
     // Wipe the bridge-side copy once the address is derived, error path included.
     mnemonic.zeroize();
     address.map_err(|_| anyhow!("invalid mnemonic"))

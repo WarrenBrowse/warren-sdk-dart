@@ -177,6 +177,12 @@ pub struct WarrenSessionFrb {
     http: Option<String>,
     state_rx: Receiver<ConnectionState>,
     migration_rx: Receiver<Option<MigrationEvent>>,
+    /// In-tunnel egress verdict (doc 62 item 5): `true` while the
+    /// liveness probe reports the exit not forwarding.
+    egress_rx: Receiver<bool>,
+    /// Probe task, aborted on disconnect. `None` when no tokio runtime
+    /// was current at session creation (plain unit tests).
+    probe_task: Mutex<Option<tokio::task::JoinHandle<()>>>,
     // Behind a Mutex<Option<>> because `shutdown` consumes the handle by value
     // while the bridge only ever hands us a shared reference.
     handle: Mutex<Option<SupervisedProxyHandle>>,
@@ -189,11 +195,27 @@ impl WarrenSessionFrb {
         let http = handle.http_addr().map(|addr| addr.to_string());
         let state_rx = handle.watch_state();
         let migration_rx = handle.watch_migration();
+        // Egress liveness probe (doc 62 item 5): a drained/half-swapped
+        // exit keeps the QUIC session alive while forwarding nothing;
+        // the probe TCP-connects through this session's own SOCKS5
+        // endpoint and publishes the verdict on `egress_rx`.
+        let (egress_tx, egress_rx) = tokio::sync::watch::channel(false);
+        let probe_task = tokio::runtime::Handle::try_current().ok().map(|rt| {
+            let socks_addr = handle.local_addr();
+            let probe_state_rx = handle.watch_state();
+            rt.spawn(crate::egress_probe::run(
+                socks_addr,
+                probe_state_rx,
+                egress_tx,
+            ))
+        });
         Self {
             socks5,
             http,
             state_rx,
             migration_rx,
+            egress_rx,
+            probe_task: Mutex::new(probe_task),
             handle: Mutex::new(Some(handle)),
         }
     }
@@ -288,13 +310,42 @@ impl WarrenSessionFrb {
             pinned_external_port,
             ..PortFollowConfig::default()
         };
-        let port = handle.forward_port_with_policy(proto.to_engine(), internal_port, target, config);
+        let port =
+            handle.forward_port_with_policy(proto.to_engine(), internal_port, target, config);
         Ok(WarrenForwardedPortFrb::new(port))
+    }
+
+    /// Whether the in-tunnel egress liveness probe currently reports
+    /// the exit not forwarding (doc 62 item 5). `false` in every state
+    /// other than a Connected session with dead egress.
+    pub fn egress_dead(&self) -> bool {
+        *self.egress_rx.borrow()
+    }
+
+    /// Streams the egress verdict (doc 62 item 5), emitting the current
+    /// value first so a late listener is never left without one. `true`
+    /// while the exit stopped forwarding despite a live session (e.g. a
+    /// drained or half-swapped exit during a fleet rollout); cleared by
+    /// one successful probe or by leaving the Connected state.
+    pub async fn egress_health(&self, sink: StreamSink<bool>) {
+        let mut rx = self.egress_rx.clone();
+        if sink.add(*rx.borrow()).is_err() {
+            return;
+        }
+        while rx.changed().await.is_ok() {
+            let dead = *rx.borrow();
+            if sink.add(dead).is_err() {
+                break;
+            }
+        }
     }
 
     /// Tears the connection down and releases its datapath resources.
     /// Idempotent: a second call is a no-op.
     pub fn disconnect(&self) {
+        if let Some(task) = self.probe_task.lock().expect("probe mutex poisoned").take() {
+            task.abort();
+        }
         if let Some(handle) = self.handle.lock().expect("session mutex poisoned").take() {
             handle.shutdown();
         }
