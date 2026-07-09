@@ -38,6 +38,18 @@ abstract class WarrenSessionFrb implements RustOpaqueInterface {
   /// Idempotent: a second call is a no-op.
   Future<void> disconnect();
 
+  /// Whether the in-tunnel egress liveness probe currently reports
+  /// the exit not forwarding (doc 62 item 5). `false` in every state
+  /// other than a Connected session with dead egress.
+  Future<bool> egressDead();
+
+  /// Streams the egress verdict (doc 62 item 5), emitting the current
+  /// value first so a late listener is never left without one. `true`
+  /// while the exit stopped forwarding despite a live session (e.g. a
+  /// drained or half-swapped exit during a fleet rollout); cleared by
+  /// one successful probe or by leaving the Connected state.
+  Stream<bool> egressHealth();
+
   /// Forwards a tunnel-side port via NAT-PMP, re-mapped automatically across
   /// reconnects. `local_target` is the local `ip:port` inbound connections are
   /// relayed to. The exit must run a NAT-PMP gateway.

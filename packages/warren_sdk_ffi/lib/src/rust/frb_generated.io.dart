@@ -83,6 +83,9 @@ abstract class WarrenRustBridgeApiImplPlatform
           dynamic raw);
 
   @protected
+  RustStreamSink<bool> dco_decode_StreamSink_bool_Sse(dynamic raw);
+
+  @protected
   RustStreamSink<ConnectionStateDto>
       dco_decode_StreamSink_connection_state_dto_Sse(dynamic raw);
 
@@ -226,6 +229,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   WarrenSessionFrb
       sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           SseDeserializer deserializer);
+
+  @protected
+  RustStreamSink<bool> sse_decode_StreamSink_bool_Sse(
+      SseDeserializer deserializer);
 
   @protected
   RustStreamSink<ConnectionStateDto>
@@ -381,6 +388,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   void
       sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
           WarrenSessionFrb self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_StreamSink_bool_Sse(
+      RustStreamSink<bool> self, SseSerializer serializer);
 
   @protected
   void sse_encode_StreamSink_connection_state_dto_Sse(
