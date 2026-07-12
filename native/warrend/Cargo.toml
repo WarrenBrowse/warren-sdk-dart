@@ -12,7 +12,11 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.15", features = [
+# Pinned by rev (not the v0.0.15 tag) to carry the socket-level carrier bypass
+# that closes Port Fail on the desktop TUN datapath: v0.0.15 predates that fix and
+# still installs the leaky <exit_ip>/32 host route. Promote to a formal tag at the
+# next SDK release.
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "db85934a1ad9a4632288687db056376462826b48", features = [
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
@@ -52,6 +56,10 @@ warrenguard-transport-core = { path = "../../../warrenguard/crates/warrenguard-t
 warrenguard-natpmp-protocol = { path = "../../../warrenguard/crates/warrenguard-natpmp-protocol" }
 warrenguard-tun-core = { path = "../../../warrenguard/crates/warrenguard-tun-core" }
 warrenguard-tun-device = { path = "../../../warrenguard/crates/warrenguard-tun-device" }
+warrenguard-socket-bypass = { path = "../../../warrenguard/crates/warrenguard-socket-bypass" }
+warrenguard-tcp-fallback = { path = "../../../warrenguard/crates/warrenguard-tcp-fallback" }
+warrenguard-token = { path = "../../../warrenguard/crates/warrenguard-token" }
+warrenguard-config = { path = "../../../warrenguard/crates/warrenguard-config" }
 
 # The engine's warren-contract carve-out declares `warrenguard-wire` as a path dep
 # relative to its own repo (`../warrenguard/...`), which escapes the git checkout
