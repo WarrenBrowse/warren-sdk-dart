@@ -39,32 +39,38 @@ runs:
         git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "ssh://git@github.com/WarrenBrowse/"
         git config --global --add url."https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/".insteadOf "https://github.com/WarrenBrowse/"
         echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
-    - name: checkout engine siblings at the engine tag's pinned revs
+    - name: checkout engine siblings at the engine pin's revs
       # native/warren_sdk_frb [patch]es warren-contract + warrenguard to these
       # siblings, so they MUST match the revs the engine's own build uses, else the
       # QUIC types split (e.g. warrenguard on warren-quinn fork.5 while the engine is
       # on fork.6) and warren-transport fails to compile. Derive both revs from the
-      # pinned engine tag so they can never drift out of lockstep again.
+      # pinned engine so they can never drift out of lockstep again.
       shell: bash
       env:
         ENGINE_TOKEN: ${{ inputs.token }}
       run: |
         set -euo pipefail
-        ENGINE_TAG="$(sed -n 's/^[[:space:]]*warren-sdk[[:space:]]*=.*warren-sdk-rs\.git.*tag[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' native/warren_sdk_frb/Cargo.toml)"
-        if [ -z "${ENGINE_TAG}" ]; then
-          echo "::error::could not parse the warren-sdk engine tag from native/warren_sdk_frb/Cargo.toml"; exit 1
+        # The engine is pinned either by a release tag (tag = "v0.0.16") or, during
+        # rapid iteration, by a raw commit rev (rev = "72f4949..."); accept both.
+        ENGINE_LINE="$(sed -n '/^[[:space:]]*warren-sdk[[:space:]]*=.*warren-sdk-rs\.git/p' native/warren_sdk_frb/Cargo.toml)"
+        ENGINE_REF="$(printf '%s' "${ENGINE_LINE}" | sed -n -E 's/.*(tag|rev)[[:space:]]*=[[:space:]]*"([^"]*)".*/\2/p')"
+        if [ -z "${ENGINE_REF}" ]; then
+          echo "::error::could not parse the warren-sdk engine tag/rev from native/warren_sdk_frb/Cargo.toml"; exit 1
         fi
-        echo "==> engine tag: ${ENGINE_TAG}"
-        # A shallow tag clone is enough to read the two version marker files.
+        echo "==> engine ref: ${ENGINE_REF}"
+        # Full clone + checkout resolves a tag AND a raw commit rev (git clone
+        # --branch only accepts a tag/branch name, never a SHA); we only read two
+        # small marker files, so the clone weight is negligible.
         PIN="${RUNNER_TEMP:-/tmp}/warren-engine-pin"
         rm -rf "${PIN}"
-        git clone --quiet --depth 1 --branch "${ENGINE_TAG}" \
+        git clone --quiet \
           "https://x-access-token:${ENGINE_TOKEN}@github.com/WarrenBrowse/warren-sdk-rs.git" "${PIN}"
+        git -C "${PIN}" checkout --quiet "${ENGINE_REF}"
         WG_REV="$(tr -d '[:space:]' < "${PIN}/.warrenguard-version")"
         WC_REV="$(tr -d '[:space:]' < "${PIN}/.warren-contract-version")"
         rm -rf "${PIN}"
         if [ -z "${WG_REV}" ] || [ -z "${WC_REV}" ]; then
-          echo "::error::engine tag ${ENGINE_TAG} is missing .warrenguard-version / .warren-contract-version"; exit 1
+          echo "::error::engine ref ${ENGINE_REF} is missing .warrenguard-version / .warren-contract-version"; exit 1
         fi
         echo "==> warrenguard rev:     ${WG_REV}"
         echo "==> warren-contract rev: ${WC_REV}"

@@ -54,7 +54,11 @@ jobs:
         run: |
           set -euo pipefail
           dart run build_runner build
-          git diff --exit-code
+          # Scope the drift check to this package: a repo-wide `git diff` also
+          # trips on the `vectors` submodule, which the persistent self-hosted
+          # runner leaves at a prior commit (this job checks out without
+          # submodules, so its gitlink and the stale working tree disagree).
+          git diff --exit-code -- .
       - run: flutter test
         working-directory: packages/warren_sdk_ffi
       - run: flutter test
@@ -134,4 +138,8 @@ jobs:
       - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
       - run: flutter_rust_bridge_codegen generate
       - name: fail if generated bindings drift from the committed ones
-        run: git diff --exit-code
+        # Exclude the `vectors` submodule: it is never an FRB codegen output, and
+        # the persistent self-hosted runner can leave it at a prior commit (this
+        # job checks out without submodules), which a repo-wide diff would
+        # misreport as generated-binding drift.
+        run: git diff --exit-code -- . ':(exclude)vectors'
