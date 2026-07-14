@@ -12,11 +12,11 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-# Pinned by rev (not the v0.0.15 tag) to carry the socket-level carrier bypass
-# that closes Port Fail on the desktop TUN datapath: v0.0.15 predates that fix and
-# still installs the leaky <exit_ip>/32 host route. Promote to a formal tag at the
+# Pinned by rev (kept in lockstep with the in-process SDK's rev above) to carry
+# the socket-level carrier bypass that closes Port Fail on the desktop TUN
+# datapath and the v10 tcp_fallback relay roster. Promote to a formal tag at the
 # next SDK release.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "db85934a1ad9a4632288687db056376462826b48", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "72f49494e02725690d48a94185365d915e053eda", features = [
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the

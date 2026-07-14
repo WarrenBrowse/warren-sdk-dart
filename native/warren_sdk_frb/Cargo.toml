@@ -12,13 +12,13 @@ publish = false
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-# The audited Warren engine, reused not reimplemented. Pinned to a tagged
-# snapshot for reproducible builds on every machine and in CI (no assumption
-# about repo layout on disk). To bump the engine, move this tag and re-run codegen.
+# The audited Warren engine, reused not reimplemented. Pinned by rev for
+# reproducible builds on every machine and in CI (no assumption about repo
+# layout on disk). To bump the engine, move this rev and re-run codegen.
 # For local co-development against a working copy of the engine, use the
 # documented gitignored path override (see the repo README, "Local co-development")
 # so this pin stays the single source of truth for CI and releases.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.16" }
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "72f49494e02725690d48a94185365d915e053eda" }
 
 flutter_rust_bridge = "=2.12.0"
 anyhow = "1"
