@@ -86,7 +86,7 @@ vendoring it:
 
 - **Engine**: the native glue crate (`native/warren_sdk_frb`) depends on the
   Warren engine through a **pinned git dependency** (`warren-sdk-rs`, tag
-  `v0.0.15`), so builds are reproducible on any machine and in CI with no
+  `v0.0.18`), so builds are reproducible on any machine and in CI with no
   assumption about on-disk layout. The obfuscated QUIC Initial (the engine builds
   on the `warren-quinn` fork with Initial-fragmentation on by default) is inherited
   through this pin. The glue crate does `[patch]` `warren-contract` + `warrenguard`
@@ -141,14 +141,17 @@ same mechanism).
 
 ### Bumping the engine
 
-The engine tag in `native/warren_sdk_frb/Cargo.toml` is the **single source of
-truth**. `warrenguard` and `warren-contract` are not pinned separately: CI reads
-the revs from that tag's `.warrenguard-version` / `.warren-contract-version` and
+The engine pin in `native/warren_sdk_frb/Cargo.toml` is the **single source of
+truth**: a release tag (`tag = "v0.0.18"`, the normal case) or, during rapid
+iteration, a raw commit rev (`rev = "..."`); CI and
+`scripts/resync-engine-lock.sh` accept both forms. `warrenguard` and
+`warren-contract` are not pinned separately: CI reads
+the revs from that pin's `.warrenguard-version` / `.warren-contract-version` and
 checks the siblings out at them (`.github/actions/setup-engine-build`), the same
 files the engine's own build uses. So a bump is:
 
 ```bash
-# 1. Move the tag in native/warren_sdk_frb/Cargo.toml (e.g. v0.0.15 -> v0.0.16).
+# 1. Move the pin in native/warren_sdk_frb/Cargo.toml (e.g. v0.0.17 -> v0.0.18).
 # 2. Resync the committed lock to the new engine graph (isolated, reproducible):
 scripts/resync-engine-lock.sh
 # 3. Re-run FRB codegen in case the engine's exposed API changed:
@@ -156,7 +159,7 @@ flutter_rust_bridge_codegen generate
 # 4. Commit Cargo.toml + Cargo.lock + any regenerated bindings together.
 ```
 
-The sibling revs must stay in lockstep with the tag: the engine builds on the
+The sibling revs must stay in lockstep with the pin: the engine builds on the
 `warren-quinn` fork, and a mismatched `warrenguard` (a different fork revision)
 makes the QUIC types collide and `warren-transport` fail to compile. The
 conformance job builds with `cargo build --locked`, so an un-resynced lock fails

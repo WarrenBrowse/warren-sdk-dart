@@ -12,9 +12,9 @@ publish = false
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-# The audited Warren engine, reused not reimplemented. Pinned by rev for
+# The audited Warren engine, reused not reimplemented. Pinned by tag for
 # reproducible builds on every machine and in CI (no assumption about repo
-# layout on disk). To bump the engine, move this rev and re-run codegen.
+# layout on disk). To bump the engine, move this tag and re-run codegen.
 # For local co-development against a working copy of the engine, use the
 # documented gitignored path override (see the repo README, "Local co-development")
 # so this pin stays the single source of truth for CI and releases.

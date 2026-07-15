@@ -12,11 +12,10 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-# Pinned by rev (kept in lockstep with the in-process SDK's rev above) to carry
+# Pinned by tag, kept in lockstep with warren_sdk_frb's engine pin, to carry
 # the socket-level carrier bypass that closes Port Fail on the desktop TUN
-# datapath and the v10 tcp_fallback relay roster. Promote to a formal tag at the
-# next SDK release.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "5fa51f120b79e89f96ef2324adf11042241798a4", features = [
+# datapath and the v10 tcp_fallback relay roster.
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.18", features = [
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
