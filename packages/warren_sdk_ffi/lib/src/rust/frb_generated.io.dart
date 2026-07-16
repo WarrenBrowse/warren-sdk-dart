@@ -111,6 +111,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   int dco_decode_box_autoadd_u_16(dynamic raw);
 
   @protected
+  WarrenFatalCauseDto dco_decode_box_autoadd_warren_fatal_cause_dto(
+      dynamic raw);
+
+  @protected
   ConnectionStateDto dco_decode_connection_state_dto(dynamic raw);
 
   @protected
@@ -147,6 +151,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
 
   @protected
+  WarrenFatalCauseDto? dco_decode_opt_box_autoadd_warren_fatal_cause_dto(
+      dynamic raw);
+
+  @protected
   PortFollowOutcomeDto dco_decode_port_follow_outcome_dto(dynamic raw);
 
   @protected
@@ -178,6 +186,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   WarrenErrorKind dco_decode_warren_error_kind(dynamic raw);
+
+  @protected
+  WarrenFatalCauseDto dco_decode_warren_fatal_cause_dto(dynamic raw);
 
   @protected
   WarrenFfiError dco_decode_warren_ffi_error(dynamic raw);
@@ -263,6 +274,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   int sse_decode_box_autoadd_u_16(SseDeserializer deserializer);
 
   @protected
+  WarrenFatalCauseDto sse_decode_box_autoadd_warren_fatal_cause_dto(
+      SseDeserializer deserializer);
+
+  @protected
   ConnectionStateDto sse_decode_connection_state_dto(
       SseDeserializer deserializer);
 
@@ -302,6 +317,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
 
   @protected
+  WarrenFatalCauseDto? sse_decode_opt_box_autoadd_warren_fatal_cause_dto(
+      SseDeserializer deserializer);
+
+  @protected
   PortFollowOutcomeDto sse_decode_port_follow_outcome_dto(
       SseDeserializer deserializer);
 
@@ -336,6 +355,10 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   WarrenErrorKind sse_decode_warren_error_kind(SseDeserializer deserializer);
+
+  @protected
+  WarrenFatalCauseDto sse_decode_warren_fatal_cause_dto(
+      SseDeserializer deserializer);
 
   @protected
   WarrenFfiError sse_decode_warren_ffi_error(SseDeserializer deserializer);
@@ -419,6 +442,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_warren_fatal_cause_dto(
+      WarrenFatalCauseDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_connection_state_dto(
       ConnectionStateDto self, SseSerializer serializer);
 
@@ -460,6 +487,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_warren_fatal_cause_dto(
+      WarrenFatalCauseDto? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_port_follow_outcome_dto(
       PortFollowOutcomeDto self, SseSerializer serializer);
 
@@ -496,6 +527,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   @protected
   void sse_encode_warren_error_kind(
       WarrenErrorKind self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_warren_fatal_cause_dto(
+      WarrenFatalCauseDto self, SseSerializer serializer);
 
   @protected
   void sse_encode_warren_ffi_error(

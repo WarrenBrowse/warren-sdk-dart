@@ -110,12 +110,24 @@ class FfiSessionHandle implements WarrenSessionHandle {
     rust_session.WarrenSessionFrb session,
     this._endpoints,
   )   : _session = session,
-        _states = LatestBroadcast(
-          session.states().map(mapConnectionState),
-        ),
+        _states = LatestBroadcast(_mapStates(session)),
         _migrationEvents = LatestBroadcast(
           session.migrationEvents().map(mapMigrationEvent),
         );
+
+  /// Maps the engine state stream, enriching the terminal `Failed` with the
+  /// engine's fatal cause. The supervisor latches the cause before publishing
+  /// `Failed`, so reading it here is race-free; a present cause tells a consumer
+  /// no redial helps (expired subscription, device limit) and to stop.
+  static Stream<ConnectionState> _mapStates(
+    rust_session.WarrenSessionFrb session,
+  ) =>
+      session.states().asyncMap((dto) async {
+        if (dto == rust_session.ConnectionStateDto.failed) {
+          return connectionFailed(mapFatalCause(await session.fatalCause()));
+        }
+        return mapConnectionState(dto);
+      });
 
   final rust_session.WarrenSessionFrb _session;
   final ProxyEndpoints _endpoints;

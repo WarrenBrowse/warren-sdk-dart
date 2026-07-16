@@ -7,7 +7,8 @@ import '../frb_generated.dart';
 import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `migration_to_dto`, `new`, `new`, `outcome_to_dto`, `to_dto`, `to_engine`, `to_engine`
+// These functions are ignored because they are not marked as `pub`: `fatal_to_dto`, `migration_to_dto`, `new`, `new`, `outcome_to_dto`, `to_dto`, `to_engine`, `to_engine`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `eq`, `fmt`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenForwardedPortFrb>>
 abstract class WarrenForwardedPortFrb implements RustOpaqueInterface {
@@ -49,6 +50,15 @@ abstract class WarrenSessionFrb implements RustOpaqueInterface {
   /// drained or half-swapped exit during a fleet rollout); cleared by
   /// one successful probe or by leaving the Connected state.
   Stream<bool> egressHealth();
+
+  /// The definitive cause the supervisor stopped on, or `None` while it is
+  /// still healing (or gave up on mere retry exhaustion, which is transient
+  /// and carries no cause). Read it when the state stream reaches `Failed`:
+  /// the supervisor latches the cause BEFORE publishing `Failed`, so a present
+  /// value there means no redial or other exit will help. A consumer surfaces
+  /// it (expired subscription, device limit) and stops instead of looping
+  /// `Reconnecting`.
+  Future<WarrenFatalCauseDto?> fatalCause();
 
   /// Forwards a tunnel-side port via NAT-PMP, re-mapped automatically across
   /// reconnects. `local_target` is the local `ip:port` inbound connections are
@@ -230,5 +240,27 @@ enum PortFollowPolicyDto {
 
   /// No follow: every epoch asks for a fresh server-assigned port.
   disabled,
+  ;
+}
+
+/// Why the supervisor stopped for good, mirrored for Dart as a plain enum.
+///
+/// The engine owns this classification; the bridge maps it, it never re-decides.
+/// Read alongside the terminal [`ConnectionStateDto::Failed`] via
+/// [`WarrenSessionFrb::fatal_cause`]: a present cause is precisely the "no redial
+/// or other exit helps, tell the user" signal, so a consumer stops retrying
+/// instead of looping `Reconnecting` forever. A `Failed` reached by mere retry
+/// exhaustion carries NO cause (the accessor returns `None`).
+enum WarrenFatalCauseDto {
+  /// The identity has no active subscription, or is not in the exit allowlist.
+  /// The user must provision or renew; retrying reproduces it.
+  notAuthorized,
+
+  /// The account already holds its maximum simultaneous devices.
+  deviceLimit,
+
+  /// The exit closed with the opaque policy-rejection code and no sealed cause
+  /// arrived: definitive, but the specific reason is unknown to the client.
+  policyRefused,
   ;
 }

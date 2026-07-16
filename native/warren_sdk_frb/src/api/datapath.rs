@@ -11,6 +11,7 @@ use std::sync::Mutex;
 use flutter_rust_bridge::frb;
 use tokio::sync::watch::Receiver;
 use warren_sdk::net::MapProto;
+use warren_sdk::transport::FatalCause;
 use warren_sdk::{
     ConnectionState, MigrationEvent, MigrationOutcome, PortFollowConfig, PortFollowOutcome,
     PortFollowPolicy, SupervisedForwardedPort, SupervisedProxyHandle,
@@ -34,6 +35,38 @@ pub enum ConnectionStateDto {
     Draining,
     /// Every attempt failed; the supervisor gave up.
     Failed,
+}
+
+/// Why the supervisor stopped for good, mirrored for Dart as a plain enum.
+///
+/// The engine owns this classification; the bridge maps it, it never re-decides.
+/// Read alongside the terminal [`ConnectionStateDto::Failed`] via
+/// [`WarrenSessionFrb::fatal_cause`]: a present cause is precisely the "no redial
+/// or other exit helps, tell the user" signal, so a consumer stops retrying
+/// instead of looping `Reconnecting` forever. A `Failed` reached by mere retry
+/// exhaustion carries NO cause (the accessor returns `None`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WarrenFatalCauseDto {
+    /// The identity has no active subscription, or is not in the exit allowlist.
+    /// The user must provision or renew; retrying reproduces it.
+    NotAuthorized,
+    /// The account already holds its maximum simultaneous devices.
+    DeviceLimit,
+    /// The exit closed with the opaque policy-rejection code and no sealed cause
+    /// arrived: definitive, but the specific reason is unknown to the client.
+    PolicyRefused,
+}
+
+fn fatal_to_dto(cause: FatalCause) -> WarrenFatalCauseDto {
+    match cause {
+        FatalCause::NotAuthorized => WarrenFatalCauseDto::NotAuthorized,
+        FatalCause::DeviceLimit => WarrenFatalCauseDto::DeviceLimit,
+        FatalCause::PolicyRefused => WarrenFatalCauseDto::PolicyRefused,
+        // `FatalCause` is `#[non_exhaustive]`. A future fatal kind is still a
+        // definitive refusal (never retryable), so surface it as the opaque
+        // `PolicyRefused` rather than dropping the "stop" signal.
+        _ => WarrenFatalCauseDto::PolicyRefused,
+    }
 }
 
 fn to_dto(state: ConnectionState) -> ConnectionStateDto {
@@ -177,6 +210,9 @@ pub struct WarrenSessionFrb {
     http: Option<String>,
     state_rx: Receiver<ConnectionState>,
     migration_rx: Receiver<Option<MigrationEvent>>,
+    /// The definitive cause latched when the supervisor gives up, or `None`
+    /// while it is healing. Set once, alongside the terminal `Failed` state.
+    fatal_rx: Receiver<Option<FatalCause>>,
     /// In-tunnel egress verdict (doc 62 item 5): `true` while the
     /// liveness probe reports the exit not forwarding.
     egress_rx: Receiver<bool>,
@@ -195,6 +231,7 @@ impl WarrenSessionFrb {
         let http = handle.http_addr().map(|addr| addr.to_string());
         let state_rx = handle.watch_state();
         let migration_rx = handle.watch_migration();
+        let fatal_rx = handle.watch_fatal();
         // Egress liveness probe (doc 62 item 5): a drained/half-swapped
         // exit keeps the QUIC session alive while forwarding nothing;
         // the probe TCP-connects through this session's own SOCKS5
@@ -214,6 +251,7 @@ impl WarrenSessionFrb {
             http,
             state_rx,
             migration_rx,
+            fatal_rx,
             egress_rx,
             probe_task: Mutex::new(probe_task),
             handle: Mutex::new(Some(handle)),
@@ -243,6 +281,17 @@ impl WarrenSessionFrb {
                 break;
             }
         }
+    }
+
+    /// The definitive cause the supervisor stopped on, or `None` while it is
+    /// still healing (or gave up on mere retry exhaustion, which is transient
+    /// and carries no cause). Read it when the state stream reaches `Failed`:
+    /// the supervisor latches the cause BEFORE publishing `Failed`, so a present
+    /// value there means no redial or other exit will help. A consumer surfaces
+    /// it (expired subscription, device limit) and stops instead of looping
+    /// `Reconnecting`.
+    pub fn fatal_cause(&self) -> Option<WarrenFatalCauseDto> {
+        self.fatal_rx.borrow().map(fatal_to_dto)
     }
 
     /// Streams maintenance-migration events (doc 59): the drain advisory's
@@ -444,5 +493,43 @@ impl WarrenForwardedPortFrb {
         if let Some(port) = self.port.lock().expect("forward mutex poisoned").take() {
             port.shutdown();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{fatal_to_dto, WarrenFatalCauseDto};
+    use warren_sdk::transport::FatalCause;
+
+    #[test]
+    fn fatal_cause_kinds_stay_distinct_across_the_bridge() {
+        // Each engine fatal cause maps to its OWN Dart-facing kind: a consumer
+        // must tell "renew the subscription" (NotAuthorized) from "too many
+        // devices" (DeviceLimit) from an opaque refusal, to react correctly.
+        assert_eq!(
+            fatal_to_dto(FatalCause::NotAuthorized),
+            WarrenFatalCauseDto::NotAuthorized
+        );
+        assert_eq!(
+            fatal_to_dto(FatalCause::DeviceLimit),
+            WarrenFatalCauseDto::DeviceLimit
+        );
+        assert_eq!(
+            fatal_to_dto(FatalCause::PolicyRefused),
+            WarrenFatalCauseDto::PolicyRefused
+        );
+        // The whole point of A4: the taxonomy must not collapse to one kind.
+        assert_ne!(
+            WarrenFatalCauseDto::NotAuthorized,
+            WarrenFatalCauseDto::DeviceLimit
+        );
+        assert_ne!(
+            WarrenFatalCauseDto::DeviceLimit,
+            WarrenFatalCauseDto::PolicyRefused
+        );
+        assert_ne!(
+            WarrenFatalCauseDto::NotAuthorized,
+            WarrenFatalCauseDto::PolicyRefused
+        );
     }
 }

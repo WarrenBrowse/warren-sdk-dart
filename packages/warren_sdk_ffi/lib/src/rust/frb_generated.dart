@@ -72,7 +72,7 @@ class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1148344352;
+  int get rustContentHash => 40866547;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -143,6 +143,9 @@ abstract class WarrenRustBridgeApi extends BaseApi {
       {required WarrenSessionFrb that});
 
   Stream<bool> crateApiDatapathWarrenSessionFrbEgressHealth(
+      {required WarrenSessionFrb that});
+
+  Future<WarrenFatalCauseDto?> crateApiDatapathWarrenSessionFrbFatalCause(
       {required WarrenSessionFrb that});
 
   Future<WarrenForwardedPortFrb> crateApiDatapathWarrenSessionFrbForwardPort(
@@ -733,6 +736,33 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       );
 
   @override
+  Future<WarrenFatalCauseDto?> crateApiDatapathWarrenSessionFrbFatalCause(
+      {required WarrenSessionFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 17, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_opt_box_autoadd_warren_fatal_cause_dto,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDatapathWarrenSessionFrbFatalCauseConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDatapathWarrenSessionFrbFatalCauseConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenSessionFrb_fatal_cause",
+        argNames: ["that"],
+      );
+
+  @override
   Future<WarrenForwardedPortFrb> crateApiDatapathWarrenSessionFrbForwardPort(
       {required WarrenSessionFrb that,
       required MapProtoDto proto,
@@ -747,7 +777,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_u_16(internalPort, serializer);
         sse_encode_String(localTarget, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 17, port: port_);
+            funcId: 18, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -786,7 +816,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_port_follow_policy_dto(policy, serializer);
         sse_encode_opt_box_autoadd_u_16(pinnedExternalPort, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 18, port: port_);
+            funcId: 19, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -830,7 +860,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 19, port: port_);
+            funcId: 20, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_String,
@@ -859,7 +889,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_migration_event_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 20, port: port_);
+            funcId: 21, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -887,7 +917,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 21, port: port_);
+            funcId: 22, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -916,7 +946,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_connection_state_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 22, port: port_);
+            funcId: 23, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -943,7 +973,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(mnemonic, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 23, port: port_);
+            funcId: 24, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -967,7 +997,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 24, port: port_);
+            funcId: 25, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1003,7 +1033,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_u_64(timestamp, serializer);
         sse_encode_String(nonceHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 25, port: port_);
+            funcId: 26, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_signed_request,
@@ -1035,7 +1065,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(address, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 26, port: port_);
+            funcId: 27, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1059,7 +1089,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(publicKeyHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 27, port: port_);
+            funcId: 28, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1234,6 +1264,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenFatalCauseDto dco_decode_box_autoadd_warren_fatal_cause_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_warren_fatal_cause_dto(raw);
+  }
+
+  @protected
   ConnectionStateDto dco_decode_connection_state_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return ConnectionStateDto.values[raw as int];
@@ -1324,6 +1361,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenFatalCauseDto? dco_decode_opt_box_autoadd_warren_fatal_cause_dto(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null
+        ? null
+        : dco_decode_box_autoadd_warren_fatal_cause_dto(raw);
+  }
+
+  @protected
   PortFollowOutcomeDto dco_decode_port_follow_outcome_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1411,6 +1457,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   WarrenErrorKind dco_decode_warren_error_kind(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return WarrenErrorKind.values[raw as int];
+  }
+
+  @protected
+  WarrenFatalCauseDto dco_decode_warren_fatal_cause_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WarrenFatalCauseDto.values[raw as int];
   }
 
   @protected
@@ -1571,6 +1623,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenFatalCauseDto sse_decode_box_autoadd_warren_fatal_cause_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_warren_fatal_cause_dto(deserializer));
+  }
+
+  @protected
   ConnectionStateDto sse_decode_connection_state_dto(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1694,6 +1753,18 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  WarrenFatalCauseDto? sse_decode_opt_box_autoadd_warren_fatal_cause_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_warren_fatal_cause_dto(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   PortFollowOutcomeDto sse_decode_port_follow_outcome_dto(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1779,6 +1850,14 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return WarrenErrorKind.values[inner];
+  }
+
+  @protected
+  WarrenFatalCauseDto sse_decode_warren_fatal_cause_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return WarrenFatalCauseDto.values[inner];
   }
 
   @protected
@@ -1970,6 +2049,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_warren_fatal_cause_dto(
+      WarrenFatalCauseDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_warren_fatal_cause_dto(self, serializer);
+  }
+
+  @protected
   void sse_encode_connection_state_dto(
       ConnectionStateDto self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -2073,6 +2159,17 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_warren_fatal_cause_dto(
+      WarrenFatalCauseDto? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_warren_fatal_cause_dto(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_port_follow_outcome_dto(
       PortFollowOutcomeDto self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -2146,6 +2243,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   @protected
   void sse_encode_warren_error_kind(
       WarrenErrorKind self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_warren_fatal_cause_dto(
+      WarrenFatalCauseDto self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
   }
@@ -2342,6 +2446,18 @@ class WarrenSessionFrbImpl extends RustOpaque implements WarrenSessionFrb {
   /// one successful probe or by leaving the Connected state.
   Stream<bool> egressHealth() => WarrenRustBridge.instance.api
           .crateApiDatapathWarrenSessionFrbEgressHealth(
+        that: this,
+      );
+
+  /// The definitive cause the supervisor stopped on, or `None` while it is
+  /// still healing (or gave up on mere retry exhaustion, which is transient
+  /// and carries no cause). Read it when the state stream reaches `Failed`:
+  /// the supervisor latches the cause BEFORE publishing `Failed`, so a present
+  /// value there means no redial or other exit will help. A consumer surfaces
+  /// it (expired subscription, device limit) and stops instead of looping
+  /// `Reconnecting`.
+  Future<WarrenFatalCauseDto?> fatalCause() =>
+      WarrenRustBridge.instance.api.crateApiDatapathWarrenSessionFrbFatalCause(
         that: this,
       );
 

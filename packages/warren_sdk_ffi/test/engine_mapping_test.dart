@@ -241,5 +241,67 @@ void main() {
         isA<ConnectionFailed>().having((s) => s.code, 'code', 'tunnel/failed'),
       );
     });
+
+    test('a bare failed state carries no fatal cause', () {
+      expect(
+        mapConnectionState(ConnectionStateDto.failed),
+        isA<ConnectionFailed>().having((s) => s.cause, 'cause', isNull),
+      );
+    });
+  });
+
+  group('mapFatalCause', () {
+    test('maps each engine fatal cause to its own distinct public kind', () {
+      // A4: the taxonomy must NOT collapse. A consumer has to tell "renew the
+      // subscription" from "too many devices" from an opaque refusal to react.
+      expect(
+        mapFatalCause(WarrenFatalCauseDto.notAuthorized),
+        WarrenFatalCause.notAuthorized,
+      );
+      expect(
+        mapFatalCause(WarrenFatalCauseDto.deviceLimit),
+        WarrenFatalCause.deviceLimit,
+      );
+      expect(
+        mapFatalCause(WarrenFatalCauseDto.policyRefused),
+        WarrenFatalCause.policyRefused,
+      );
+      // Every engine kind reaches its own public kind: no two collapse.
+      final mapped = WarrenFatalCauseDto.values.map(mapFatalCause).toList();
+      expect(mapped.toSet().length, WarrenFatalCauseDto.values.length);
+    });
+
+    test('a null bridge cause is transient exhaustion, not a fatal cause', () {
+      expect(mapFatalCause(null), isNull);
+    });
+  });
+
+  group('connectionFailed', () {
+    test('a null cause is plain retry exhaustion', () {
+      expect(
+        connectionFailed(null),
+        const ConnectionFailed(
+          code: 'tunnel/failed',
+          message: 'the connection failed and will not be retried',
+        ),
+      );
+    });
+
+    test('each fatal cause yields a distinct code and carries the cause', () {
+      final byCause = {
+        for (final cause in WarrenFatalCause.values)
+          cause: connectionFailed(cause) as ConnectionFailed,
+      };
+      // The public state carries the machine-readable cause so a consumer can
+      // stop on it.
+      for (final entry in byCause.entries) {
+        expect(entry.value.cause, entry.key);
+      }
+      // Distinct code per cause: a consumer branching on `code` alone still
+      // distinguishes an expired subscription from a device-limit rejection.
+      final codes = byCause.values.map((f) => f.code).toSet();
+      expect(codes.length, WarrenFatalCause.values.length);
+      expect(codes, isNot(contains('tunnel/failed')));
+    });
   });
 }
