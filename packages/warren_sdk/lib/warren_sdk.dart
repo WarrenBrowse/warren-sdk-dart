@@ -40,6 +40,7 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         WarrenApiError,
         WarrenDiscoveryError,
         WarrenError,
+        WarrenFatalCause,
         WarrenForwardedPort,
         WarrenIdentityError,
         WarrenPrivilegeError,
