@@ -15,7 +15,7 @@ path = "src/main.rs"
 # Pinned by tag, kept in lockstep with warren_sdk_frb's engine pin, to carry
 # the socket-level carrier bypass that closes Port Fail on the desktop TUN
 # datapath and the v10 tcp_fallback relay roster.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.19", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.21", features = [
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
