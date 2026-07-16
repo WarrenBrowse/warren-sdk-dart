@@ -271,6 +271,18 @@ async fn handle(
                 .as_ref()
                 .ok_or_else(|| Event::error("tunnel", "configure must precede connect"))?;
             let exit = find_exit(client, &exit_pubkey_hex).await?;
+            // Datapath scope of the cover/probe defenses on this TUN path: the
+            // engine idle-cover IS armed here, because `start_tun_multihop`
+            // shares the engine multihop dial (`connect_multihop_with_bypass`,
+            // driven by the `cover_defenses()` knob) with the userland proxy.
+            // What this path does NOT run is the in-tunnel egress liveness probe:
+            // that probe lives in the in-process proxy glue (`warren_sdk_frb`)
+            // and connects through the session's SOCKS5 endpoint, which a full
+            // TUN has no equivalent of. Surfacing a "dead egress" signal here
+            // would mean an equivalent probe over the TUN datapath (or exposing
+            // the engine `warren_transport::egress_probe` on this handle),
+            // reported on the IPC protocol; not wired yet, and deferred while the
+            // privileged TUN datapath is under separate review.
             // An empty name lets the OS pick the TUN interface.
             let handle = client
                 .start_tun_multihop(&exit, "")
