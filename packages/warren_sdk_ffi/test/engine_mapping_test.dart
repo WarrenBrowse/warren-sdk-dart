@@ -252,7 +252,7 @@ void main() {
 
   group('mapFatalCause', () {
     test('maps each engine fatal cause to its own distinct public kind', () {
-      // A4: the taxonomy must NOT collapse. A consumer has to tell "renew the
+      // The taxonomy must NOT collapse: a consumer has to tell "renew the
       // subscription" from "too many devices" from an opaque refusal to react.
       expect(
         mapFatalCause(WarrenFatalCauseDto.notAuthorized),

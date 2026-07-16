@@ -518,7 +518,8 @@ mod tests {
             fatal_to_dto(FatalCause::PolicyRefused),
             WarrenFatalCauseDto::PolicyRefused
         );
-        // The whole point of A4: the taxonomy must not collapse to one kind.
+        // The taxonomy must not collapse to one kind: a subscription rejection
+        // has to stay distinguishable from a device-limit one for the client.
         assert_ne!(
             WarrenFatalCauseDto::NotAuthorized,
             WarrenFatalCauseDto::DeviceLimit
