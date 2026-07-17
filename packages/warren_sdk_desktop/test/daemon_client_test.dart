@@ -84,6 +84,16 @@ void main() {
     expect(await states, [const Reconnecting(), const Disconnected()]);
   });
 
+  test('a disconnect teardown surfaces draining before disconnected', () async {
+    // The daemon announces teardown (`draining`, killswitch still holding)
+    // before the terminal `disconnected`; the sealed hierarchy must keep the
+    // two distinct so a UI cannot read teardown-in-progress as already done.
+    final states = client.states.take(2).toList();
+    daemonSends(const StateEvent(DaemonConnectionState.draining));
+    daemonSends(const StateEvent(DaemonConnectionState.disconnected));
+    expect(await states, [const Draining(), const Disconnected()]);
+  });
+
   test('replays the latest state to a listener that attaches late', () async {
     daemonSends(const StateEvent(DaemonConnectionState.connected));
     await pumpEventQueue();

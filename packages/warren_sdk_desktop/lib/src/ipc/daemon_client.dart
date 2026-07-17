@@ -110,6 +110,7 @@ ConnectionState _toConnectionState(DaemonConnectionState state) =>
       DaemonConnectionState.connecting => const Connecting(),
       DaemonConnectionState.connected => const Connected(),
       DaemonConnectionState.reconnecting => const Reconnecting(),
+      DaemonConnectionState.draining => const Draining(),
       DaemonConnectionState.disconnected => const Disconnected(),
       DaemonConnectionState.failed => const ConnectionFailed(
           code: 'tunnel/failed',

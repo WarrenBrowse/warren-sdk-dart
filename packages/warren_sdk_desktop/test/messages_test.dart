@@ -87,4 +87,14 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('the daemon draining wire state parses', () {
+    // The daemon announces teardown with `draining` before the terminal
+    // `disconnected`; a client that cannot parse it would break on every
+    // disconnect.
+    final message =
+        DaemonMessage.fromJson(const {'type': 'state', 'state': 'draining'});
+    expect(message, isA<StateEvent>());
+    expect((message as StateEvent).state, DaemonConnectionState.draining);
+  });
 }

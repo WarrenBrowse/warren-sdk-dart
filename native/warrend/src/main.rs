@@ -199,6 +199,12 @@ async fn serve_connection(stream: &mut UnixStream, tunnel: &SharedTunnel) -> Res
                 continue;
             }
         };
+        // Teardown is not instantaneous (routing + pf revert): announce it so
+        // the client can hold a "draining, killswitch still up" state instead
+        // of reading the eventual Disconnected as already true.
+        if matches!(request, Request::Disconnect) {
+            send(stream, &Event::state(ConnState::Draining)).await?;
+        }
         match handle(&mut session, tunnel, request).await {
             Ok(Some(event)) => send(stream, &event).await?,
             Ok(None) => {}
@@ -228,8 +234,8 @@ async fn handle(
             // The engine keeps only the zeroized derived key; wipe our own copy
             // whether or not derivation succeeded.
             mnemonic.zeroize();
-            let identity = identity_result
-                .map_err(|_| Event::error("identity", "invalid mnemonic"))?;
+            let identity =
+                identity_result.map_err(|_| Event::error("identity", "invalid mnemonic"))?;
             let mut builder = WarrenClient::builder()
                 .identity(identity)
                 .api_base(api_base)
@@ -368,6 +374,58 @@ async fn send(stream: &mut UnixStream, event: &Event) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Reads one framed daemon event from `stream` as JSON.
+    async fn read_event(stream: &mut UnixStream) -> serde_json::Value {
+        let mut len_buf = [0u8; 4];
+        stream.read_exact(&mut len_buf).await.expect("frame length");
+        let mut payload = vec![0u8; u32::from_be_bytes(len_buf) as usize];
+        stream
+            .read_exact(&mut payload)
+            .await
+            .expect("frame payload");
+        serde_json::from_slice(&payload).expect("event json")
+    }
+
+    async fn send_frame(stream: &mut UnixStream, payload: &[u8]) {
+        stream
+            .write_all(&(payload.len() as u32).to_be_bytes())
+            .await
+            .expect("frame length");
+        stream.write_all(payload).await.expect("frame payload");
+    }
+
+    #[tokio::test]
+    async fn disconnect_reports_draining_then_disconnected() {
+        // The client must be able to distinguish "teardown in progress, the
+        // killswitch still holds" from "the network is fully restored": a
+        // single final event would read as done while routing/pf revert is
+        // still running.
+        let (mut daemon_end, mut client_end) = UnixStream::pair().expect("socketpair");
+        let tunnel: SharedTunnel = Arc::new(Mutex::new(None));
+        let serve = tokio::spawn(async move { serve_connection(&mut daemon_end, &tunnel).await });
+
+        send_frame(&mut client_end, br#"{"type":"disconnect"}"#).await;
+
+        let first = read_event(&mut client_end).await;
+        assert_eq!(
+            first,
+            serde_json::json!({"type": "state", "state": "draining"}),
+            "teardown must be announced before the network revert runs"
+        );
+        let second = read_event(&mut client_end).await;
+        assert_eq!(
+            second,
+            serde_json::json!({"type": "state", "state": "disconnected"}),
+            "disconnected is only sent once the datapath handle is dropped"
+        );
+
+        drop(client_end);
+        serve
+            .await
+            .expect("serve task")
+            .expect("clean end at client EOF");
+    }
 
     #[tokio::test]
     async fn peer_uid_reports_the_connected_process_uid() {

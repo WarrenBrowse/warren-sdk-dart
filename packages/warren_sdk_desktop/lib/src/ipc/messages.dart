@@ -14,10 +14,16 @@ enum DaemonConnectionState {
   /// A retry is in flight after backoff.
   reconnecting,
 
+  /// The session is being wound down while the killswitch still holds: an
+  /// explicit disconnect started tearing the datapath down (or, under a
+  /// supervised daemon, the exit signalled a drain migration). Not final:
+  /// [disconnected] follows once the network is restored.
+  draining,
+
   /// Every attempt failed; the supervisor gave up.
   failed,
 
-  /// The session was torn down.
+  /// The session was torn down and the network fully restored.
   disconnected,
 }
 

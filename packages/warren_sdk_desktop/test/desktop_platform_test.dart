@@ -198,6 +198,38 @@ void main() {
       expect(daemon.closed, isTrue);
     });
 
+    test('disconnect waits for the terminal disconnected state', () async {
+      // The daemon answers a disconnect with draining (teardown running, the
+      // killswitch still holding) and only then disconnected (network
+      // restored). disconnect() must complete on the terminal state, not
+      // right after sending the request: a caller returning early would treat
+      // a still-captured network as restored.
+      final daemon = _FakeDaemon(
+        reply: const StateEvent(DaemonConnectionState.connected),
+      );
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => daemon.client,
+      );
+      final handle = await platform.createClient(config);
+      final session = await handle.connect(
+        exit,
+        ConnectMode.systemVpn,
+        const ConnectOptions(),
+      );
+      final seen = <ConnectionState>[];
+      final sub = session.states.listen(seen.add);
+
+      await session.disconnect();
+
+      expect(
+        seen,
+        containsAllInOrder(const [Draining(), Disconnected()]),
+        reason: 'disconnect() completed before the terminal disconnected state',
+      );
+      await sub.cancel();
+    });
+
     test('forwardPort is not available on the system-VPN datapath', () async {
       final daemon = _FakeDaemon(
         reply: const StateEvent(DaemonConnectionState.connected),
@@ -414,6 +446,22 @@ class _FakeDaemon {
       _incoming.add(
         FrameCodec.encode(utf8.encode(jsonEncode(reply.toJson()))),
       );
+    }
+    // Mirror the real daemon's teardown protocol: draining (revert running)
+    // then the terminal disconnected.
+    if (received().isNotEmpty &&
+        received().last is DisconnectRequest &&
+        !_incoming.isClosed) {
+      for (final state in const [
+        DaemonConnectionState.draining,
+        DaemonConnectionState.disconnected,
+      ]) {
+        _incoming.add(
+          FrameCodec.encode(
+            utf8.encode(jsonEncode(StateEvent(state).toJson())),
+          ),
+        );
+      }
     }
   }
 

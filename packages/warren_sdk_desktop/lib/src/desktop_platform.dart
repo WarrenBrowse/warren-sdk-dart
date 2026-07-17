@@ -265,7 +265,17 @@ class DaemonSessionHandle implements WarrenSessionHandle {
 
   @override
   Future<void> disconnect() async {
+    // The daemon answers with draining (teardown running, killswitch still
+    // holding) and then the terminal disconnected once routing/pf are
+    // restored. Completing before the terminal state would let a caller treat
+    // a still-captured network as restored, so wait for it (bounded, so a
+    // wedged daemon cannot hang the app; the close below still tears down).
+    final terminal = _daemon.states
+        .firstWhere((s) => s is Disconnected)
+        .timeout(const Duration(seconds: 10))
+        .then<void>((_) {}, onError: (Object _) {});
     _daemon.disconnect();
+    await terminal;
     await _daemon.close();
   }
 }

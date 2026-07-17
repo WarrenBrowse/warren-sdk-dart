@@ -55,10 +55,11 @@ pub enum Event {
 
 /// The connection state, serialized with the same names the Dart enum uses.
 ///
-/// This is the full wire vocabulary shared with the Dart side. The current
-/// (non-supervised) daemon only emits a subset (`Connected` / `Disconnected`,
-/// plus errors); the others exist for protocol parity and a future supervised
-/// daemon.
+/// This is the full wire vocabulary shared with the Dart side, mirroring the
+/// engine's `ConnectionState` lineage plus `Disconnected`. The current
+/// (non-supervised) daemon only emits a subset (`Connected` / `Draining` /
+/// `Disconnected`, plus errors); the others exist for protocol parity and a
+/// future supervised daemon.
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
@@ -66,6 +67,11 @@ pub enum ConnState {
     Connecting,
     Connected,
     Reconnecting,
+    /// The session is being wound down while the killswitch still holds: sent
+    /// when an explicit disconnect starts tearing the datapath down (and, once
+    /// the daemon is supervised, when the exit signals a drain migration).
+    /// Not final: `Disconnected` follows only after the network is restored.
+    Draining,
     Failed,
     Disconnected,
 }
@@ -165,6 +171,12 @@ mod tests {
     fn serializes_events_as_the_dart_side_expects() {
         let state = serde_json::to_string(&Event::state(ConnState::Connected)).unwrap();
         assert_eq!(state, r#"{"type":"state","state":"connected"}"#);
+
+        // The teardown-in-progress state (and, under a future supervised
+        // daemon, the exit-drain migration): its spelling is shared with the
+        // Dart enum and the TS WarrendState mirror.
+        let draining = serde_json::to_string(&Event::state(ConnState::Draining)).unwrap();
+        assert_eq!(draining, r#"{"type":"state","state":"draining"}"#);
 
         let error = serde_json::to_string(&Event::error("tunnel", "down")).unwrap();
         assert_eq!(
