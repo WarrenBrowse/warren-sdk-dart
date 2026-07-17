@@ -32,8 +32,8 @@ void main() {
     });
 
     test('formats a real timestamp', () {
-      // 2021-01-01T00:00:00Z; exact local rendering depends on the zone, but it
-      // must be a full date-time, not the dash sentinel.
+      // A real epoch renders to a full date-time (exact local rendering
+      // depends on the zone), never the dash sentinel.
       expect(formatUnixSeconds(1609459200), isNot('-'));
     });
   });
