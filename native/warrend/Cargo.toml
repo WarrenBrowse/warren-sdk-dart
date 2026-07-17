@@ -12,10 +12,9 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-# Pinned by rev (branch validation; retag at release), kept in lockstep with
-# warren_sdk_frb's engine pin, to carry the single-homed route-split/killswitch
-# stack the rooted datapath rides.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", branch = "wip/b4-tun-single-home", features = [
+# Pinned by tag, kept in lockstep with warren_sdk_frb's engine pin, to carry
+# the single-homed route-split/killswitch stack the rooted datapath rides.
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.24", features = [
     "experimental-tun",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
