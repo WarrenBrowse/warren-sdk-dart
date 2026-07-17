@@ -240,7 +240,7 @@ impl WarrenSessionFrb {
         let probe_task = tokio::runtime::Handle::try_current().ok().map(|rt| {
             let socks_addr = handle.local_addr();
             let probe_state_rx = handle.watch_state();
-            rt.spawn(crate::egress_probe::run(
+            rt.spawn(warren_sdk::socks_egress::run_socks5_egress_probe(
                 socks_addr,
                 probe_state_rx,
                 egress_tx,
