@@ -10,6 +10,19 @@ name: Linux TUN (rooted, netns)
 # egress) is mnemonic-free and runs on every dispatch; without WARREN_MNEMONIC
 # only the live TUN test self-skips, so a dry run is still green AND meaningful.
 #
+# CI CAPABILITY GAP (why this stays dispatch-only, and where it IS validated):
+# creating a netns + loading the nft killswitch needs CAP_NET_ADMIN + CAP_SYS_ADMIN
+# (and /dev/net/tun). The shared self-hosted Linux runner containers grant neither
+# (default Docker caps drop both; the `runner` user has apt-only sudo), so this job
+# does not actually pass there. Granting those caps to the SHARED fleet would widen
+# the blast radius for every other job on those containers, so it is not done.
+# This gate is instead validated OUT-OF-CI on a real kernel: phase 1 and the full
+# rooted TUN test are run in a real Linux VM (kernel 6.17, nftables). To bring it
+# into CI, run it on a DEDICATED capability-scoped ephemeral runner
+# (--cap-add=NET_ADMIN --cap-add=SYS_ADMIN --device /dev/net/tun on that runner's
+# container only), never by privileging the shared fleet. See the README
+# "Rooted system-VPN kill-switch gate" section.
+#
 # Runs on the org self-hosted Linux runner; needs root + ip/iptables/nft on it.
 
 on:
