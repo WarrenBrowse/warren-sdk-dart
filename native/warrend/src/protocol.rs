@@ -27,6 +27,11 @@ pub enum Request {
         // previous always-on IPv6 behaviour.
         #[serde(default = "default_true", rename = "requestIpv6")]
         request_ipv6: bool,
+        // Lockdown mode: user-intended stops (disconnect, daemon stop) keep
+        // the network BLOCKED instead of restoring it. Defaults off, the
+        // pre-lockdown wire behaviour.
+        #[serde(default)]
+        lockdown: bool,
     },
     /// Bring up a system-VPN session to an exit (Ed25519 id from `listExits`).
     Connect {
@@ -101,13 +106,15 @@ mod tests {
             r#"{"type":"configure","mnemonic":"m","apiBase":"https://a","serverPubkeyPin":"p"}"#,
         )
         .expect("configure");
-        // Omitted optional fields default: no root pin, DAITA off, IPv6 on.
+        // Omitted optional fields default: no root pin, DAITA off, IPv6 on,
+        // lockdown off.
         assert!(matches!(
             configure,
             Request::Configure {
                 multihop_root_pin: None,
                 daita: false,
                 request_ipv6: true,
+                lockdown: false,
                 ..
             }
         ));
@@ -152,6 +159,19 @@ mod tests {
             }
             _ => panic!("expected configure"),
         }
+    }
+
+    #[test]
+    fn configure_carries_lockdown() {
+        let configure: Request = serde_json::from_str(
+            r#"{"type":"configure","mnemonic":"m","apiBase":"https://a",
+                "serverPubkeyPin":"p","lockdown":true}"#,
+        )
+        .expect("configure");
+        assert!(matches!(
+            configure,
+            Request::Configure { lockdown: true, .. }
+        ));
     }
 
     #[test]

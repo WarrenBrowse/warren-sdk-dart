@@ -22,6 +22,12 @@ warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = 
 # available transitively: warren-sdk and warrenguard both depend on the
 # warren-quinn fork, so no `[patch.crates-io]` is needed here.
 warrenguard-transport-core = { path = "../../../warrenguard/crates/warrenguard-transport-core" }
+# Canonical firewall artifact names (nft table, pf anchor) and the in-tunnel
+# DNS gateway, shared with the engine so warrend's crash-recovery paths can
+# never drift from what the engine actually installs.
+warrenguard-killswitch-os = { path = "../../../warrenguard/crates/warrenguard-killswitch-os" }
+warrenguard-config = { path = "../../../warrenguard/crates/warrenguard-config" }
+warrenguard-route-split = { path = "../../../warrenguard/crates/warrenguard-route-split" }
 tokio = { version = "1", features = [
     "rt-multi-thread",
     "macros",
@@ -73,4 +79,9 @@ warren-discovery-core = { path = "../../../warren-contract/warren-discovery" }
 [profile.release]
 opt-level = 3
 lto = "thin"
+# Fail closed on a panic: no unwinding means no RAII teardown runs, so the
+# installed kill-switch rules keep holding instead of restoring the network
+# at the exact moment the daemon is in an undefined state. Matches the
+# engine's own release posture (see warrenguard-killswitch-os crate docs).
+panic = "abort"
 strip = true

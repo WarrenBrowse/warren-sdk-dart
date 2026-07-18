@@ -3173,6 +3173,9 @@ dependencies = [
  "serde_json",
  "tokio",
  "warren-sdk",
+ "warrenguard-config",
+ "warrenguard-killswitch-os",
+ "warrenguard-route-split",
  "warrenguard-transport-core",
  "zeroize",
 ]
