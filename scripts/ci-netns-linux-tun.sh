@@ -39,6 +39,12 @@ HOST_IP="172.31.9.1"
 NS_IP="172.31.9.2"
 NS_CIDR="172.31.9.0/30"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# A box whose forwarded NAT egress is filtered (e.g. a dev VM behind a per-app
+# host firewall) can still validate the fail-closed contract: probe a host-side
+# veth HTTP target instead of the internet. Off-netns reachability through the
+# veth exercises the same OUTPUT-hook egress the kill-switch must cut; only the
+# rooted live test (which needs the real API) is skipped in this mode.
+LOCAL_TARGET="${WARREN_NETNS_LOCAL_TARGET:-0}"
 
 log()  { echo "[netns-tun] $*"; }
 fail() { echo "[netns-tun] FAIL: $*" >&2; exit 1; }
@@ -51,6 +57,7 @@ UPLINK="$(ip route show default | awk '/default/ {print $5; exit}')"
 
 cleanup() {
     set +e
+    [ -n "${HTTP_PID:-}" ] && kill "$HTTP_PID" 2>/dev/null
     iptables -t nat -D POSTROUTING -s "$NS_CIDR" -o "$UPLINK" -j MASQUERADE 2>/dev/null
     iptables -D FORWARD -i "$VETH_H" -j ACCEPT 2>/dev/null
     iptables -D FORWARD -o "$VETH_H" -j ACCEPT 2>/dev/null
@@ -82,10 +89,19 @@ iptables -A FORWARD -o "$VETH_H" -j ACCEPT
 mkdir -p "/etc/netns/$NS"
 echo "nameserver 1.1.1.1" > "/etc/netns/$NS/resolv.conf"
 
-# Sanity: the namespace can reach the internet before we hand it to the test.
-ip netns exec "$NS" curl -s -m 10 https://1.1.1.1/cdn-cgi/trace >/dev/null \
-    || fail "the namespace has no internet egress (NAT/uplink misconfigured)"
-log "namespace has internet egress"
+if [ "$LOCAL_TARGET" = "1" ]; then
+    egress_ok() { ip netns exec "$NS" curl -s -m 4 "http://$HOST_IP:8080/" >/dev/null; }
+    python3 -m http.server 8080 --bind "$HOST_IP" >/dev/null 2>&1 &
+    HTTP_PID=$!
+    sleep 0.5
+    egress_ok || fail "the namespace cannot reach the host-side veth target"
+    log "namespace reaches the local veth target (local-target mode)"
+else
+    egress_ok() { ip netns exec "$NS" curl -s -m 8 https://1.1.1.1/cdn-cgi/trace >/dev/null; }
+    # Sanity: the namespace can reach the internet before we hand it to the test.
+    egress_ok || fail "the namespace has no internet egress (NAT/uplink misconfigured)"
+    log "namespace has internet egress"
+fi
 
 # ---------------------------------------------------------------------------
 # PHASE 1: kill-switch crash recovery (mnemonic-free, real nft, real egress).
@@ -105,8 +121,6 @@ wait_for_socket() {
     fail "daemon socket never appeared at $SOCK"
 }
 
-egress_ok() { ip netns exec "$NS" curl -s -m 8 https://1.1.1.1/cdn-cgi/trace >/dev/null; }
-
 log "phase1: the help output documents the manual escape"
 "$WARREND" --help | grep -q "revert" || fail "warrend --help does not document revert"
 
@@ -115,15 +129,26 @@ rm -f "$SOCK"
 ip netns exec "$NS" "$WARREND" "$SOCK" 2>"$DLOG" &
 DPID=$!
 wait_for_socket
-timeout 60 ip netns exec "$NS" python3 "$DRIVE" "$SOCK" lockdown-disconnect \
-    || fail "lockdown-disconnect drive failed (daemon log: $(cat "$DLOG"))"
+# The daemon exits the moment its single owner hangs up, so the drive holds
+# the connection open: the SIGKILL below must land on a LIVE daemon, not on
+# the corpse of a clean lockdown-conditional exit.
+timeout 120 ip netns exec "$NS" python3 "$DRIVE" "$SOCK" lockdown-disconnect-hold &
+HOLD_PID=$!
+for _ in $(seq 1 300); do
+    ip netns exec "$NS" nft list table inet warrend_lockdown >/dev/null 2>&1 && break
+    kill -0 "$HOLD_PID" 2>/dev/null || break
+    sleep 0.2
+done
 ip netns exec "$NS" nft list table inet warrend_lockdown >/dev/null \
-    || fail "lockdown table missing after a lockdown disconnect"
+    || fail "lockdown table missing after a lockdown disconnect (daemon log: $(cat "$DLOG"))"
 if egress_ok; then fail "egress NOT blocked under lockdown"; fi
 
-log "phase1: SIGKILL leaves the block holding (fail-closed)"
+log "phase1: SIGKILL of the live daemon leaves the block holding (fail-closed)"
+kill -0 "$DPID" 2>/dev/null || fail "daemon already exited before SIGKILL (owner hold broken)"
 kill -9 "$DPID" 2>/dev/null || true
 wait "$DPID" 2>/dev/null || true
+kill "$HOLD_PID" 2>/dev/null || true
+wait "$HOLD_PID" 2>/dev/null || true
 ip netns exec "$NS" nft list table inet warrend_lockdown >/dev/null \
     || fail "the lockdown block did not survive SIGKILL"
 if egress_ok; then fail "egress open after SIGKILL: the block must hold"; fi
@@ -163,6 +188,16 @@ egress_ok || fail "egress not restored after the reconciling disconnect"
 kill "$DPID" 2>/dev/null || true
 wait "$DPID" 2>/dev/null || true
 log "phase1 PASS: fail-closed persistence + both recovery paths validated (nft backend)"
+
+# Lets a Flutter-less box (e.g. a dev VM) validate the kill-switch contract alone.
+if [ "${WARREN_NETNS_PHASE1_ONLY:-0}" = "1" ]; then
+    log "WARREN_NETNS_PHASE1_ONLY=1: stopping after phase 1"
+    exit 0
+fi
+if [ "$LOCAL_TARGET" = "1" ]; then
+    log "local-target mode: skipping the rooted TUN test (needs real egress)"
+    exit 0
+fi
 
 log "running the rooted TUN test inside the namespace"
 

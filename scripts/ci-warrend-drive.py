@@ -11,6 +11,7 @@ import json
 import socket
 import struct
 import sys
+import time
 
 MNEMONIC = ("abandon " * 11) + "about"
 API_BASE = "https://api.warrenbrowse.com"
@@ -37,28 +38,39 @@ def expect_state(sock, state):
         raise SystemExit(f"expected state {state!r}, daemon sent: {event!r}")
 
 
+def lockdown_disconnect(sock):
+    send(
+        sock,
+        {
+            "type": "configure",
+            "mnemonic": MNEMONIC,
+            "apiBase": API_BASE,
+            "serverPubkeyPin": SERVER_PIN,
+            "lockdown": True,
+        },
+    )
+    # A successful configure sends no event; the next events answer the
+    # disconnect. A configure failure surfaces here as an unexpected
+    # error event instead of draining.
+    send(sock, {"type": "disconnect"})
+    expect_state(sock, "draining")
+    expect_state(sock, "disconnected")
+
+
 def main():
     socket_path, mode = sys.argv[1], sys.argv[2]
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.settimeout(30)
     sock.connect(socket_path)
     if mode == "lockdown-disconnect":
-        send(
-            sock,
-            {
-                "type": "configure",
-                "mnemonic": MNEMONIC,
-                "apiBase": API_BASE,
-                "serverPubkeyPin": SERVER_PIN,
-                "lockdown": True,
-            },
-        )
-        # A successful configure sends no event; the next events answer the
-        # disconnect. A configure failure surfaces here as an unexpected
-        # error event instead of draining.
-        send(sock, {"type": "disconnect"})
-        expect_state(sock, "draining")
-        expect_state(sock, "disconnected")
+        lockdown_disconnect(sock)
+    elif mode == "lockdown-disconnect-hold":
+        # Keep the owner connection open after the exchange: the daemon exits
+        # as soon as its single owner hangs up, so a crash test must SIGKILL
+        # it while the owner is still attached or it only ever kills a corpse.
+        lockdown_disconnect(sock)
+        print(f"drive {mode}: block installed, holding the owner open", flush=True)
+        time.sleep(120)
     elif mode == "disconnect":
         send(sock, {"type": "disconnect"})
         expect_state(sock, "draining")
