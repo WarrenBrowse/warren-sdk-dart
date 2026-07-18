@@ -13,7 +13,9 @@ use warren_sdk::api::ClientError;
 use warren_sdk::discovery::{Relay, VerifiedExit};
 use warren_sdk::identity::WarrenIdentity;
 use warren_sdk::net::ProxyConfig;
-use warren_sdk::{DefaultClient, FileGenerationStore, FileServerKeyStore, SdkError, WarrenClient};
+use warren_sdk::{
+    Circuit, DefaultClient, FileGenerationStore, FileServerKeyStore, SdkError, WarrenClient,
+};
 use zeroize::Zeroize;
 
 use crate::api::datapath::WarrenSessionFrb;
@@ -270,7 +272,7 @@ impl WarrenClientFrb {
 
         let handle = if failover_exit_pubkeys_hex.is_empty() {
             self.inner
-                .start_proxy_multihop_supervised(&primary, &cfg)
+                .start_proxy_supervised(&Circuit::SingleHop(primary), &cfg)
                 .await
                 .map_err(map_sdk_error)?
         } else {
@@ -279,8 +281,9 @@ impl WarrenClientFrb {
             for hex_id in &failover_exit_pubkeys_hex {
                 candidates.push(resolve(hex_id)?);
             }
+            let circuits: Vec<Circuit> = candidates.into_iter().map(Circuit::SingleHop).collect();
             self.inner
-                .start_proxy_multihop_supervised_failover(&candidates, &cfg)
+                .start_proxy_supervised_failover(&circuits, &cfg)
                 .await
                 .map_err(map_sdk_error)?
         };
