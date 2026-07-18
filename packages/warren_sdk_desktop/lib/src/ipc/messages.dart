@@ -68,6 +68,7 @@ final class ConfigureRequest extends DaemonMessage {
     this.daita = false,
     this.daitaMachine,
     this.requestIpv6 = true,
+    this.lockdown = false,
   });
 
   /// The 12-word BIP39 mnemonic.
@@ -91,6 +92,10 @@ final class ConfigureRequest extends DaemonMessage {
   /// Whether the daemon requests a dual-stack IPv6 allocation from the exit.
   final bool requestIpv6;
 
+  /// Lockdown mode: user-intended stops (disconnect, daemon stop) keep the
+  /// network blocked instead of restoring it.
+  final bool lockdown;
+
   @override
   Map<String, Object?> toJson() => {
         'type': 'configure',
@@ -101,6 +106,7 @@ final class ConfigureRequest extends DaemonMessage {
         if (daita) 'daita': daita,
         if (daitaMachine != null) 'daitaMachine': daitaMachine,
         'requestIpv6': requestIpv6,
+        if (lockdown) 'lockdown': lockdown,
       };
 
   static ConfigureRequest _fromJson(Map<String, Object?> json) =>
@@ -112,6 +118,7 @@ final class ConfigureRequest extends DaemonMessage {
         daita: json['daita'] as bool? ?? false,
         daitaMachine: json['daitaMachine'] as String?,
         requestIpv6: json['requestIpv6'] as bool? ?? true,
+        lockdown: json['lockdown'] as bool? ?? false,
       );
 
   // Never render the mnemonic.

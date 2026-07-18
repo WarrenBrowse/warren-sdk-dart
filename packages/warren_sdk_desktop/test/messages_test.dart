@@ -17,6 +17,7 @@ void main() {
         daita: true,
         daitaMachine: 'tamaraw',
         requestIpv6: false,
+        lockdown: true,
       );
       final full = roundTrip(fullSource);
       expect(full.mnemonic, 'twelve words');
@@ -26,6 +27,7 @@ void main() {
       expect(full.daita, isTrue);
       expect(full.daitaMachine, 'tamaraw');
       expect(full.requestIpv6, isFalse);
+      expect(full.lockdown, isTrue);
 
       const minimalSource = ConfigureRequest(
         mnemonic: 'm',
@@ -38,6 +40,8 @@ void main() {
       expect(minimal.daita, isFalse);
       expect(minimal.daitaMachine, isNull);
       expect(minimal.requestIpv6, isTrue);
+      // Lockdown is opt-in: an older client that never sends it stays off.
+      expect(minimal.lockdown, isFalse);
     });
 
     test('ConnectRequest', () {

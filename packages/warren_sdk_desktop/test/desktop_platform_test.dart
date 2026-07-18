@@ -20,6 +20,7 @@ void main() {
     daita: true,
     daitaMachine: 'tamaraw',
     requestIpv6: false,
+    lockdown: true,
   );
 
   group('createClient delegates to the inner platform and wraps the handle',
@@ -106,6 +107,7 @@ void main() {
       expect(configure.daita, isTrue);
       expect(configure.daitaMachine, 'tamaraw');
       expect(configure.requestIpv6, isFalse);
+      expect(configure.lockdown, isTrue);
       final connect = received.whereType<ConnectRequest>().single;
       expect(connect.exitPubkeyHex, 'ab12');
       expect(connect.dnsOverTunnel, isFalse);

@@ -98,6 +98,7 @@ class DesktopWarrenSdkPlatform extends WarrenSdkPlatform {
         daita: config.daita,
         daitaMachine: config.daitaMachine,
         requestIpv6: config.requestIpv6,
+        lockdown: config.lockdown,
       ),
       connectTimeout: _connectTimeout,
     );

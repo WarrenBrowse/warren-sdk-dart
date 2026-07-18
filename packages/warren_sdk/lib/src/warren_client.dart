@@ -43,6 +43,7 @@ class WarrenClient {
     bool daita = false,
     String? daitaMachine,
     bool requestIpv6 = true,
+    bool lockdown = false,
     String? stateDir,
   }) async {
     // Ensure the default in-process engine is registered. A privileged Mode B
@@ -59,6 +60,7 @@ class WarrenClient {
         daita: daita,
         daitaMachine: daitaMachine,
         requestIpv6: requestIpv6,
+        lockdown: lockdown,
         stateDir: stateDir,
       ),
     );

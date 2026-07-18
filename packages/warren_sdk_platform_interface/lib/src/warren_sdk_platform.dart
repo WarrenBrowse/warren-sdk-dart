@@ -26,6 +26,7 @@ class WarrenClientConfig {
     this.daita = false,
     this.daitaMachine,
     this.requestIpv6 = true,
+    this.lockdown = false,
     this.stateDir,
   });
 
@@ -64,6 +65,12 @@ class WarrenClientConfig {
   /// through the tunnel.
   final bool requestIpv6;
 
+  /// Lockdown mode: the kill switch keeps blocking the network on
+  /// user-intended stops (disconnect, daemon stop) instead of restoring it.
+  /// Served by privileged system-VPN implementations; proxy mode has no OS
+  /// firewall to hold.
+  final bool lockdown;
+
   /// Optional directory for on-disk persistence of the anti-rollback floors and
   /// the TOFU server pin. Without it those live in memory only, so rollback
   /// protection does not survive a restart. Pass a private, app-owned path.
@@ -80,6 +87,7 @@ class WarrenClientConfig {
       other.daita == daita &&
       other.daitaMachine == daitaMachine &&
       other.requestIpv6 == requestIpv6 &&
+      other.lockdown == lockdown &&
       other.stateDir == stateDir;
 
   @override
@@ -92,6 +100,7 @@ class WarrenClientConfig {
         daita,
         daitaMachine,
         requestIpv6,
+        lockdown,
         stateDir,
       );
 
