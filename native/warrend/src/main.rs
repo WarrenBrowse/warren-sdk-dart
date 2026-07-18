@@ -40,8 +40,35 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{UnixListener, UnixStream};
 use warren_sdk::discovery::VerifiedExit;
 use warren_sdk::identity::WarrenIdentity;
-use warren_sdk::{DefaultClient, SdkError, TunDatapathHandle, WarrenClient};
+use warren_sdk::{SdkError, TunDatapathHandle, WarrenClient};
 use zeroize::Zeroize;
+
+/// The control-plane HTTP transport warrend's client egresses through.
+///
+/// On Linux it is the socket-marked transport: its TCP sockets carry the Warren
+/// tunnel fwmark so the tightened `meta mark` connecting guard permits warrend's
+/// OWN control-plane fetch while every other process, even root-owned, stays
+/// blocked. Off Linux (macOS pf guard is still owner-uid) the bundled reqwest
+/// transport is used unchanged. warrend runs as root, so `SO_MARK` succeeds.
+#[cfg(target_os = "linux")]
+type CpTransport = warren_sdk::api::MarkedTransport;
+#[cfg(not(target_os = "linux"))]
+type CpTransport = warren_sdk::api::ReqwestTransport;
+
+/// warrend's high-level client over [`CpTransport`].
+type CpClient = WarrenClient<CpTransport>;
+
+/// Builds the control-plane transport for the current platform (marked on Linux).
+fn build_cp_transport() -> Result<CpTransport, warren_sdk::api::TransportError> {
+    #[cfg(target_os = "linux")]
+    {
+        CpTransport::marked()
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        CpTransport::try_new()
+    }
+}
 
 use cmd::{CmdRunner, SystemRunner};
 use posture::{stop_action, StopAction, StopTrigger};
@@ -330,7 +357,7 @@ fn restrict_socket(socket_path: &str) -> Result<()> {
 /// the shared slot so signals and connection close can both act on it.
 #[derive(Default)]
 struct Session {
-    client: Option<DefaultClient>,
+    client: Option<CpClient>,
 }
 
 async fn serve_connection(
@@ -575,8 +602,9 @@ async fn handle(
             // warren-app's anti-DPI handshake. The SDK itself stays on upstream.
             builder = builder
                 .transport_config(warrenguard_transport_core::warren_transport_config_client());
+            let transport = build_cp_transport().map_err(|e| Event::error("api", e.to_string()))?;
             let client = builder
-                .build()
+                .build_with_transport(transport)
                 .map_err(|e| Event::error("api", e.to_string()))?;
             session.client = Some(client);
             lockdown.store(lockdown_requested, Ordering::SeqCst);
@@ -650,7 +678,7 @@ async fn handle(
 
 /// Resolves the exit and brings the TUN datapath up.
 async fn connect_session(
-    client: &DefaultClient,
+    client: &CpClient,
     exit_pubkey_hex: &str,
 ) -> Result<TunDatapathHandle, Event> {
     let exit = find_exit(client, exit_pubkey_hex).await?;
@@ -661,7 +689,7 @@ async fn connect_session(
         .map_err(map_sdk_error)
 }
 
-async fn find_exit(client: &DefaultClient, exit_pubkey_hex: &str) -> Result<VerifiedExit, Event> {
+async fn find_exit(client: &CpClient, exit_pubkey_hex: &str) -> Result<VerifiedExit, Event> {
     let target: [u8; 32] = hex::decode(exit_pubkey_hex)
         .ok()
         .and_then(|bytes| bytes.try_into().ok())

@@ -12,10 +12,12 @@ path = "src/main.rs"
 
 [dependencies]
 # Same audited engine as the in-process SDK, with the privileged TUN datapath.
-# Pinned by tag, kept in lockstep with warren_sdk_frb's engine pin, to carry
-# the single-homed route-split/killswitch stack the rooted datapath rides.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", tag = "v0.0.24", features = [
+# Pinned by rev to carry the socket-marked control-plane transport: the
+# `marked-transport` feature tags warrend's control-plane HTTP client with the
+# Warren tunnel fwmark, so the tightened `meta mark` connecting guard permits it.
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "7d7dbcdcdd5149df71321d08408c16aeea12edcf", features = [
     "experimental-tun",
+    "marked-transport",
 ] }
 # Builds the engine's obfuscated QUIC-Initial transport config injected into the
 # SDK (system-VPN anti-DPI parity with warren-app). The fork-only quinn API is
