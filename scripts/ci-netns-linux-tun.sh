@@ -91,9 +91,13 @@ echo "nameserver 1.1.1.1" > "/etc/netns/$NS/resolv.conf"
 
 if [ "$LOCAL_TARGET" = "1" ]; then
     egress_ok() { ip netns exec "$NS" curl -s -m 4 "http://$HOST_IP:8080/" >/dev/null; }
-    python3 -m http.server 8080 --bind "$HOST_IP" >/dev/null 2>&1 &
+    # Bind the target to all addresses, not the veth IP: on a box with broken DNS
+    # `http.server --bind <ip>` stalls in getaddrinfo, while 0.0.0.0 binds at once
+    # and still serves $HOST_IP over the veth. The netns OUTPUT hook under test is
+    # unaffected by which local address the target listens on.
+    python3 -m http.server 8080 --bind 0.0.0.0 >/dev/null 2>&1 &
     HTTP_PID=$!
-    sleep 0.5
+    for _ in $(seq 1 25); do egress_ok && break; sleep 0.2; done
     egress_ok || fail "the namespace cannot reach the host-side veth target"
     log "namespace reaches the local veth target (local-target mode)"
 else
