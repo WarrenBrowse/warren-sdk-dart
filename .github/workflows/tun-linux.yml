@@ -5,8 +5,10 @@ name: Linux TUN (rooted, netns)
 # and the Linux TUN datapath is not yet live-validated (unlike macOS). It runs the
 # `warrend` daemon inside a Linux network namespace so its split-default route and
 # nft killswitch stay confined to the namespace and never touch the runner's host
-# routing (see scripts/ci-netns-linux-tun.sh). Without WARREN_MNEMONIC the inner
-# test self-skips, so a dry run is still green.
+# routing (see scripts/ci-netns-linux-tun.sh). The script's phase 1 (kill-switch
+# fail-closed persistence + the revert/reconcile recovery paths, real nft + real
+# egress) is mnemonic-free and runs on every dispatch; without WARREN_MNEMONIC
+# only the live TUN test self-skips, so a dry run is still green AND meaningful.
 #
 # Runs on the org self-hosted Linux runner; needs root + ip/iptables/nft on it.
 
@@ -33,22 +35,21 @@ jobs:
       - run: flutter pub get
       - name: checkout the engine siblings (warrenguard + warren-contract)
         # Both warren_sdk_frb and warrend build against the engine's warrenguard
-        # crates and (since v0.0.14) the warren-contract carve-out, patched to these
-        # siblings; warrend also injects warrenguard's obfuscated transport config.
-        # Pinned to the SDK's revs (warrenguard: .warrenguard-expected-rev;
-        # warren-contract: the engine's warren-contract rev at tag v0.0.14). At these
-        # revs the quinn fork resolves as a plain git dep (no vendoring step).
+        # crates and the warren-contract carve-out, patched to these siblings;
+        # warrend also injects warrenguard's obfuscated transport config. Pinned to
+        # the revs the pinned engine tag (v0.0.24) records in its
+        # .warrenguard-version / .warren-contract-version marker files.
         run: |
           set -euo pipefail
           rm -rf ../warrenguard ../warren-contract
           git clone --quiet \
             "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" \
             ../warrenguard
-          git -C ../warrenguard checkout --quiet 906ddc75a7a33a17ef744cf0b486e6ed4bc4ff4e
+          git -C ../warrenguard checkout --quiet f47abedb3008a9608f3b6e2a63a5503bd9727150
           git clone --quiet \
             "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" \
             ../warren-contract
-          git -C ../warren-contract checkout --quiet 19b6a1c1aa3805211101daaa009ea9d3877cca20
+          git -C ../warren-contract checkout --quiet 1c8f733689dbfd092f56591a4d16e0b287823526
       - name: build the in-process engine dylib (discovery)
         run: cargo build --release
         working-directory: native/warren_sdk_frb

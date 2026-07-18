@@ -85,7 +85,86 @@ echo "nameserver 1.1.1.1" > "/etc/netns/$NS/resolv.conf"
 # Sanity: the namespace can reach the internet before we hand it to the test.
 ip netns exec "$NS" curl -s -m 10 https://1.1.1.1/cdn-cgi/trace >/dev/null \
     || fail "the namespace has no internet egress (NAT/uplink misconfigured)"
-log "namespace has internet egress; running the rooted TUN test inside it"
+log "namespace has internet egress"
+
+# ---------------------------------------------------------------------------
+# PHASE 1: kill-switch crash recovery (mnemonic-free, real nft, real egress).
+# Validates the fail-closed contract on the Linux backend inside the netns:
+# a lockdown disconnect blocks egress, SIGKILL leaves the block holding, and
+# both escape paths (the next daemon's explicit disconnect, `warrend revert`)
+# restore egress. Runs on every dispatch, WARREN_MNEMONIC or not.
+# ---------------------------------------------------------------------------
+WARREND="$ROOT/native/warrend/target/release/warrend"
+[ -x "$WARREND" ] || fail "build the daemon first: (cd native/warrend && cargo build --release)"
+DRIVE="$ROOT/scripts/ci-warrend-drive.py"
+SOCK="/tmp/warrend-netns-ci.sock"
+DLOG="/tmp/warrend-netns-ci.log"
+
+wait_for_socket() {
+    for _ in $(seq 1 100); do [ -S "$SOCK" ] && return 0; sleep 0.1; done
+    fail "daemon socket never appeared at $SOCK"
+}
+
+egress_ok() { ip netns exec "$NS" curl -s -m 8 https://1.1.1.1/cdn-cgi/trace >/dev/null; }
+
+log "phase1: the help output documents the manual escape"
+"$WARREND" --help | grep -q "revert" || fail "warrend --help does not document revert"
+
+log "phase1: lockdown disconnect installs the block"
+rm -f "$SOCK"
+ip netns exec "$NS" "$WARREND" "$SOCK" 2>"$DLOG" &
+DPID=$!
+wait_for_socket
+timeout 60 ip netns exec "$NS" python3 "$DRIVE" "$SOCK" lockdown-disconnect \
+    || fail "lockdown-disconnect drive failed (daemon log: $(cat "$DLOG"))"
+ip netns exec "$NS" nft list table inet warrend_lockdown >/dev/null \
+    || fail "lockdown table missing after a lockdown disconnect"
+if egress_ok; then fail "egress NOT blocked under lockdown"; fi
+
+log "phase1: SIGKILL leaves the block holding (fail-closed)"
+kill -9 "$DPID" 2>/dev/null || true
+wait "$DPID" 2>/dev/null || true
+ip netns exec "$NS" nft list table inet warrend_lockdown >/dev/null \
+    || fail "the lockdown block did not survive SIGKILL"
+if egress_ok; then fail "egress open after SIGKILL: the block must hold"; fi
+
+log "phase1: warrend revert restores the network with no daemon"
+ip netns exec "$NS" "$WARREND" revert || fail "warrend revert failed"
+if ip netns exec "$NS" nft list table inet warrend_lockdown >/dev/null 2>&1; then
+    fail "revert left the lockdown table installed"
+fi
+egress_ok || fail "egress not restored by warrend revert"
+
+log "phase1: a stale engine block is held at startup, cleared by an explicit disconnect"
+ip netns exec "$NS" nft -f - <<'RULES'
+add table inet warrenguard_killswitch_os
+flush table inet warrenguard_killswitch_os
+table inet warrenguard_killswitch_os {
+	chain output {
+		type filter hook output priority 0; policy drop;
+		oifname "lo" accept
+	}
+}
+RULES
+if egress_ok; then fail "the fabricated stale engine block does not block"; fi
+rm -f "$SOCK"
+ip netns exec "$NS" "$WARREND" "$SOCK" 2>"$DLOG" &
+DPID=$!
+wait_for_socket
+grep -q "fail-closed" "$DLOG" || fail "startup did not report the held stale block"
+ip netns exec "$NS" nft list table inet warrenguard_killswitch_os >/dev/null \
+    || fail "startup must HOLD a stale block, not clear it"
+timeout 60 ip netns exec "$NS" python3 "$DRIVE" "$SOCK" disconnect \
+    || fail "disconnect drive failed (daemon log: $(cat "$DLOG"))"
+if ip netns exec "$NS" nft list table inet warrenguard_killswitch_os >/dev/null 2>&1; then
+    fail "an explicit disconnect did not clear the stale block"
+fi
+egress_ok || fail "egress not restored after the reconciling disconnect"
+kill "$DPID" 2>/dev/null || true
+wait "$DPID" 2>/dev/null || true
+log "phase1 PASS: fail-closed persistence + both recovery paths validated (nft backend)"
+
+log "running the rooted TUN test inside the namespace"
 
 # Run the whole test inside the namespace: discovery (in-process engine), the
 # daemon (its route+killswitch land in THIS namespace), and the egress probe.

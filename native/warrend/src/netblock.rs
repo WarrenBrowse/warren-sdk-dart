@@ -385,7 +385,13 @@ pub fn reconcile_dns_files(resolv_conf: &Path, backup: &Path) -> std::io::Result
     }
     let current = std::fs::read_to_string(resolv_conf).unwrap_or_default();
     if current.contains(RESOLV_CONF_MARKER) {
-        std::fs::rename(backup, resolv_conf)?;
+        // resolv.conf is often not a plain file (a symlink under
+        // systemd-resolved, a per-netns bind mount in containers), where a
+        // rename fails EXDEV/EBUSY; writing through the path covers those.
+        if std::fs::rename(backup, resolv_conf).is_err() {
+            std::fs::write(resolv_conf, std::fs::read(backup)?)?;
+            std::fs::remove_file(backup)?;
+        }
         return Ok(DnsReconcile::RestoredBackup);
     }
     std::fs::remove_file(backup)?;
