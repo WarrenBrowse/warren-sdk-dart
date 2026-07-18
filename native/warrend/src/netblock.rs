@@ -30,6 +30,7 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use warrenguard_tun_core::WARREN_TUNNEL_FWMARK;
 
 use crate::cmd::CmdRunner;
 
@@ -55,14 +56,13 @@ pub const LOCKDOWN_NFT_TABLE: &str = "warrend_lockdown";
 pub const LOCKDOWN_PF_ANCHOR: &str = "com.apple/251.warrend_lockdown";
 
 /// The uid warrend itself runs as: root, because the TUN datapath needs
-/// privilege. The connecting guard permits exactly this owner uid so that
-/// during a dial warrend's OWN control-plane fetch and QUIC carrier egress
-/// while every non-root application stays blocked (the Mullvad `user root` /
-/// `meta skuid 0` pattern the app's talpid firewall also uses). An owner-uid
-/// match, not a destination match, so it opens no Port-Fail hole. It is broader
-/// than warrend alone (any root process matches); tightening it to only
-/// warrend's own sockets needs the engine to fwmark-tag the control-plane HTTP
-/// client, which it does not yet do (only the carrier is tagged).
+/// privilege. Used only by the macOS pf connecting guard, which still permits
+/// warrend by owner-uid (the Mullvad `user root` pattern the app's talpid
+/// firewall also uses): pf cannot match a Linux `SO_MARK`, and the engine does
+/// not yet bind the control-plane client's sockets to the physical interface via
+/// `IP_BOUND_IF` (the macOS analogue of the mark), so an interface-scoped pf pass
+/// is not yet possible. The Linux nft guard has moved OFF owner-uid to the
+/// tighter `meta mark` rule (see [`connecting_guard_nft_ruleset`]).
 const DAEMON_UID: u32 = 0;
 
 /// The engine's Linux DNS-push backup file (`dns_push.rs`). The path is
@@ -122,12 +122,21 @@ pub fn lockdown_pf_rules() -> &'static str {
 }
 
 /// The nftables ruleset for the CONNECTING GUARD: the lockdown block plus one
-/// owner-uid exception (`meta skuid <DAEMON_UID> accept`) so warrend's own
-/// control-plane fetch and QUIC carrier can dial while every non-root app stays
-/// blocked. It replaces the FULL firewall lift that used to open the whole host
-/// during a connect (an IP-leak window on every connect for a lockdown user).
-/// Same warrend-owned table + atomic replace as the strict block, so a dial
-/// swaps between the two with no open instant.
+/// fwmark exception (`meta mark <WARREN_TUNNEL_FWMARK> accept`) so warrend's OWN
+/// marked sockets (the QUIC carrier and, since the engine tags the control-plane
+/// HTTP client, the directory/API fetch) can dial while every OTHER process,
+/// even root-owned, stays blocked. This is the WireGuard fwmark model already
+/// used for the carrier: keyed on the SOCKET, not on owner-uid, so it is strictly
+/// tighter than the previous `meta skuid 0 accept` (which let ANY root process
+/// egress during the window) and opens no destination hole (no Port-Fail leak).
+/// Same warrend-owned table + atomic replace as the strict block, so a dial swaps
+/// between the two with no open instant.
+///
+/// DNS caveat: the control-plane resolves names via `getaddrinfo`, whose sockets
+/// are libc-internal and cannot be marked, so under this strict mark-only guard
+/// the lockdown/reconnect path needs a companion (a marked resolver, or a narrow
+/// DNS allowance) before it fully resolves. The common first-connect path is
+/// unaffected: it dials with the firewall open (no guard), see `connect_orchestrated`.
 #[must_use]
 pub fn connecting_guard_nft_ruleset() -> String {
     format!(
@@ -138,19 +147,22 @@ pub fn connecting_guard_nft_ruleset() -> String {
          \t\ttype filter hook output priority 0; policy drop;\n\
          \t\toifname \"lo\" accept\n\
          \t\tudp dport {{67, 68}} accept\n\
-         \t\tmeta skuid {uid} accept\n\
+         \t\tmeta mark {mark:#x} accept\n\
          \t}}\n\
          }}\n",
         t = LOCKDOWN_NFT_TABLE,
-        uid = DAEMON_UID
+        mark = WARREN_TUNNEL_FWMARK
     )
 }
 
 /// The pf rules for the CONNECTING GUARD: the lockdown block plus one owner-uid
 /// `quick` pass so warrend's own sockets (uid `DAEMON_UID`) egress during a dial
 /// while everything else stays blocked. pf cannot match a Linux SO_MARK, so the
-/// owner-uid match is the macOS equivalent of the `meta skuid` rule (and the
-/// same primitive the app's talpid pf firewall uses via `user root`).
+/// owner-uid match is the macOS equivalent (and the same primitive the app's
+/// talpid pf firewall uses via `user root`). The Linux guard tightened this to a
+/// per-socket fwmark; the macOS analogue is to `IP_BOUND_IF` the control-plane
+/// client's sockets to the physical interface and interface-scope this pass. That
+/// engine `IP_BOUND_IF` binding is a follow-up, so macOS stays uid-scoped here.
 #[must_use]
 pub fn connecting_guard_pf_rules() -> String {
     format!(
@@ -1071,15 +1083,22 @@ mod tests {
     // ---- connecting guard (item 1: no more full lift during a dial) --
 
     #[test]
-    fn connecting_guard_nft_permits_the_daemon_uid_but_no_destination_hole() {
+    fn connecting_guard_nft_permits_the_daemon_mark_but_no_destination_hole() {
         let s = connecting_guard_nft_ruleset();
         assert!(s.contains("policy drop;"), "must still fail closed:\n{s}");
         assert!(s.contains("oifname \"lo\" accept"), "loopback stays usable");
         assert!(s.contains("udp dport {67, 68} accept"), "DHCP renewal");
         assert!(
-            s.contains("meta skuid 0 accept"),
-            "the guard must permit warrend's own uid so its control-plane dial and \
-             carrier egress while every other app stays blocked:\n{s}"
+            s.contains("meta mark 0x77617272 accept"),
+            "the guard must permit warrend's OWN marked sockets (carrier + \
+             control-plane) by fwmark, so its dial egresses while every other \
+             process, even root-owned, stays blocked:\n{s}"
+        );
+        assert!(
+            !s.contains("skuid"),
+            "the tightened guard is keyed on the socket mark, NOT owner-uid: a \
+             root-wide skuid allowance would let ANY root process leak out of the \
+             block (the residual this change closes):\n{s}"
         );
         assert!(
             !s.contains("daddr") && !s.contains("meta l4proto udp accept"),
@@ -1090,6 +1109,19 @@ mod tests {
             s.contains("table inet warrend_lockdown"),
             "the guard shares warrend's own table so it swaps atomically with the \
              strict block, never the engine table:\n{s}"
+        );
+    }
+
+    #[test]
+    fn connecting_guard_nft_mark_rule_matches_the_engine_carrier_fwmark() {
+        // The guard permits EXACTLY the fwmark the engine tags the carrier (and,
+        // since Part 1, the control-plane client) with; rendered as the same nft
+        // hex the engine kill-switch uses, so guard and socket mark cannot drift.
+        assert_eq!(WARREN_TUNNEL_FWMARK, 0x7761_7272);
+        assert!(
+            connecting_guard_nft_ruleset()
+                .contains(&format!("meta mark {WARREN_TUNNEL_FWMARK:#x} accept")),
+            "the guard mark rule must render the canonical fwmark constant"
         );
     }
 

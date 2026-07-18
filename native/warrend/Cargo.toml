@@ -28,6 +28,10 @@ warrenguard-transport-core = { path = "../../../warrenguard/crates/warrenguard-t
 warrenguard-killswitch-os = { path = "../../../warrenguard/crates/warrenguard-killswitch-os" }
 warrenguard-config = { path = "../../../warrenguard/crates/warrenguard-config" }
 warrenguard-route-split = { path = "../../../warrenguard/crates/warrenguard-route-split" }
+# The connecting guard permits the daemon's OWN marked sockets by fwmark; the
+# canonical WARREN_TUNNEL_FWMARK lives here (same const the carrier tags with),
+# so the guard rule and the socket mark can never drift.
+warrenguard-tun-core = { path = "../../../warrenguard/crates/warrenguard-tun-core" }
 tokio = { version = "1", features = [
     "rt-multi-thread",
     "macros",

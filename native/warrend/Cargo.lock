@@ -3177,6 +3177,7 @@ dependencies = [
  "warrenguard-killswitch-os",
  "warrenguard-route-split",
  "warrenguard-transport-core",
+ "warrenguard-tun-core",
  "zeroize",
 ]
 
