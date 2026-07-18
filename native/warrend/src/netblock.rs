@@ -44,12 +44,26 @@ pub const ENGINE_PF_ANCHOR: &str = "com.apple/250.warrenguard_killswitch_os";
 
 /// warrend's own lockdown table / anchor. Deliberately NOT the engine names:
 /// the engine's RAII teardown flushes its own artifact on drop, and the
-/// lockdown block must survive exactly that teardown.
+/// lockdown block must survive exactly that teardown. The connecting guard
+/// ([`connecting_guard_nft_ruleset`]) shares this table so a dial can transition
+/// between the strict block and the guard with the same atomic replace, never an
+/// open instant.
 pub const LOCKDOWN_NFT_TABLE: &str = "warrend_lockdown";
 /// pf twin of [`LOCKDOWN_NFT_TABLE`]. Same `com.apple/` prefix trick as the
 /// engine: the stock pf.conf evaluates every `com.apple/*` sub-anchor, so the
 /// block needs no pf.conf edit.
 pub const LOCKDOWN_PF_ANCHOR: &str = "com.apple/251.warrend_lockdown";
+
+/// The uid warrend itself runs as: root, because the TUN datapath needs
+/// privilege. The connecting guard permits exactly this owner uid so that
+/// during a dial warrend's OWN control-plane fetch and QUIC carrier egress
+/// while every non-root application stays blocked (the Mullvad `user root` /
+/// `meta skuid 0` pattern the app's talpid firewall also uses). An owner-uid
+/// match, not a destination match, so it opens no Port-Fail hole. It is broader
+/// than warrend alone (any root process matches); tightening it to only
+/// warrend's own sockets needs the engine to fwmark-tag the control-plane HTTP
+/// client, which it does not yet do (only the carrier is tagged).
+const DAEMON_UID: u32 = 0;
 
 /// The engine's Linux DNS-push backup file (`dns_push.rs`). The path is
 /// private in the engine, so it is mirrored here; the marker below is what the
@@ -105,6 +119,48 @@ pub fn lockdown_pf_rules() -> &'static str {
      pass out quick on lo0 all\n\
      pass out quick proto udp from any to any port 67\n\
      pass out quick proto udp from any to any port 68\n"
+}
+
+/// The nftables ruleset for the CONNECTING GUARD: the lockdown block plus one
+/// owner-uid exception (`meta skuid <DAEMON_UID> accept`) so warrend's own
+/// control-plane fetch and QUIC carrier can dial while every non-root app stays
+/// blocked. It replaces the FULL firewall lift that used to open the whole host
+/// during a connect (an IP-leak window on every connect for a lockdown user).
+/// Same warrend-owned table + atomic replace as the strict block, so a dial
+/// swaps between the two with no open instant.
+#[must_use]
+pub fn connecting_guard_nft_ruleset() -> String {
+    format!(
+        "add table inet {t}\n\
+         flush table inet {t}\n\
+         table inet {t} {{\n\
+         \tchain output {{\n\
+         \t\ttype filter hook output priority 0; policy drop;\n\
+         \t\toifname \"lo\" accept\n\
+         \t\tudp dport {{67, 68}} accept\n\
+         \t\tmeta skuid {uid} accept\n\
+         \t}}\n\
+         }}\n",
+        t = LOCKDOWN_NFT_TABLE,
+        uid = DAEMON_UID
+    )
+}
+
+/// The pf rules for the CONNECTING GUARD: the lockdown block plus one owner-uid
+/// `quick` pass so warrend's own sockets (uid `DAEMON_UID`) egress during a dial
+/// while everything else stays blocked. pf cannot match a Linux SO_MARK, so the
+/// owner-uid match is the macOS equivalent of the `meta skuid` rule (and the
+/// same primitive the app's talpid pf firewall uses via `user root`).
+#[must_use]
+pub fn connecting_guard_pf_rules() -> String {
+    format!(
+        "block return out all\n\
+         pass out quick on lo0 all\n\
+         pass out quick proto udp from any to any port 67\n\
+         pass out quick proto udp from any to any port 68\n\
+         pass out quick from any to any user = {uid}\n",
+        uid = DAEMON_UID
+    )
 }
 
 /// Linux nftables backend: the engine table plus warrend's lockdown table.
@@ -167,13 +223,25 @@ impl NftBackend {
     /// # Errors
     /// When `nft` cannot be spawned or rejects the ruleset.
     pub fn install_lockdown(self, runner: &dyn CmdRunner) -> Result<()> {
-        let ruleset = lockdown_nft_ruleset();
+        self.pipe_ruleset(runner, &lockdown_nft_ruleset(), "lockdown")
+    }
+
+    /// Installs (or atomically re-installs) the connecting guard: the lockdown
+    /// block with the owner-uid exception that lets warrend's own dial out.
+    ///
+    /// # Errors
+    /// When `nft` cannot be spawned or rejects the ruleset.
+    pub fn install_connecting_guard(self, runner: &dyn CmdRunner) -> Result<()> {
+        self.pipe_ruleset(runner, &connecting_guard_nft_ruleset(), "connecting guard")
+    }
+
+    fn pipe_ruleset(self, runner: &dyn CmdRunner, ruleset: &str, what: &str) -> Result<()> {
         let out = runner
-            .run("nft", &["-f", "-"], Some(&ruleset))
+            .run("nft", &["-f", "-"], Some(ruleset))
             .context("spawn nft -f -")?;
         anyhow::ensure!(
             out.success,
-            "nft rejected the lockdown ruleset: {}",
+            "nft rejected the {what} ruleset: {}",
             out.stderr.trim()
         );
         Ok(())
@@ -253,20 +321,30 @@ impl PfBackend {
     /// # Errors
     /// When `pfctl` cannot be spawned or rejects the rules.
     pub fn install_lockdown(self, runner: &dyn CmdRunner) -> Result<()> {
+        self.enable_and_load(runner, lockdown_pf_rules(), "lockdown")
+    }
+
+    /// Installs (or re-installs) the connecting guard: the lockdown block plus
+    /// the owner-uid pass that lets warrend's own dial out while everything else
+    /// stays blocked. Enables pf like [`Self::install_lockdown`].
+    ///
+    /// # Errors
+    /// When `pfctl` cannot be spawned or rejects the rules.
+    pub fn install_connecting_guard(self, runner: &dyn CmdRunner) -> Result<()> {
+        self.enable_and_load(runner, &connecting_guard_pf_rules(), "connecting guard")
+    }
+
+    fn enable_and_load(self, runner: &dyn CmdRunner, rules: &str, what: &str) -> Result<()> {
         let enable = runner
             .run("pfctl", &["-E"], None)
             .context("spawn pfctl -E")?;
         anyhow::ensure!(enable.success, "pfctl -E failed: {}", enable.stderr.trim());
         let out = runner
-            .run(
-                "pfctl",
-                &["-a", LOCKDOWN_PF_ANCHOR, "-f", "-"],
-                Some(lockdown_pf_rules()),
-            )
+            .run("pfctl", &["-a", LOCKDOWN_PF_ANCHOR, "-f", "-"], Some(rules))
             .context("spawn pfctl -f")?;
         anyhow::ensure!(
             out.success,
-            "pfctl rejected the lockdown rules: {}",
+            "pfctl rejected the {what} rules: {}",
             out.stderr.trim()
         );
         Ok(())
@@ -342,6 +420,17 @@ impl Backend {
         match self {
             Backend::Nft(b) => b.install_lockdown(runner),
             Backend::Pf(b) => b.install_lockdown(runner),
+        }
+    }
+
+    /// See the per-backend method.
+    ///
+    /// # Errors
+    /// Propagated from the backend.
+    pub fn install_connecting_guard(self, runner: &dyn CmdRunner) -> Result<()> {
+        match self {
+            Backend::Nft(b) => b.install_connecting_guard(runner),
+            Backend::Pf(b) => b.install_connecting_guard(runner),
         }
     }
 
@@ -533,19 +622,6 @@ pub fn revert_network(backend: Backend, runner: &dyn CmdRunner) -> Result<Revert
         lockdown_block: backend.clear_lockdown(runner)?,
         dns_actions: reconcile_dns(runner)?,
     })
-}
-
-/// Clears any held block so a user-intended connect can dial the control
-/// plane (the API and directory fetch need egress). Returns whether a block
-/// was actually cleared, so a failed connect can re-install the lockdown
-/// block instead of leaving the network open.
-///
-/// # Errors
-/// Propagated from the teardown steps.
-pub fn clear_blocks_for_dial(backend: Backend, runner: &dyn CmdRunner) -> Result<bool> {
-    let engine = backend.clear_engine_block(runner)?;
-    let lockdown = backend.clear_lockdown(runner)?;
-    Ok(engine == Cleared::Removed || lockdown == Cleared::Removed)
 }
 
 #[cfg(test)]
@@ -992,21 +1068,101 @@ mod tests {
         );
     }
 
+    // ---- connecting guard (item 1: no more full lift during a dial) --
+
     #[test]
-    fn clear_blocks_for_dial_reports_whether_a_block_was_lifted() {
-        let none = RecordingRunner::default().with_reply(
-            "nft",
-            "delete table",
-            fail_with("Error: No such file or directory"),
+    fn connecting_guard_nft_permits_the_daemon_uid_but_no_destination_hole() {
+        let s = connecting_guard_nft_ruleset();
+        assert!(s.contains("policy drop;"), "must still fail closed:\n{s}");
+        assert!(s.contains("oifname \"lo\" accept"), "loopback stays usable");
+        assert!(s.contains("udp dport {67, 68} accept"), "DHCP renewal");
+        assert!(
+            s.contains("meta skuid 0 accept"),
+            "the guard must permit warrend's own uid so its control-plane dial and \
+             carrier egress while every other app stays blocked:\n{s}"
         );
         assert!(
-            !clear_blocks_for_dial(Backend::Nft(NftBackend), &none).expect("clear"),
-            "nothing installed, nothing lifted"
+            !s.contains("daddr") && !s.contains("meta l4proto udp accept"),
+            "the guard is identity-based: no destination exception (that is the \
+             Port-Fail hole the full lift used to open):\n{s}"
         );
-        let some = RecordingRunner::default();
         assert!(
-            clear_blocks_for_dial(Backend::Nft(NftBackend), &some).expect("clear"),
-            "a lifted block must be reported so a failed connect can re-block"
+            s.contains("table inet warrend_lockdown"),
+            "the guard shares warrend's own table so it swaps atomically with the \
+             strict block, never the engine table:\n{s}"
         );
+    }
+
+    #[test]
+    fn connecting_guard_pf_permits_the_daemon_uid_via_a_quick_pass() {
+        let rules = connecting_guard_pf_rules();
+        let mut lines = rules.lines();
+        assert_eq!(
+            lines.next(),
+            Some("block return out all"),
+            "the default block stays first and NON-quick"
+        );
+        assert!(
+            rules.contains("pass out quick from any to any user = 0"),
+            "pf cannot match the Linux SO_MARK, so the owner-uid pass is the macOS \
+             equivalent that lets warrend's own dial out:\n{rules}"
+        );
+        for line in rules.lines().skip(1) {
+            assert!(
+                line.starts_with("pass out quick "),
+                "every exception is a quick pass: {line:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn nft_install_connecting_guard_pipes_the_guard_ruleset() {
+        let runner = RecordingRunner::default();
+        NftBackend
+            .install_connecting_guard(&runner)
+            .expect("install");
+        let calls = runner.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].0, "nft");
+        assert_eq!(calls[0].1, ["-f", "-"]);
+        assert_eq!(
+            calls[0].2.as_deref(),
+            Some(connecting_guard_nft_ruleset().as_str()),
+            "the piped ruleset is exactly the connecting guard"
+        );
+    }
+
+    #[test]
+    fn pf_install_connecting_guard_enables_pf_then_loads_the_guard_into_warrends_anchor() {
+        let runner = RecordingRunner::default();
+        PfBackend
+            .install_connecting_guard(&runner)
+            .expect("install");
+        let calls = runner.calls();
+        assert_eq!(calls.len(), 2, "enable + load");
+        assert_eq!(calls[0].1, ["-E"]);
+        assert_eq!(
+            calls[1].1,
+            ["-a", "com.apple/251.warrend_lockdown", "-f", "-"],
+            "the guard loads into warrend's own anchor, never the engine anchor"
+        );
+        assert_eq!(
+            calls[1].2.as_deref(),
+            Some(connecting_guard_pf_rules().as_str())
+        );
+    }
+
+    #[test]
+    fn install_connecting_guard_dispatches_per_backend() {
+        let nft = RecordingRunner::default();
+        Backend::Nft(NftBackend)
+            .install_connecting_guard(&nft)
+            .expect("nft");
+        assert_eq!(nft.calls()[0].0, "nft");
+        let pf = RecordingRunner::default();
+        Backend::Pf(PfBackend)
+            .install_connecting_guard(&pf)
+            .expect("pf");
+        assert_eq!(pf.calls()[0].0, "pfctl");
     }
 }

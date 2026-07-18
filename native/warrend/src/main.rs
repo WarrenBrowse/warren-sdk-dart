@@ -380,6 +380,154 @@ where
         .context("join netblock task")?
 }
 
+/// The firewall side of a connect, as the orchestration needs it. Abstracted so
+/// the fail-closed ordering (guard up before any teardown; the prior session
+/// torn down before the new one installs its rules) is unit-testable with a fake:
+/// a real [`TunDatapathHandle`] needs a privileged device, and the collision the
+/// orchestration prevents lives in that handle's RAII drop.
+#[allow(async_fn_in_trait)]
+trait ConnectFirewall {
+    /// Whether a dead predecessor's engine kill-switch block is installed.
+    async fn engine_held(&self) -> Result<bool>;
+    /// Install the connecting guard: block all but loopback, DHCP and warrend's
+    /// own uid, so the dial egresses while every other app stays blocked.
+    async fn install_guard(&self) -> Result<()>;
+    /// Drop the connecting guard once the session's engine kill-switch protects.
+    async fn clear_guard(&self) -> Result<()>;
+    /// Remove a dead predecessor's engine block so warrend's own root dial is not
+    /// dropped by its chain.
+    async fn clear_stale_engine(&self) -> Result<()>;
+    /// Install the strict lockdown block (fail closed after a failed dial).
+    async fn install_lockdown(&self) -> Result<()>;
+    /// Restore the host network (a non-lockdown reconnect whose dial failed).
+    async fn restore(&self) -> Result<()>;
+}
+
+/// Production [`ConnectFirewall`]: the real nft/pf backend via the command runner.
+struct RealFirewall<'a> {
+    runner: &'a Arc<dyn CmdRunner>,
+}
+
+impl ConnectFirewall for RealFirewall<'_> {
+    async fn engine_held(&self) -> Result<bool> {
+        run_netblock(self.runner, |b, r| b.engine_block_present(r)).await
+    }
+    async fn install_guard(&self) -> Result<()> {
+        run_netblock(self.runner, |b, r| b.install_connecting_guard(r)).await
+    }
+    async fn clear_guard(&self) -> Result<()> {
+        run_netblock(self.runner, |b, r| b.clear_lockdown(r).map(|_| ())).await
+    }
+    async fn clear_stale_engine(&self) -> Result<()> {
+        run_netblock(self.runner, |b, r| b.clear_engine_block(r).map(|_| ())).await
+    }
+    async fn install_lockdown(&self) -> Result<()> {
+        run_netblock(self.runner, |b, r| b.install_lockdown(r)).await
+    }
+    async fn restore(&self) -> Result<()> {
+        run_netblock(self.runner, netblock::revert_network)
+            .await
+            .map(|_| ())
+    }
+}
+
+/// Orchestrates the firewall around one connect, fail-closed at every step.
+///
+/// The window this closes: the old code LIFTED the whole firewall before the
+/// control-plane dial (every app on the host could egress during a lockdown
+/// connect), and on a replace-connect it installed the new session's rules
+/// BEFORE dropping the old handle whose RAII flush targets the SAME engine
+/// kill-switch table, so the old teardown wiped the successor's protection.
+///
+/// Both are fixed here: a connecting guard (warrend's OWN table, permitting only
+/// loopback, DHCP and warrend's uid) goes up before anything is torn down, and on
+/// a reconnect the prior session is dropped BEFORE the new one is brought up, so
+/// the shared engine table is never flushed out from under the successor.
+///
+/// On success the handle is stored in `slot` and the guard is dropped (the
+/// session's own engine kill-switch then protects). On failure the network is
+/// held closed (lockdown or a held block) or restored (a non-lockdown reconnect,
+/// now disconnected).
+async fn connect_orchestrated<H, Fut>(
+    slot: &Arc<Mutex<Option<H>>>,
+    fw: &impl ConnectFirewall,
+    lockdown: bool,
+    bring_up: impl FnOnce() -> Fut,
+) -> Result<(), Event>
+where
+    Fut: std::future::Future<Output = Result<H, Event>>,
+{
+    let reconnect = slot.lock().expect("tunnel mutex").is_some();
+    // A block already in force before this connect: a dead predecessor's engine
+    // block, or lockdown mode. Only then must the dial stay protected rather than
+    // running with the firewall fully open (the plain non-lockdown connect keeps
+    // dialing in the open, unchanged). A reconnect always needs the guard: the
+    // swap tears the live session down and must not leak in between.
+    let engine_held = if reconnect {
+        false
+    } else {
+        fw.engine_held()
+            .await
+            .map_err(|e| Event::error("tunnel", e.to_string()))?
+    };
+    let guard = reconnect || engine_held || lockdown;
+
+    if guard {
+        // Fail-closed ordering: the connecting guard goes up BEFORE any teardown,
+        // so there is never an instant with the network open.
+        fw.install_guard()
+            .await
+            .map_err(|e| Event::error("tunnel", e.to_string()))?;
+    }
+    if reconnect {
+        // Drop the prior session BEFORE the new one installs its rules: both share
+        // the engine's single kill-switch table, so the old RAII teardown would
+        // otherwise flush the successor's protection (a leak on every reconnect).
+        // The guard installed above bridges the gap.
+        let prior = slot.lock().expect("tunnel mutex").take();
+        drop(prior);
+    } else if engine_held {
+        // The guard now protects, so the dead predecessor's engine block (which
+        // would drop warrend's own root dial) can go.
+        fw.clear_stale_engine()
+            .await
+            .map_err(|e| Event::error("tunnel", e.to_string()))?;
+    }
+
+    match bring_up().await {
+        Ok(handle) => {
+            *slot.lock().expect("tunnel mutex") = Some(handle);
+            if guard {
+                // The session's engine kill-switch now protects; drop the bridging
+                // guard so it does not shadow the live datapath. Best-effort: a
+                // failure over-blocks (fail-closed), it never opens the network.
+                if let Err(error) = fw.clear_guard().await {
+                    eprintln!("warrend: clearing the connecting guard failed: {error}");
+                }
+            }
+            Ok(())
+        }
+        Err(event) => {
+            if guard {
+                let result = if lockdown || engine_held {
+                    fw.install_lockdown().await
+                } else {
+                    // Non-lockdown reconnect: the prior session is gone, so the
+                    // host is now disconnected, which under non-lockdown means the
+                    // network is restored.
+                    fw.restore().await
+                };
+                if let Err(error) = result {
+                    eprintln!(
+                        "warrend: fail-closed cleanup after a failed connect failed: {error}"
+                    );
+                }
+            }
+            Err(event)
+        }
+    }
+}
+
 /// Handles one request, returning an event to send back (or an error event).
 async fn handle(
     session: &mut Session,
@@ -446,43 +594,19 @@ async fn handle(
                 .client
                 .as_ref()
                 .ok_or_else(|| Event::error("tunnel", "configure must precede connect"))?;
-            // A held block (a dead predecessor's kill-switch, or the lockdown
-            // block) would drop this connect's own control-plane dial. The
-            // connect is the user's intent to protect via a NEW session, so
-            // lift the stale block first; a failed connect re-blocks below
-            // instead of leaving the network open.
-            let had_block = if tunnel.lock().expect("tunnel mutex").is_none() {
-                run_netblock(runner, netblock::clear_blocks_for_dial)
-                    .await
-                    .map_err(|e| Event::error("tunnel", e.to_string()))?
-            } else {
-                false
-            };
-            let connected = connect_session(client, &exit_pubkey_hex).await;
-            match connected {
-                Ok(handle) => {
-                    // Datapath scope note: the engine idle-cover IS armed on
-                    // this TUN path (shared multihop dial); the in-tunnel
-                    // egress liveness probe is not, it lives in the in-process
-                    // proxy glue and has no TUN equivalent yet.
-                    // Replacing any prior tunnel drops it first (reverting its
-                    // routes).
-                    *tunnel.lock().expect("tunnel mutex") = Some(handle);
-                    Ok(Some(Event::state(ConnState::Connected)))
-                }
-                Err(event) => {
-                    if had_block || lockdown.load(Ordering::SeqCst) {
-                        // The network was blocked before this attempt (or
-                        // lockdown demands it): a failed connect must not
-                        // leave it open.
-                        if let Err(error) = run_netblock(runner, |b, r| b.install_lockdown(r)).await
-                        {
-                            eprintln!("warrend: re-block after failed connect failed: {error}");
-                        }
-                    }
-                    Err(event)
-                }
-            }
+            // The dial no longer LIFTS the firewall (that opened the whole host on
+            // every lockdown connect). A connecting guard protects the window and,
+            // on a reconnect, the prior session is torn down before the new one
+            // installs its rules so the shared engine kill-switch table is not
+            // flushed out from under the successor. Datapath scope note: the engine
+            // idle-cover IS armed on this TUN path; the in-tunnel egress liveness
+            // probe is not (it lives in the in-process proxy glue).
+            let fw = RealFirewall { runner };
+            connect_orchestrated(tunnel, &fw, lockdown.load(Ordering::SeqCst), || {
+                connect_session(client, &exit_pubkey_hex)
+            })
+            .await
+            .map(|()| Some(Event::state(ConnState::Connected)))
         }
         Request::Disconnect => {
             let lockdown_on = lockdown.load(Ordering::SeqCst);
@@ -773,5 +897,279 @@ mod tests {
         let (end, _other) = UnixStream::pair().expect("socketpair");
         let expected = unsafe { libc::geteuid() };
         assert_eq!(peer_uid(&end), Some(expected));
+    }
+}
+
+/// Behavioral tests for the connect firewall orchestration. A real
+/// [`TunDatapathHandle`] needs a privileged device, so a fake session models the
+/// one thing that matters for these invariants: the engine's SINGLE kill-switch
+/// table, which a session's bring-up installs and its RAII drop flushes. Two
+/// sessions sharing that one table is exactly the replace-connect collision, so
+/// the fake reproduces it faithfully and the tests fail if the ordering fix is
+/// reverted.
+#[cfg(test)]
+mod connect_orchestration_tests {
+    use super::*;
+
+    /// A shared, ordered timeline plus the two pieces of protection state.
+    #[derive(Default)]
+    struct Timeline {
+        events: Mutex<Vec<&'static str>>,
+        /// The engine's ONE kill-switch table: bring-up installs it, a session's
+        /// RAII drop flushes it UNCONDITIONALLY (like `nft delete table`), which
+        /// is why a successor sharing the table can be wiped by a predecessor.
+        engine_table_present: AtomicBool,
+        /// A warrend-owned block (connecting guard or strict lockdown) holds.
+        warrend_block: AtomicBool,
+    }
+
+    impl Timeline {
+        fn push(&self, e: &'static str) {
+            self.events.lock().expect("events").push(e);
+        }
+        fn events(&self) -> Vec<&'static str> {
+            self.events.lock().expect("events").clone()
+        }
+        /// The host is protected iff SOME block holds (the engine table or a
+        /// warrend block). The whole point of the guard is that this is never
+        /// false across a swap.
+        fn protected(&self) -> bool {
+            self.engine_table_present.load(Ordering::SeqCst)
+                || self.warrend_block.load(Ordering::SeqCst)
+        }
+    }
+
+    /// A fake datapath session: its bring-up installed the engine table, its drop
+    /// flushes it (unconditional, mirroring the engine's `nft delete table`).
+    struct FakeSession {
+        tl: Arc<Timeline>,
+    }
+
+    impl Drop for FakeSession {
+        fn drop(&mut self) {
+            self.tl.engine_table_present.store(false, Ordering::SeqCst);
+            self.tl.push("session_teardown");
+        }
+    }
+
+    struct FakeFirewall {
+        tl: Arc<Timeline>,
+        engine_held: bool,
+    }
+
+    impl ConnectFirewall for FakeFirewall {
+        async fn engine_held(&self) -> Result<bool> {
+            Ok(self.engine_held)
+        }
+        async fn install_guard(&self) -> Result<()> {
+            self.tl.warrend_block.store(true, Ordering::SeqCst);
+            self.tl.push("guard_install");
+            Ok(())
+        }
+        async fn clear_guard(&self) -> Result<()> {
+            self.tl.warrend_block.store(false, Ordering::SeqCst);
+            self.tl.push("guard_clear");
+            Ok(())
+        }
+        async fn clear_stale_engine(&self) -> Result<()> {
+            self.tl.engine_table_present.store(false, Ordering::SeqCst);
+            self.tl.push("clear_stale_engine");
+            Ok(())
+        }
+        async fn install_lockdown(&self) -> Result<()> {
+            self.tl.warrend_block.store(true, Ordering::SeqCst);
+            self.tl.push("install_lockdown");
+            Ok(())
+        }
+        async fn restore(&self) -> Result<()> {
+            self.tl.warrend_block.store(false, Ordering::SeqCst);
+            self.tl.push("restore");
+            Ok(())
+        }
+    }
+
+    fn slot_with(session: Option<FakeSession>) -> Arc<Mutex<Option<FakeSession>>> {
+        Arc::new(Mutex::new(session))
+    }
+
+    /// Index of the first occurrence of `e` in the timeline.
+    fn at(events: &[&'static str], e: &str) -> usize {
+        events
+            .iter()
+            .position(|x| *x == e)
+            .unwrap_or_else(|| panic!("event {e:?} never happened in {events:?}"))
+    }
+
+    #[tokio::test]
+    async fn reconnect_tears_the_prior_session_down_before_the_new_one_installs_its_rules() {
+        // The replace-connect collision: the old and new sessions share the ONE
+        // engine kill-switch table, so if the new rules are installed before the
+        // old handle drops, the old RAII teardown flushes the successor's
+        // protection. The fix drops the prior session FIRST, bridged by the guard.
+        let tl = Arc::new(Timeline::default());
+        // A live prior session: its engine table is up.
+        tl.engine_table_present.store(true, Ordering::SeqCst);
+        let slot = slot_with(Some(FakeSession { tl: tl.clone() }));
+        let fw = FakeFirewall {
+            tl: tl.clone(),
+            engine_held: false,
+        };
+
+        let bring = {
+            let tl = tl.clone();
+            move || async move {
+                tl.engine_table_present.store(true, Ordering::SeqCst);
+                tl.push("new_up");
+                Ok(FakeSession { tl })
+            }
+        };
+        connect_orchestrated(&slot, &fw, false, bring)
+            .await
+            .expect("reconnect succeeds");
+
+        let events = tl.events();
+        assert!(
+            at(&events, "guard_install") < at(&events, "session_teardown"),
+            "the guard must be up BEFORE the prior session is torn down: {events:?}"
+        );
+        assert!(
+            at(&events, "session_teardown") < at(&events, "new_up"),
+            "the prior session must be torn down BEFORE the new one installs its \
+             rules, else the old teardown flushes the successor's table: {events:?}"
+        );
+        assert!(
+            tl.engine_table_present.load(Ordering::SeqCst),
+            "the new session's kill-switch table must survive the swap (this goes \
+             red if the fix is reverted to install-before-teardown): {events:?}"
+        );
+        assert!(
+            slot.lock().expect("slot").is_some(),
+            "the new session must be stored"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_lockdown_connect_guards_the_dial_instead_of_lifting_the_firewall() {
+        // Item 1: a lockdown connect must NOT open the whole host for the dial. The
+        // connecting guard holds for the whole dial and is only dropped once the
+        // session's own kill-switch is up, so the host is protected throughout.
+        let tl = Arc::new(Timeline::default());
+        let slot = slot_with(None);
+        let fw = FakeFirewall {
+            tl: tl.clone(),
+            engine_held: false,
+        };
+        let bring = {
+            let tl = tl.clone();
+            move || async move {
+                tl.engine_table_present.store(true, Ordering::SeqCst);
+                tl.push("new_up");
+                Ok(FakeSession { tl })
+            }
+        };
+        connect_orchestrated(&slot, &fw, true, bring)
+            .await
+            .expect("connect succeeds");
+
+        let events = tl.events();
+        assert_eq!(
+            events,
+            ["guard_install", "new_up", "guard_clear"],
+            "a lockdown connect installs the guard, dials, then drops the guard \
+             once the session protects, and never lifts the firewall: {events:?}"
+        );
+        assert!(
+            at(&events, "guard_install") < at(&events, "new_up"),
+            "the guard must protect the dial window: {events:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_failed_lockdown_connect_holds_the_block_closed() {
+        // Fail-closed: a lockdown dial that fails must leave the network blocked.
+        let tl = Arc::new(Timeline::default());
+        let slot = slot_with(None);
+        let fw = FakeFirewall {
+            tl: tl.clone(),
+            engine_held: false,
+        };
+        let bring = || async { Err(Event::error("tunnel", "dial failed")) };
+        let result = connect_orchestrated(&slot, &fw, true, bring).await;
+        assert!(result.is_err(), "the failure must surface");
+        assert!(
+            tl.events().contains(&"install_lockdown"),
+            "a failed lockdown connect must install the strict block: {:?}",
+            tl.events()
+        );
+        assert!(
+            tl.protected(),
+            "the host must stay protected after a failed lockdown connect"
+        );
+        assert!(slot.lock().expect("slot").is_none(), "no session is stored");
+    }
+
+    #[tokio::test]
+    async fn a_plain_connect_with_no_block_held_dials_in_the_open_unchanged() {
+        // A plain non-lockdown connect with nothing held keeps its prior behaviour:
+        // no guard, dial in the open. Installing a guard here would newly block a
+        // non-lockdown user's apps during connect (a behaviour regression).
+        let tl = Arc::new(Timeline::default());
+        let slot = slot_with(None);
+        let fw = FakeFirewall {
+            tl: tl.clone(),
+            engine_held: false,
+        };
+        let bring = {
+            let tl = tl.clone();
+            move || async move {
+                tl.engine_table_present.store(true, Ordering::SeqCst);
+                tl.push("new_up");
+                Ok(FakeSession { tl })
+            }
+        };
+        connect_orchestrated(&slot, &fw, false, bring)
+            .await
+            .expect("connect succeeds");
+        assert_eq!(
+            tl.events(),
+            ["new_up"],
+            "no guard is installed for a plain connect with nothing held: {:?}",
+            tl.events()
+        );
+    }
+
+    #[tokio::test]
+    async fn a_fresh_connect_over_a_stale_engine_block_guards_then_clears_it() {
+        // A dead predecessor's engine block would drop warrend's own root dial, so
+        // the guard goes up first (protecting), then the stale block is cleared.
+        let tl = Arc::new(Timeline::default());
+        tl.engine_table_present.store(true, Ordering::SeqCst);
+        let slot = slot_with(None);
+        let fw = FakeFirewall {
+            tl: tl.clone(),
+            engine_held: true,
+        };
+        let bring = {
+            let tl = tl.clone();
+            move || async move {
+                tl.engine_table_present.store(true, Ordering::SeqCst);
+                tl.push("new_up");
+                Ok(FakeSession { tl })
+            }
+        };
+        connect_orchestrated(&slot, &fw, false, bring)
+            .await
+            .expect("connect succeeds");
+        let events = tl.events();
+        assert!(
+            at(&events, "guard_install") < at(&events, "clear_stale_engine"),
+            "the guard must be up before the stale engine block is cleared, so the \
+             host is never open: {events:?}"
+        );
+        assert!(
+            at(&events, "clear_stale_engine") < at(&events, "new_up"),
+            "the stale block must be cleared before the dial (else the dial is \
+             blocked by the dead chain): {events:?}"
+        );
     }
 }
