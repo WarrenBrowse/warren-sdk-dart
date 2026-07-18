@@ -18,6 +18,14 @@ on:
   pull_request:
   workflow_dispatch: {}
 
+env:
+  # The x86 self-hosted runners are Rosetta-emulated, where gcc's collect2 link
+  # driver segfaults under memory pressure linking large proc-macro crates
+  # (zerovec-derive et al, seen in the codegen `cargo expand` pass). clang-lld
+  # (baked into the runner image) drives the link without collect2. Target
+  # scoped, so inert on the macos/ios/arm matrices.
+  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang-lld
+
 jobs:
   analyze:
     name: format + analyze
