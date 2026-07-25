@@ -38,6 +38,7 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         SubscriptionInfo,
         TunnelCheck,
         WarrenApiError,
+        WarrenChannel,
         WarrenDiscoveryError,
         WarrenError,
         WarrenFatalCause,
@@ -45,7 +46,10 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         WarrenIdentityError,
         WarrenPrivilegeError,
         WarrenTunnelError,
-        WarrenUnsupportedError;
+        WarrenUnsupportedError,
+        warrenApiBase,
+        warrenChannel,
+        warrenChannelSelector;
 
 export 'src/warren_client.dart';
 export 'src/warren_identity.dart';

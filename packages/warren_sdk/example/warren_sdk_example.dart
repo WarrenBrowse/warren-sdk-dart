@@ -13,7 +13,7 @@ Future<void> main() async {
   //    client. The mnemonic is consumed once and zeroized in the engine.
   final client = await WarrenClient.create(
     mnemonic: await _readMnemonicFromSecureStore(),
-    apiBase: Uri.parse('https://api.warrenbrowse.com'),
+    apiBase: Uri.parse(warrenApiBase),
     serverPubkeyPin: _kWarrenServerPubkeyPin,
   );
 

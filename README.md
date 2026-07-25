@@ -38,7 +38,7 @@ import 'package:warren_sdk/warren_sdk.dart';
 
 final warren = await WarrenClient.create(
   mnemonic: await secureStore.read('warren_mnemonic'),
-  apiBase: Uri.parse('https://api.warrenbrowse.com'),
+  apiBase: Uri.parse(warrenApiBase),
   serverPubkeyPin: kWarrenServerPubkeyPin,
 );
 
@@ -119,6 +119,15 @@ melos run analyze            # analyze every package
 melos run test               # test every package
 melos run gen                # run code generation (FRB, Riverpod, etc.)
 ```
+
+### Release channel (build-time)
+
+`--dart-define=WARREN_PRODUCT_ENV=beta` picks the beta channel; unset (or `prod`)
+means prod, so an ordinary build and every test run exercise the prod path.
+`warrenApiBase` resolves to that channel's account API base
+(`https://api.warrenbrowse.com` or `https://api.beta.warrenbrowse.com`), any
+other value fails the build, and an explicit `WarrenClientConfig.apiBase` still
+wins.
 
 ### Local co-development against a working copy of the engine
 

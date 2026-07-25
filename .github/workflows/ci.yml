@@ -73,6 +73,8 @@ jobs:
           # submodules, so its gitlink and the stale working tree disagree).
           git diff --exit-code -- .
       - run: flutter test
+        working-directory: packages/warren_sdk_platform_interface
+      - run: flutter test
         working-directory: packages/warren_sdk_ffi
       - run: flutter test
         working-directory: packages/warren_sdk_desktop

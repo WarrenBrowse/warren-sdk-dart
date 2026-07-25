@@ -73,9 +73,10 @@ the **Client** tab at runtime.
 
 | Define | Default | Meaning |
 |---|---|---|
-| `WARREN_API_BASE` | `https://api.warrenbrowse.com` | Account API base. |
+| `WARREN_API_BASE` | the build channel's API base | Account API base. |
 | `WARREN_SERVER_PIN` | _(the Warren network pin)_ | Pinned server public key (hex). A public key, not a secret. |
 | `WARREN_DAEMON_SOCKET` | `/tmp/warren-sdk-daemon.sock` | Mode B daemon socket. |
+| `WARREN_PRODUCT_ENV` | `prod` | Release channel (`prod` or `beta`); picks the default API base. |
 
 So against the test network you only need to supply a mnemonic (Client tab, or
 the `WARREN_MNEMONIC` env button).

@@ -15,7 +15,7 @@
 ///     warrenClientProvider.overrideWith((ref) async {
 ///       final client = await WarrenClient.create(
 ///         mnemonic: await secureStore.read('warren_mnemonic'),
-///         apiBase: Uri.parse('https://api.warrenbrowse.com'),
+///         apiBase: Uri.parse(warrenApiBase),
 ///         serverPubkeyPin: kWarrenServerPubkeyPin,
 ///       );
 ///       ref.onDispose(client.dispose);

@@ -1,5 +1,7 @@
 import 'dart:io' show Platform;
 
+import 'package:warren_sdk/warren_sdk.dart' show warrenApiBase;
+
 /// Build-time defaults, overridable with `--dart-define`. These keep the test
 /// network ergonomic without baking any secret into the binary.
 abstract final class AppEnv {
@@ -12,10 +14,14 @@ abstract final class AppEnv {
     return (value != null && value.trim().isNotEmpty) ? value.trim() : null;
   }
 
-  /// Default account API base. The Warren test network.
-  static const String apiBase = String.fromEnvironment(
+  /// Default account API base: the build's release channel
+  /// (`--dart-define=WARREN_PRODUCT_ENV=beta` for beta), overridable per build
+  /// with `--dart-define=WARREN_API_BASE=...`.
+  static String get apiBase =>
+      _apiBaseOverride.isEmpty ? warrenApiBase : _apiBaseOverride;
+
+  static const String _apiBaseOverride = String.fromEnvironment(
     'WARREN_API_BASE',
-    defaultValue: 'https://api.warrenbrowse.com',
   );
 
   /// Default pinned server public key (hex) for the Warren network. This is a
