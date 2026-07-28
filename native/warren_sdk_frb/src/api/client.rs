@@ -176,7 +176,10 @@ impl WarrenClientFrb {
                 .clone()
                 .try_into()
                 .map_err(|_| err(WarrenErrorKind::Identity, "invalid ss58 address"))?,
-            voucher_secret: secret,
+            // The DTO field turned optional (registering with no code lets the
+            // server apply its campaign voucher); this path always carries one,
+            // and `Some` keeps the wire form byte-identical.
+            voucher_secret: Some(secret),
             referral_code: None,
         };
         let resp = self
