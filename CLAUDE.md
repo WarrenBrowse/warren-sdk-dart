@@ -21,8 +21,10 @@ the rationale, and `ROADMAP.md` for the phase plan.
    implements only the ergonomic API, reactive state, secret storage and platform
    integration. Never reimplement a frozen format in Dart.
 2. **Wire compatibility is inherited and must be proven** (see the shared
-   wire-vectors rule). The Dart surface is validated by replaying the shared
-   `vectors/` from `warren-sdk-rs`.
+   wire-vectors rule). The Dart surface is validated by replaying this repo's
+   own `vectors/` submodule (the shared warren-vectors corpus, the same one
+   `warren-sdk-rs` pins; advance its gitlink with the sibling pins, see the
+   warren-sibling-pins skill).
 3. **One engine, two FFI surfaces.** Flutter uses `flutter_rust_bridge`
    (`native/warren_sdk_frb`). Non-Flutter languages use the engine's uniffi
    surface. Do not blur them.
@@ -38,16 +40,16 @@ real exit). Frozen formats get a vector-replay test.
 
 ## Error handling specifics
 
-Public errors are a sealed `WarrenError` hierarchy with a stable code and a
-redacted message. Map Rust errors at the bridge; never surface raw
-secret-bearing strings (see the shared errors/secrets rule).
+Public errors are the sealed `WarrenError` hierarchy; map Rust errors at the
+FRB bridge (shape and no-leak rules: the imported shared errors/secrets rule).
 
 ## Dart and Flutter conventions
 
-- Target a current stable Dart/Flutter SDK; Dart pub workspaces for the monorepo.
+- Flutter is pinned via `.fvmrc` (currently 3.44.2); run every Flutter command
+  through `fvm flutter`. Dart pub workspaces for the monorepo.
 - `analysis_options.yaml` is strict (`flutter_lints` plus the project additions);
   `dart analyze` and `dart format --set-exit-if-changed` must be clean before any
-  commit. Analysis only; never run a Flutter build to check.
+  commit.
 - Immutable models (`final` fields, `const` constructors, value equality). Sealed
   classes for closed unions (errors, connection state).
 - Public API is documented with `///`; every package has a library doc comment.
@@ -56,9 +58,11 @@ secret-bearing strings (see the shared errors/secrets rule).
 
 ## Build constraints (environment)
 
-- `flutter pub get`, `dart pub get`, `dart analyze`, `flutter analyze`,
+- `fvm flutter pub get`, `dart pub get`, `dart analyze`, `fvm flutter analyze`,
   `dart format`, `dart test` and FRB/`build_runner` codegen are allowed.
-- Do **not** run `flutter build` or `flutter run` (they break this environment).
+- `fvm flutter build` / `fvm flutter run` are allowed for validation (live
+  tests, real-exit checks); prefer analysis for routine checks, and never
+  invoke bare `flutter`, which bypasses the `.fvmrc` pin.
 
 ## Commit gates
 
@@ -68,5 +72,6 @@ Before any commit, these must be green:
 dart format --output=none --set-exit-if-changed .
 dart analyze
 dart test            # in packages that have tests
-# plus FRB codegen drift check once P1 lands
+# if native/warren_sdk_frb changed: flutter_rust_bridge_codegen generate
+# (pinned 2.12.0), then a clean git diff (mirrors the CI codegen-drift job)
 ```
