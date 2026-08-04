@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Repo-level PAT: see ci.yml for why the org secret does not resolve.
+          # Repo-level PAT: see ci.yml (org secrets do not resolve in runs).
           token: ${{ secrets.VECTORS_TOKEN }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: subosito/flutter-action@v2

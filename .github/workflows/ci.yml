@@ -1,21 +1,17 @@
 name: CI
 
 # Runs on the WarrenBrowse org self-hosted runners (same as warren-sdk-rs and
-# warren-app), so it never consumes GitHub-hosted minutes. Label set:
-#   [self-hosted, Linux, X64, macstudio-rosetta]  -> the warren-linux-runner
-#   x86 Rosetta pool. Flutter has no Linux arm64 SDK, so these jobs cannot use
-#   the native arm64 pool the pure-Rust repos migrated to; they stay on x86.
-#   The macstudio-rosetta label is deliberately NARROWER than a bare
-#   [self-hosted, Linux, X64] (which also lands on the warren-docker-mac pool):
-#   only the warren-linux-runner containers ship the clang-lld linker below.
-# Do not switch any job to a GitHub-hosted runner (the org's hosted-minutes
-# billing is disabled, so those jobs never start).
+# warren-app); every job must stay on them. Label set:
+#   [self-hosted, Linux, X64, macstudio-rosetta] -> an x86 pool. Flutter has no
+#   Linux arm64 SDK, so these jobs cannot use the arm64 pool the pure-Rust
+#   repos use; they stay on x86. The macstudio-rosetta label is deliberately
+#   NARROWER than a bare [self-hosted, Linux, X64]: only that pool's containers
+#   ship the clang-lld linker below.
 #
-# VECTORS_TOKEN must be a REPO-LEVEL secret (gh secret set ... --repo ...), not the
-# org-level one: while the org billing is degraded, org secrets do not resolve in
-# runs (checkout fails with "Input required and not supplied: token"). It is a PAT
-# with read access to the private warren-sdk-rs (cargo git dep) + warren-vectors
-# (submodule).
+# VECTORS_TOKEN must be a REPO-LEVEL secret (gh secret set ... --repo ...), not
+# an org-level one: org secrets do not resolve in this org's runs (checkout
+# fails with "Input required and not supplied: token"). It is a PAT with read
+# access to warren-sdk-rs (cargo git dep) + warren-vectors (submodule).
 
 on:
   push:
@@ -24,11 +20,10 @@ on:
   workflow_dispatch: {}
 
 env:
-  # Rosetta-emulated x86: gcc's collect2 link driver segfaults under memory
-  # pressure on large proc-macro/build-script links (the 2026-07-18
-  # zerovec-derive red). clang-lld drives the link without collect2. Baked into
-  # the warren-linux-runner image (the macstudio-rosetta pool the jobs pin), and
-  # target scoped so it is inert on the flutter-only steps.
+  # Rosetta-emulated x86: gcc's collect2 link driver can segfault under memory
+  # pressure on large proc-macro/build-script links. clang-lld drives the link
+  # without collect2; it is baked into the macstudio-rosetta pool image the
+  # jobs pin, and target scoped so it is inert on the flutter-only steps.
   CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang-lld
 
 jobs:
