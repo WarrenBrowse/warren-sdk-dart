@@ -55,6 +55,14 @@ strip = true
 warren-contract = { path = "../../../warren-contract" }
 warren-discovery-core = { path = "../../../warren-contract/warren-discovery" }
 
+# The engine repos declare the warren-quinn fork over ssh://, which requires an
+# SSH key even for a read-only build. Repoint that git-dep at the https:// form
+# of the same repo and tag (identical commit, only the transport changes) so a
+# checkout builds with plain https read access.
+[patch."ssh://git@github.com/WarrenBrowse/warren-quinn.git"]
+warren-quinn = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.16-fork.11" }
+warren-quinn-udp = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.16-fork.11" }
+
 [patch."https://github.com/WarrenBrowse/warrenguard.git"]
 warrenguard-backoff = { path = "../../../warrenguard/crates/warrenguard-backoff" }
 warrenguard-wire = { path = "../../../warrenguard/crates/warrenguard-wire" }
