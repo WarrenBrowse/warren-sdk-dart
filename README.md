@@ -97,13 +97,13 @@ vendoring it:
   `warren-vectors` repository (the same single source of truth used by
   `warren-sdk-rs` and every sibling SDK, no duplication).
 
-Both `warren-sdk-rs` and `warren-vectors` are private; cloning and CI need read
-access to them.
+Cloning with submodules, the native build and the CI engine jobs need read
+access to `warren-sdk-rs` and `warren-vectors`.
 
 ## Clone
 
 ```bash
-git clone --recurse-submodules git@github.com:WarrenBrowse/warren-sdk-dart.git
+git clone --recurse-submodules https://github.com/WarrenBrowse/warren-sdk-dart.git
 # or, in an existing checkout:
 git submodule update --init
 ```
@@ -210,4 +210,5 @@ never by privileging the shared fleet.
 
 ## License
 
-AGPL-3.0-or-later, matching `warren-sdk-rs`.
+AGPL-3.0-or-later, matching `warren-sdk-rs`. See [LICENSE](LICENSE) for the
+full text.

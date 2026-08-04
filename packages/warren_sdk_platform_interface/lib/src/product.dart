@@ -1,6 +1,6 @@
 /// Release channel a build targets. Each channel is a separate Warren
-/// deployment: `api.beta` and `api.warrenbrowse.com` resolve to the same box
-/// today, so a wrong binding stays invisible until production splits off.
+/// deployment, so a build must bind exactly the channel it ships for; the
+/// compile-time selector check below makes a typo fail the build.
 enum WarrenChannel {
   /// Production deployment, the default when the selector is unset.
   prod('https://api.warrenbrowse.com'),
