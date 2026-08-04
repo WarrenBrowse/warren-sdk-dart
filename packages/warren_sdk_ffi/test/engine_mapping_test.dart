@@ -76,7 +76,7 @@ void main() {
     });
 
     test('maps a non-exit with no location', () {
-      const dto = TunnelCheckDto(ip: '82.65.12.5', isExit: false);
+      const dto = TunnelCheckDto(ip: '192.0.2.7', isExit: false);
       final check = tunnelCheckFromDto(dto);
       expect(check.isExit, isFalse);
       expect(check.country, isNull);

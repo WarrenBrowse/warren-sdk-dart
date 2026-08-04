@@ -43,17 +43,17 @@ void main() {
       final check = NetCheck(
         connected: false,
         systemVpn: false,
-        direct: ip('82.65.12.5'),
+        direct: ip('192.0.2.7'),
       );
       expect(check.verdict, LeakVerdict.exposed);
-      expect(check.effective?.ip, '82.65.12.5');
+      expect(check.effective?.ip, '192.0.2.7');
     });
 
     test('protected when the tunnel egress differs from the real IP', () {
       final check = NetCheck(
         connected: true,
         systemVpn: false,
-        direct: ip('82.65.12.5'),
+        direct: ip('192.0.2.7'),
         tunnel: ip('50.7.46.90'),
       );
       expect(check.verdict, LeakVerdict.protected);
@@ -65,8 +65,8 @@ void main() {
       final check = NetCheck(
         connected: true,
         systemVpn: false,
-        direct: ip('82.65.12.5'),
-        tunnel: ip('82.65.12.5'),
+        direct: ip('192.0.2.7'),
+        tunnel: ip('192.0.2.7'),
       );
       expect(check.verdict, LeakVerdict.leaking);
     });
@@ -75,7 +75,7 @@ void main() {
       final check = NetCheck(
         connected: true,
         systemVpn: false,
-        direct: ip('82.65.12.5'),
+        direct: ip('192.0.2.7'),
       );
       expect(check.verdict, LeakVerdict.unknown);
     });
