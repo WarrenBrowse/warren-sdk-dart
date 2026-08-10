@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/warren-logo.svg" alt="Warren" width="130"/>
+</p>
+
 # warren-sdk-dart
 
 The Dart/Flutter client SDK for the **Warren VPN**. Embed Warren in any Flutter
