@@ -63,6 +63,19 @@ FRB bridge (shape and no-leak rules: the imported shared errors/secrets rule).
 - `fvm flutter build` / `fvm flutter run` are allowed for validation (live
   tests, real-exit checks); prefer analysis for routine checks, and never
   invoke bare `flutter`, which bypasses the `.fvmrc` pin.
+- **`.fvmrc` carries `updateMelosSettings: false`, do not drop it.** Without it
+  `fvm install` stops on an interactive prompt offering to point `melos.yaml` at
+  the FVM SDK, and busy-waits on the answer forever. Nothing here calls
+  `fvm install` by hand, but `flutter_rust_bridge_codegen generate` shells out to
+  it four times, so the codegen hangs at 100% CPU with no output instead of
+  failing. Answering yes is not the fix either: CI installs Flutter through
+  `subosito/flutter-action`, never fvm, so a `melos.yaml` pointing at
+  `.fvm/flutter_sdk` would resolve to nothing there.
+- **Run the codegen under the same toolchain as CI** (`RUSTUP_TOOLCHAIN=stable`,
+  which is what `dtolnay/rust-toolchain@stable` gives the drift job). The
+  generated `datapath.dart` embeds the name of the derived `Eq` helper that
+  rustc emits, and that name changed between releases, so an older default
+  toolchain rewrites that one line and the drift gate reads it as real.
 
 ## Commit gates
 
