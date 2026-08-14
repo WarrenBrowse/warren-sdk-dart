@@ -3197,7 +3197,7 @@ dependencies = [
 [[package]]
 name = "warren-api"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "data-encoding",
  "hex",
@@ -3230,7 +3230,7 @@ dependencies = [
 [[package]]
 name = "warren-daita"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "warrenguard-daita",
 ]
@@ -3238,7 +3238,7 @@ dependencies = [
 [[package]]
 name = "warren-discovery"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "ed25519-dalek",
  "hex",
@@ -3268,7 +3268,7 @@ dependencies = [
 [[package]]
 name = "warren-identity"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "bip39",
  "ed25519-dalek",
@@ -3280,7 +3280,7 @@ dependencies = [
 [[package]]
 name = "warren-multihop"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "warrenguard-multihop",
 ]
@@ -3288,7 +3288,7 @@ dependencies = [
 [[package]]
 name = "warren-net"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "bytes",
  "rand 0.8.6",
@@ -3299,7 +3299,7 @@ dependencies = [
  "warren-transport",
  "warren-tun-core",
  "warren-wire",
- "warrenguard-pump 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
+ "warrenguard-pump 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
  "warrenguard-transport-core",
 ]
 
@@ -3362,7 +3362,7 @@ dependencies = [
 [[package]]
 name = "warren-sdk"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "bytes",
  "serde",
@@ -3377,13 +3377,13 @@ dependencies = [
  "warren-identity",
  "warren-net",
  "warren-transport",
- "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
+ "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
 ]
 
 [[package]]
 name = "warren-transport"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "bytes",
  "ed25519-dalek",
@@ -3396,11 +3396,11 @@ dependencies = [
  "warren-quinn",
  "warren-wire",
  "warrenguard-backoff",
- "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
+ "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
  "warrenguard-multihop",
- "warrenguard-pump 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
- "warrenguard-socket-bypass 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
- "warrenguard-tcp-fallback 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
+ "warrenguard-pump 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
+ "warrenguard-socket-bypass 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
+ "warrenguard-tcp-fallback 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
  "warrenguard-tls",
  "warrenguard-transport",
  "warrenguard-transport-core",
@@ -3409,7 +3409,7 @@ dependencies = [
 [[package]]
 name = "warren-tun-core"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "warrenguard-tun-core",
 ]
@@ -3417,7 +3417,7 @@ dependencies = [
 [[package]]
 name = "warren-wire"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=47b27ddf3d9155e45f1196d6adf945ffdd0a53ef#47b27ddf3d9155e45f1196d6adf945ffdd0a53ef"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=36003d84559b3ba434c4bef137748a054b8cd123#36003d84559b3ba434c4bef137748a054b8cd123"
 dependencies = [
  "serde",
  "warrenguard-multihop",
@@ -3455,7 +3455,7 @@ dependencies = [
 [[package]]
 name = "warrenguard-config"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468#aaae5a5c9fd3b148928bb57b0d78cfdb82f16468"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e#5e5c87e300178c2bbe355918f5d08d1d5128253e"
 dependencies = [
  "thiserror",
  "tracing",
@@ -3536,7 +3536,7 @@ dependencies = [
 [[package]]
 name = "warrenguard-pump"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468#aaae5a5c9fd3b148928bb57b0d78cfdb82f16468"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e#5e5c87e300178c2bbe355918f5d08d1d5128253e"
 dependencies = [
  "bytes",
  "parking_lot",
@@ -3544,9 +3544,9 @@ dependencies = [
  "tokio",
  "tracing",
  "warren-quinn",
- "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
+ "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
  "warrenguard-daita",
- "warrenguard-ratelimit 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
+ "warrenguard-ratelimit 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
  "warrenguard-transport-core",
  "warrenguard-wire",
 ]
@@ -3561,7 +3561,7 @@ dependencies = [
 [[package]]
 name = "warrenguard-ratelimit"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468#aaae5a5c9fd3b148928bb57b0d78cfdb82f16468"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e#5e5c87e300178c2bbe355918f5d08d1d5128253e"
 dependencies = [
  "parking_lot",
 ]
@@ -3579,7 +3579,7 @@ dependencies = [
 [[package]]
 name = "warrenguard-socket-bypass"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468#aaae5a5c9fd3b148928bb57b0d78cfdb82f16468"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e#5e5c87e300178c2bbe355918f5d08d1d5128253e"
 dependencies = [
  "libc",
  "socket2",
@@ -3597,7 +3597,7 @@ dependencies = [
 [[package]]
 name = "warrenguard-tcp-carrier"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468#aaae5a5c9fd3b148928bb57b0d78cfdb82f16468"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e#5e5c87e300178c2bbe355918f5d08d1d5128253e"
 dependencies = [
  "thiserror",
 ]
@@ -3619,7 +3619,7 @@ dependencies = [
 [[package]]
 name = "warrenguard-tcp-fallback"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468#aaae5a5c9fd3b148928bb57b0d78cfdb82f16468"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e#5e5c87e300178c2bbe355918f5d08d1d5128253e"
 dependencies = [
  "rustls",
  "thiserror",
@@ -3627,7 +3627,7 @@ dependencies = [
  "tokio-rustls",
  "tracing",
  "warren-quinn",
- "warrenguard-tcp-carrier 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468)",
+ "warrenguard-tcp-carrier 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e)",
  "warrenguard-tls",
 ]
 
@@ -3648,7 +3648,7 @@ dependencies = [
 [[package]]
 name = "warrenguard-token"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=aaae5a5c9fd3b148928bb57b0d78cfdb82f16468#aaae5a5c9fd3b148928bb57b0d78cfdb82f16468"
+source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=5e5c87e300178c2bbe355918f5d08d1d5128253e#5e5c87e300178c2bbe355918f5d08d1d5128253e"
 dependencies = [
  "blind-rsa-signatures",
  "rand 0.10.2",
