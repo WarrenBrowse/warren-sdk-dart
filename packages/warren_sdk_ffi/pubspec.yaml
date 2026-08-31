@@ -15,7 +15,7 @@ dependencies:
   ffi: ^2.1.3
   flutter:
     sdk: flutter
-  flutter_rust_bridge: ^2.12.0
+  flutter_rust_bridge: 2.12.0
   meta: ^1.15.0
   warren_sdk_platform_interface:
     path: ../warren_sdk_platform_interface
