@@ -3299,7 +3299,7 @@ dependencies = [
  "warren-transport",
  "warren-tun-core",
  "warren-wire",
- "warrenguard-pump 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
+ "warrenguard-pump",
  "warrenguard-transport-core",
 ]
 
@@ -3377,7 +3377,7 @@ dependencies = [
  "warren-identity",
  "warren-net",
  "warren-transport",
- "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
+ "warrenguard-config",
 ]
 
 [[package]]
@@ -3396,11 +3396,11 @@ dependencies = [
  "warren-quinn",
  "warren-wire",
  "warrenguard-backoff",
- "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
+ "warrenguard-config",
  "warrenguard-multihop",
- "warrenguard-pump 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
- "warrenguard-socket-bypass 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
- "warrenguard-tcp-fallback 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
+ "warrenguard-pump",
+ "warrenguard-socket-bypass",
+ "warrenguard-tcp-fallback",
  "warrenguard-tls",
  "warrenguard-transport",
  "warrenguard-transport-core",
@@ -3453,15 +3453,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "warrenguard-config"
-version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395#b05335469a4870361c49866c4f42140beb024395"
-dependencies = [
- "thiserror",
- "tracing",
-]
-
-[[package]]
 name = "warrenguard-daita"
 version = "0.1.0"
 dependencies = [
@@ -3483,7 +3474,7 @@ dependencies = [
  "sha2",
  "thiserror",
  "tracing",
- "warrenguard-config 0.1.0",
+ "warrenguard-config",
  "zeroize",
 ]
 
@@ -3526,27 +3517,9 @@ dependencies = [
  "tokio",
  "tracing",
  "warren-quinn",
- "warrenguard-config 0.1.0",
+ "warrenguard-config",
  "warrenguard-daita",
- "warrenguard-ratelimit 0.1.0",
- "warrenguard-transport-core",
- "warrenguard-wire",
-]
-
-[[package]]
-name = "warrenguard-pump"
-version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395#b05335469a4870361c49866c4f42140beb024395"
-dependencies = [
- "bytes",
- "parking_lot",
- "thiserror",
- "tokio",
- "tracing",
- "warren-quinn",
- "warrenguard-config 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
- "warrenguard-daita",
- "warrenguard-ratelimit 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
+ "warrenguard-ratelimit",
  "warrenguard-transport-core",
  "warrenguard-wire",
 ]
@@ -3554,14 +3527,6 @@ dependencies = [
 [[package]]
 name = "warrenguard-ratelimit"
 version = "0.1.0"
-dependencies = [
- "parking_lot",
-]
-
-[[package]]
-name = "warrenguard-ratelimit"
-version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395#b05335469a4870361c49866c4f42140beb024395"
 dependencies = [
  "parking_lot",
 ]
@@ -3577,27 +3542,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "warrenguard-socket-bypass"
-version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395#b05335469a4870361c49866c4f42140beb024395"
-dependencies = [
- "libc",
- "socket2",
- "warrenguard-tun-core",
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "warrenguard-tcp-carrier"
 version = "0.1.0"
-dependencies = [
- "thiserror",
-]
-
-[[package]]
-name = "warrenguard-tcp-carrier"
-version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395#b05335469a4870361c49866c4f42140beb024395"
 dependencies = [
  "thiserror",
 ]
@@ -3612,22 +3558,7 @@ dependencies = [
  "tokio-rustls",
  "tracing",
  "warren-quinn",
- "warrenguard-tcp-carrier 0.1.0",
- "warrenguard-tls",
-]
-
-[[package]]
-name = "warrenguard-tcp-fallback"
-version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395#b05335469a4870361c49866c4f42140beb024395"
-dependencies = [
- "rustls",
- "thiserror",
- "tokio",
- "tokio-rustls",
- "tracing",
- "warren-quinn",
- "warrenguard-tcp-carrier 0.1.0 (git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395)",
+ "warrenguard-tcp-carrier",
  "warrenguard-tls",
 ]
 
@@ -3648,7 +3579,6 @@ dependencies = [
 [[package]]
 name = "warrenguard-token"
 version = "0.1.0"
-source = "git+https://github.com/WarrenBrowse/warrenguard.git?rev=b05335469a4870361c49866c4f42140beb024395#b05335469a4870361c49866c4f42140beb024395"
 dependencies = [
  "blind-rsa-signatures",
  "rand 0.10.2",
@@ -3680,12 +3610,12 @@ dependencies = [
  "warren-quinn",
  "warren-quinn-udp",
  "warrenguard-backoff",
- "warrenguard-config 0.1.0",
+ "warrenguard-config",
  "warrenguard-daita",
  "warrenguard-multihop",
- "warrenguard-pump 0.1.0",
- "warrenguard-socket-bypass 0.1.0",
- "warrenguard-tcp-fallback 0.1.0",
+ "warrenguard-pump",
+ "warrenguard-socket-bypass",
+ "warrenguard-tcp-fallback",
  "warrenguard-tls",
  "warrenguard-transport-core",
  "warrenguard-wire",
@@ -3702,7 +3632,7 @@ dependencies = [
  "tokio",
  "tracing",
  "warren-quinn",
- "warrenguard-config 0.1.0",
+ "warrenguard-config",
  "warrenguard-daita",
  "warrenguard-wire",
 ]
@@ -4208,6 +4138,14 @@ name = "zmij"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
+
+[[patch.unused]]
+name = "warrenguard-killswitch-os"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "warrenguard-route-split"
+version = "0.1.0"
 
 [[patch.unused]]
 name = "warrenguard-tun-device"
