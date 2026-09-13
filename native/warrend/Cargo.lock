@@ -577,15 +577,6 @@ checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 
 [[package]]
 name = "defmt"
-version = "0.3.100"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0963443817029b2024136fc4dd07a5107eb8f977eaf18fcd1fdeb11306b64ad"
-dependencies = [
- "defmt 1.1.1",
-]
-
-[[package]]
-name = "defmt"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2953bfe4f93bbd20cc71198842756f77d161884c99ebbabc41d80231ded88d1"
@@ -1099,9 +1090,9 @@ dependencies = [
 
 [[package]]
 name = "heapless"
-version = "0.8.0"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bfb9eb618601c89945a70e254898da93b13be0388091d42117462b265bb3fad"
+checksum = "25ba4bd83f9415b58b4ed8dc5714c76e626a105be4646c02630ad730ad3b5aa4"
 dependencies = [
  "hash32 0.3.1",
  "stable_deref_trait",
@@ -2565,15 +2556,15 @@ checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
 name = "smoltcp"
-version = "0.12.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dad095989c1533c1c266d9b1e8d70a1329dd3723c3edac6d03bbd67e7bf6f4bb"
+checksum = "b6f8b28ad56c6e35524a37dd492af5d1a47e31e1a4d175cd12f89c075f01980f"
 dependencies = [
  "bitflags 1.3.2",
  "byteorder",
  "cfg-if",
- "defmt 0.3.100",
- "heapless 0.8.0",
+ "defmt",
+ "heapless 0.9.3",
  "managed",
 ]
 
@@ -2974,7 +2965,7 @@ dependencies = [
 [[package]]
 name = "warren-api"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "bytes",
  "data-encoding",
@@ -3019,7 +3010,7 @@ dependencies = [
 [[package]]
 name = "warren-daita"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "warrenguard-daita",
 ]
@@ -3027,7 +3018,7 @@ dependencies = [
 [[package]]
 name = "warren-discovery"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "ed25519-dalek",
  "hex",
@@ -3057,7 +3048,7 @@ dependencies = [
 [[package]]
 name = "warren-identity"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "bip39",
  "ed25519-dalek",
@@ -3069,7 +3060,7 @@ dependencies = [
 [[package]]
 name = "warren-multihop"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "warrenguard-multihop",
 ]
@@ -3077,7 +3068,7 @@ dependencies = [
 [[package]]
 name = "warren-net"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "bytes",
  "rand 0.8.6",
@@ -3095,8 +3086,8 @@ dependencies = [
 
 [[package]]
 name = "warren-quinn"
-version = "0.11.11-fork.11"
-source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.16-fork.11#e9065f273dab75e1b47da3bde29125809a3be672"
+version = "0.11.11-fork.13"
+source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.17-fork.13#3bea597a52758b87bb55aa8f568c545cf344663c"
 dependencies = [
  "bytes",
  "cfg_aliases",
@@ -3114,8 +3105,8 @@ dependencies = [
 
 [[package]]
 name = "warren-quinn-proto"
-version = "0.11.16-fork.11"
-source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.16-fork.11#e9065f273dab75e1b47da3bde29125809a3be672"
+version = "0.11.17-fork.13"
+source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.17-fork.13#3bea597a52758b87bb55aa8f568c545cf344663c"
 dependencies = [
  "bytes",
  "fastbloom",
@@ -3137,8 +3128,8 @@ dependencies = [
 
 [[package]]
 name = "warren-quinn-udp"
-version = "0.6.1-fork.11"
-source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.16-fork.11#e9065f273dab75e1b47da3bde29125809a3be672"
+version = "0.6.1-fork.13"
+source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.17-fork.13#3bea597a52758b87bb55aa8f568c545cf344663c"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -3152,7 +3143,7 @@ dependencies = [
 [[package]]
 name = "warren-sdk"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "bytes",
  "serde",
@@ -3176,7 +3167,7 @@ dependencies = [
 [[package]]
 name = "warren-transport"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "bytes",
  "ed25519-dalek",
@@ -3202,7 +3193,7 @@ dependencies = [
 [[package]]
 name = "warren-tun"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "warrenguard-tun-device",
 ]
@@ -3210,7 +3201,7 @@ dependencies = [
 [[package]]
 name = "warren-tun-core"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "warrenguard-tun-core",
 ]
@@ -3218,7 +3209,7 @@ dependencies = [
 [[package]]
 name = "warren-wire"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=b2e4be4bb4b94704e9b0ef9127538b2faa36812e#b2e4be4bb4b94704e9b0ef9127538b2faa36812e"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=a1ebd19709e772e111308c51c377f604c6b1f5d5#a1ebd19709e772e111308c51c377f604c6b1f5d5"
 dependencies = [
  "serde",
  "warrenguard-multihop",
@@ -3989,3 +3980,13 @@ name = "zmij"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
+
+[[patch.unused]]
+name = "warren-quinn"
+version = "0.11.11-fork.11"
+source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.16-fork.11#e9065f273dab75e1b47da3bde29125809a3be672"
+
+[[patch.unused]]
+name = "warren-quinn-udp"
+version = "0.6.1-fork.11"
+source = "git+https://github.com/WarrenBrowse/warren-quinn.git?tag=v0.11.16-fork.11#e9065f273dab75e1b47da3bde29125809a3be672"
