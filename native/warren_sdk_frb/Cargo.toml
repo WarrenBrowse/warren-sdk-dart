@@ -18,7 +18,7 @@ crate-type = ["cdylib", "staticlib"]
 # For local co-development against a working copy of the engine, use the
 # documented gitignored path override (see the repo README, "Local co-development")
 # so this pin stays the single source of truth for CI and releases.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "b2e4be4bb4b94704e9b0ef9127538b2faa36812e" }
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "96fb63db4fc2f37dace984ae3b3eac4be1d41b42" }
 
 flutter_rust_bridge = "=2.12.0"
 anyhow = "1"
@@ -60,8 +60,8 @@ warren-discovery-core = { path = "../../../warren-contract/warren-discovery" }
 # of the same repo and tag (identical commit, only the transport changes) so a
 # checkout builds with plain https read access.
 [patch."ssh://git@github.com/WarrenBrowse/warren-quinn.git"]
-warren-quinn = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.16-fork.11" }
-warren-quinn-udp = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.16-fork.11" }
+warren-quinn = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.17-fork.13" }
+warren-quinn-udp = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.17-fork.13" }
 
 [patch."https://github.com/WarrenBrowse/warrenguard.git"]
 warrenguard-backoff = { path = "../../../warrenguard/crates/warrenguard-backoff" }
