@@ -115,6 +115,25 @@ jobs:
         run: flutter test
         working-directory: packages/warren_sdk
 
+  warrend:
+    name: warrend daemon tests
+    runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
+    steps:
+      # The daemon's unit tests plus the tests that launch the real binary
+      # unprivileged: its launch environment, its control socket's mode and
+      # directory, and what it refuses to remove. None needs root or a network.
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.VECTORS_TOKEN }}
+      - uses: dtolnay/rust-toolchain@stable
+      # warrend pins the same warren-sdk rev as native/warren_sdk_frb and
+      # patches the same siblings, so the frb-derived sibling revs apply.
+      - uses: ./.github/actions/setup-engine-build
+        with:
+          token: ${{ secrets.VECTORS_TOKEN }}
+      - run: cargo test --locked
+        working-directory: native/warrend
+
   codegen-drift:
     name: flutter_rust_bridge codegen is up to date
     runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
