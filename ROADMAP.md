@@ -106,7 +106,8 @@ The first vertical slice, mirroring how the Rust engine started with identity.
       fake daemon + inner; no native engine or live daemon needed.
 - [ ] Privilege bootstrap per OS (polkit / launchd helper / Windows service +
       single UAC elevation). Dev-only passwordless run for local testing:
-      `native/warrend/scripts/dev-sudoers.sh` (NOT production wiring).
+      `native/warrend/scripts/dev-sudoers.sh` (NOT production wiring; it grants
+      a root-owned copy of the daemon with a pinned argument list only).
 - [ ] Linux/Windows rooted TUN bring-up validation (the routing layer exists;
       validate on those hosts). A CI job for this must isolate the tunnel in a
       Linux network namespace (like warren-core `netns-e2e.yml` /

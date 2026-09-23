@@ -15,9 +15,11 @@ import 'support/engine.dart';
 /// the `warrend` daemon to a real exit.
 ///
 /// The daemon needs root to open the TUN device, so this is opt-in via
-/// `WARREN_ROOTED=1` (plus the usual `WARREN_*` account env). It runs the daemon
-/// with `sudo -n`, which requires the dev sudoers drop-in
-/// (`native/warrend/scripts/dev-sudoers.sh`, test-only) to be installed first.
+/// `WARREN_ROOTED=1` (plus the usual `WARREN_*` account env). Unless the test
+/// already runs as root, it runs the daemon with `sudo -n`, which requires the
+/// dev sudoers drop-in (`native/warrend/scripts/dev-sudoers.sh`, test-only):
+/// rerun that script after each daemon build, since sudo runs the root-owned
+/// copy it installs.
 /// It uses the in-process engine to discover a real exit, then drives the daemon
 /// to connect to it and waits for `Connected`.
 ///
