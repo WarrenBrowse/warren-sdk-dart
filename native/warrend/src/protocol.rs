@@ -231,6 +231,18 @@ mod tests {
     }
 
     #[test]
+    fn a_connect_request_never_prints_the_exit_key() {
+        let connect: Request =
+            serde_json::from_str(r#"{"type":"connect","exitPubkeyHex":"c0ffee00c0ffee00"}"#)
+                .expect("connect");
+
+        let rendered = format!("{connect:?}");
+
+        assert!(rendered.starts_with("Connect"), "{rendered}");
+        assert!(!rendered.contains("c0ffee"), "{rendered}");
+    }
+
+    #[test]
     fn serializes_events_as_the_dart_side_expects() {
         let state = serde_json::to_string(&Event::state(ConnState::Connected)).unwrap();
         assert_eq!(state, r#"{"type":"state","state":"connected"}"#);
