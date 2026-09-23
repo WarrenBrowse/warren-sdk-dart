@@ -292,8 +292,10 @@ class _FakeSessionHandle implements WarrenSessionHandle {
   bool disconnected = false;
 
   @override
-  ProxyEndpoints? get endpoints =>
-      const ProxyEndpoints(socks5: '127.0.0.1:1080');
+  ProxyEndpoints? get endpoints => const ProxyEndpoints(
+        socks5: '127.0.0.1:1080',
+        credentials: ProxyCredentials(username: 'warren', password: 'test'),
+      );
 
   @override
   Stream<ConnectionState> get states => Stream.value(const Connected());

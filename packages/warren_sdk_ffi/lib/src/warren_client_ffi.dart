@@ -72,9 +72,13 @@ class FfiClientHandle implements WarrenClientHandle {
         );
         final socks5 = await session.socks5Endpoint();
         final http = await session.httpEndpoint();
+        final credentials = ProxyCredentials(
+          username: await session.proxyUsername(),
+          password: await session.proxyPassword(),
+        );
         return FfiSessionHandle(
           session,
-          ProxyEndpoints(socks5: socks5, http: http),
+          ProxyEndpoints(socks5: socks5, http: http, credentials: credentials),
         );
       });
 

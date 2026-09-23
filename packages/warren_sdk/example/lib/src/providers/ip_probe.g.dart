@@ -50,7 +50,7 @@ final class NetCheckProvider extends $FunctionalProvider<AsyncValue<NetCheck>,
   }
 }
 
-String _$netCheckHash() => r'f138fbb96bab876e9769ed7a3292a8f077fc3d77';
+String _$netCheckHash() => r'3d072b9f4e16975e4ae2ceb493cc13536e15f644';
 
 /// The account server's authoritative view of this device, via the SDK's
 /// `checkTunnel()` (signed `/v1/check`). Re-runs when the session changes.

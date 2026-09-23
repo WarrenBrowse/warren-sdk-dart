@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warren_sdk_example/src/providers/ip_probe.dart';
+import 'package:warren_sdk_riverpod/warren_sdk_riverpod.dart';
 
 void main() {
   group('IpReport.fromTrace', () {
@@ -87,6 +91,50 @@ void main() {
         direct: ip('50.7.46.90'),
       );
       expect(check.verdict, LeakVerdict.protected);
+    });
+  });
+
+  group('routeThroughHttpListener', () {
+    // A stand-in for the session's HTTP listener: it refuses every request
+    // without the session credentials, as the engine's listener does.
+    const credentials = ProxyCredentials(username: 'warren', password: 's3');
+    late HttpServer listener;
+
+    setUp(() async {
+      listener = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final expected = 'Basic ${base64.encode(utf8.encode('warren:s3'))}';
+      listener.listen((request) {
+        final auth = request.headers.value('proxy-authorization');
+        if (auth != expected) {
+          request.response
+            ..statusCode = HttpStatus.proxyAuthenticationRequired
+            ..headers.set('proxy-authenticate', 'Basic realm="proxy"');
+        } else {
+          request.response.write('via ${request.uri.host}');
+        }
+        request.response.close();
+      });
+    });
+
+    tearDown(() => listener.close(force: true));
+
+    test('presents the session credentials the listener demands', () async {
+      final client = HttpClient();
+      addTearDown(() => client.close(force: true));
+      routeThroughHttpListener(
+        client,
+        '127.0.0.1:${listener.port}',
+        credentials,
+      );
+
+      final request = await client.getUrl(Uri.parse('http://probe.invalid/'));
+      final response = await request.close();
+
+      expect(response.statusCode, HttpStatus.ok);
+      expect(
+        await response.transform(utf8.decoder).join(),
+        'via probe.invalid',
+      );
     });
   });
 }

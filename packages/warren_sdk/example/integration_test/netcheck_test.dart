@@ -18,13 +18,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:warren_sdk_desktop/warren_sdk_desktop.dart';
 import 'package:warren_sdk_example/src/providers/constants.dart';
+import 'package:warren_sdk_example/src/providers/ip_probe.dart';
 import 'package:warren_sdk_riverpod/warren_sdk_riverpod.dart';
 
-Future<String?> _fetchIpOnce({String? proxy}) async {
+Future<String?> _fetchIpOnce({ProxyEndpoints? via}) async {
   final client = HttpClient()
     ..connectionTimeout = const Duration(seconds: 6)
     ..badCertificateCallback = (_, __, ___) => true;
-  if (proxy != null) client.findProxy = (_) => 'PROXY $proxy';
+  final listener = via?.http;
+  if (via != null && listener != null) {
+    routeThroughHttpListener(client, listener, via.credentials);
+  }
   try {
     final request =
         await client.getUrl(Uri.parse('https://1.1.1.1/cdn-cgi/trace'));
@@ -42,9 +46,9 @@ Future<String?> _fetchIpOnce({String? proxy}) async {
   }
 }
 
-Future<String?> fetchIp({String? proxy, int tries = 6}) async {
+Future<String?> fetchIp({ProxyEndpoints? via, int tries = 6}) async {
   for (var i = 0; i < tries; i++) {
-    final ip = await _fetchIpOnce(proxy: proxy);
+    final ip = await _fetchIpOnce(via: via);
     if (ip != null) return ip;
   }
   return null;
@@ -94,7 +98,7 @@ void main() {
             .timeout(const Duration(seconds: 60));
         httpEndpoint = session.endpoints?.http;
         if (httpEndpoint != null) {
-          tunnelIp = await fetchIp(proxy: httpEndpoint);
+          tunnelIp = await fetchIp(via: session.endpoints);
         }
 
         await session.disconnect();

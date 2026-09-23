@@ -191,14 +191,45 @@ void main() {
       );
     });
 
-    test('ProxyEndpoints equality is value-based', () {
+    test('ProxyEndpoints equality is value-based, credentials included', () {
+      const session = ProxyCredentials(username: 'warren', password: 's1');
       expect(
-        const ProxyEndpoints(socks5: '127.0.0.1:1'),
-        equals(const ProxyEndpoints(socks5: '127.0.0.1:1')),
+        const ProxyEndpoints(socks5: '127.0.0.1:1', credentials: session),
+        equals(
+          const ProxyEndpoints(socks5: '127.0.0.1:1', credentials: session),
+        ),
       );
       expect(
-        const ProxyEndpoints(socks5: '127.0.0.1:1'),
-        isNot(equals(const ProxyEndpoints(socks5: '127.0.0.1:2'))),
+        const ProxyEndpoints(socks5: '127.0.0.1:1', credentials: session),
+        isNot(
+          equals(
+            const ProxyEndpoints(socks5: '127.0.0.1:2', credentials: session),
+          ),
+        ),
+      );
+      expect(
+        const ProxyEndpoints(socks5: '127.0.0.1:1', credentials: session),
+        isNot(
+          equals(
+            const ProxyEndpoints(
+              socks5: '127.0.0.1:1',
+              credentials: ProxyCredentials(username: 'warren', password: 's2'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('ProxyCredentials never render the password', () {
+      const credentials = ProxyCredentials(
+        username: 'warren',
+        password: 'per-session-secret',
+      );
+      expect(credentials.toString(), isNot(contains('per-session-secret')));
+      expect(
+        const ProxyEndpoints(socks5: '127.0.0.1:1', credentials: credentials)
+            .toString(),
+        isNot(contains('per-session-secret')),
       );
     });
 

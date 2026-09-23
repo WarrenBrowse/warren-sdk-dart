@@ -33,6 +33,7 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         PortFollowOutcome,
         PortFollowPolicy,
         PortKept,
+        ProxyCredentials,
         ProxyEndpoints,
         Reconnecting,
         SubscriptionInfo,

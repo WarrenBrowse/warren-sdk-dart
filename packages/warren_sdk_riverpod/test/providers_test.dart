@@ -58,7 +58,10 @@ void main() {
 
 class _FakeSessionHandle implements WarrenSessionHandle {
   @override
-  ProxyEndpoints? get endpoints => const ProxyEndpoints(socks5: '127.0.0.1:1');
+  ProxyEndpoints? get endpoints => const ProxyEndpoints(
+        socks5: '127.0.0.1:1',
+        credentials: ProxyCredentials(username: 'warren', password: 'test'),
+      );
 
   @override
   Stream<ConnectionState> get states =>

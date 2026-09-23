@@ -428,8 +428,10 @@ class _FakeInnerHandle implements WarrenClientHandle {
 
 class _FakeProxySession implements WarrenSessionHandle {
   @override
-  ProxyEndpoints? get endpoints =>
-      const ProxyEndpoints(socks5: '127.0.0.1:51234');
+  ProxyEndpoints? get endpoints => const ProxyEndpoints(
+        socks5: '127.0.0.1:51234',
+        credentials: ProxyCredentials(username: 'warren', password: 'test'),
+      );
   @override
   Stream<ConnectionState> get states => const Stream.empty();
   @override

@@ -47,6 +47,7 @@ void main() {
         addTearDown(session.disconnect);
 
         expect(session.endpoints?.socks5, isNotEmpty);
+        expect(session.endpoints?.credentials.password, isNotEmpty);
 
         final connected = await session.states
             .firstWhere((s) => s is Connected || s is ConnectionFailed)

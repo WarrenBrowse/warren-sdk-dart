@@ -125,7 +125,7 @@ class NetCheck {
 Future<NetCheck> netCheck(Ref ref) async {
   final session = ref.watch(connectionControllerProvider).asData?.value;
   final endpoints = session?.endpoints;
-  final httpProxy = endpoints?.http;
+  final tunnelEndpoints = endpoints?.http != null ? endpoints : null;
   final connected = session != null;
   final systemVpn = connected && endpoints == null;
 
@@ -133,11 +133,11 @@ Future<NetCheck> netCheck(Ref ref) async {
   // so its probes retry harder. All probes run concurrently.
   final directF = _safeProbe(tries: 2);
   final directV6F = _safeProbe(ipv6: true, tries: 2);
-  final tunnelF = httpProxy != null
-      ? _safeProbe(proxy: httpProxy, tries: 6)
+  final tunnelF = tunnelEndpoints != null
+      ? _safeProbe(via: tunnelEndpoints, tries: 6)
       : Future<(IpReport?, String?)>.value((null, null));
-  final tunnelV6F = httpProxy != null
-      ? _safeProbe(proxy: httpProxy, ipv6: true, tries: 4)
+  final tunnelV6F = tunnelEndpoints != null
+      ? _safeProbe(via: tunnelEndpoints, ipv6: true, tries: 4)
       : Future<(IpReport?, String?)>.value((null, null));
 
   final results = await Future.wait([directF, directV6F, tunnelF, tunnelV6F]);
@@ -158,18 +158,36 @@ Future<NetCheck> netCheck(Ref ref) async {
   );
 }
 
+/// Points [client] at the session's HTTP [listener] (`host:port`) with the
+/// [credentials] it demands: the listener answers 407 to anyone without them,
+/// since any local process can reach a loopback port.
+void routeThroughHttpListener(
+  HttpClient client,
+  String listener,
+  ProxyCredentials credentials,
+) {
+  final address = Uri.parse('http://$listener');
+  client.findProxy = (_) => 'PROXY $listener';
+  client.addProxyCredentials(
+    address.host,
+    address.port,
+    'proxy',
+    HttpClientBasicCredentials(credentials.username, credentials.password),
+  );
+}
+
 /// Runs one probe with retries (the tunnel egress drops a fair share of
 /// connect attempts), returning either a report or a short error string and
 /// never throwing, so one failed path does not sink the whole check.
 Future<(IpReport?, String?)> _safeProbe({
-  String? proxy,
+  ProxyEndpoints? via,
   bool ipv6 = false,
   int tries = 3,
 }) async {
   String? lastError;
   for (var attempt = 0; attempt < tries; attempt++) {
     try {
-      return (await _probe(proxy: proxy, ipv6: ipv6), null);
+      return (await _probe(via: via, ipv6: ipv6), null);
     } on TimeoutException {
       lastError = 'timed out';
     } on SocketException {
@@ -183,7 +201,7 @@ Future<(IpReport?, String?)> _safeProbe({
   return (null, lastError);
 }
 
-Future<IpReport> _probe({String? proxy, bool ipv6 = false}) async {
+Future<IpReport> _probe({ProxyEndpoints? via, bool ipv6 = false}) async {
   final client = HttpClient()
     ..connectionTimeout = const Duration(seconds: 6)
     ..userAgent = 'warren-sdk-example/netcheck'
@@ -191,9 +209,10 @@ Future<IpReport> _probe({String? proxy, bool ipv6 = false}) async {
     // cloudflare-dns.com) will not match the host. This probe only reads our
     // own egress IP back; it sends nothing sensitive, so the mismatch is safe.
     ..badCertificateCallback = (_, __, ___) => true;
-  if (proxy != null) {
+  final listener = via?.http;
+  if (via != null && listener != null) {
     // Stock HttpClient issues CONNECT for an https target through an HTTP proxy.
-    client.findProxy = (_) => 'PROXY $proxy';
+    routeThroughHttpListener(client, listener, via.credentials);
   }
   try {
     // Cloudflare's trace is reachable by IP on 443 (no tunnel DNS needed) and

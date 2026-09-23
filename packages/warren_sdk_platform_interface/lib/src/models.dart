@@ -179,11 +179,44 @@ enum ForwardProtocol {
   udp,
 }
 
+/// The credentials every client of a session's local proxy endpoints presents:
+/// RFC 1929 on SOCKS5, `Proxy-Authorization: Basic` on HTTP. The listeners
+/// refuse any client without them, since any local process can reach a
+/// loopback port.
+@immutable
+class ProxyCredentials {
+  /// Creates the credential pair.
+  const ProxyCredentials({required this.username, required this.password});
+
+  /// The username clients present.
+  final String username;
+
+  /// The password clients present. A per-session secret: keep it out of logs,
+  /// argv and anything another local account can read.
+  final String password;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ProxyCredentials &&
+      other.username == username &&
+      other.password == password;
+
+  @override
+  int get hashCode => Object.hash(username, password);
+
+  @override
+  String toString() => 'ProxyCredentials($username, <redacted>)';
+}
+
 /// The local endpoints exposed by a proxy-mode session.
 @immutable
 class ProxyEndpoints {
   /// Creates the endpoint set.
-  const ProxyEndpoints({required this.socks5, this.http});
+  const ProxyEndpoints({
+    required this.socks5,
+    this.http,
+    required this.credentials,
+  });
 
   /// The bound local SOCKS5 endpoint, for example `127.0.0.1:51234`.
   final String socks5;
@@ -191,12 +224,21 @@ class ProxyEndpoints {
   /// The bound local HTTP CONNECT endpoint, if enabled.
   final String? http;
 
-  @override
-  bool operator ==(Object other) =>
-      other is ProxyEndpoints && other.socks5 == socks5 && other.http == http;
+  /// What every client of [socks5] and [http] presents.
+  final ProxyCredentials credentials;
 
   @override
-  int get hashCode => Object.hash(socks5, http);
+  bool operator ==(Object other) =>
+      other is ProxyEndpoints &&
+      other.socks5 == socks5 &&
+      other.http == http &&
+      other.credentials == credentials;
+
+  @override
+  int get hashCode => Object.hash(socks5, http, credentials);
+
+  @override
+  String toString() => 'ProxyEndpoints($socks5, $http, $credentials)';
 }
 
 /// Account subscription state.

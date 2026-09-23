@@ -50,9 +50,28 @@ final expiry = await warren.subscriptionExpiry();
 final exits = await warren.listExits();
 final exit = WarrenClient.selectExit(exits, const ExitQuery(country: 'RO'))!;
 
-final session = await warren.connect(exit, mode: ConnectMode.proxy);
+final session = await warren.connect(
+  exit,
+  mode: ConnectMode.proxy,
+  options: const ConnectOptions(httpListen: '127.0.0.1:0'),
+);
 session.states.listen((s) => print('connection: $s'));
-// ... use the local SOCKS5 endpoint at session.socks5Endpoint ...
+// The local listeners refuse any client without the session's credentials
+// (RFC 1929 on SOCKS5, `Proxy-Authorization: Basic` on HTTP).
+final endpoints = session.endpoints!;
+final listener = Uri.parse('http://${endpoints.http!}');
+final http = HttpClient()
+  ..findProxy = (_) => 'PROXY ${endpoints.http}';
+http.addProxyCredentials(
+  listener.host,
+  listener.port,
+  'proxy',
+  HttpClientBasicCredentials(
+    endpoints.credentials.username,
+    endpoints.credentials.password,
+  ),
+);
+// ... requests through `http` ride the tunnel ...
 await session.disconnect();
 ```
 
