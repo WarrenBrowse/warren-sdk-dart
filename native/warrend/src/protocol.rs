@@ -4,10 +4,12 @@
 //! length-prefixed (4-byte big-endian) UTF-8 JSON object with a `type`
 //! discriminator. Field names match the Dart side (camelCase).
 
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 /// A request from the app to the daemon.
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Request {
     /// Bind an identity and account API in the daemon.
@@ -46,6 +48,33 @@ pub enum Request {
 
 const fn default_true() -> bool {
     true
+}
+
+/// Renders only the variant and its switches: a configure request carries the
+/// mnemonic, and no identity material may reach a log line.
+impl fmt::Debug for Request {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Request::Configure {
+                daita,
+                request_ipv6,
+                lockdown,
+                ..
+            } => f
+                .debug_struct("Configure")
+                .field("daita", daita)
+                .field("request_ipv6", request_ipv6)
+                .field("lockdown", lockdown)
+                .finish_non_exhaustive(),
+            Request::Connect {
+                dns_over_tunnel, ..
+            } => f
+                .debug_struct("Connect")
+                .field("dns_over_tunnel", dns_over_tunnel)
+                .finish_non_exhaustive(),
+            Request::Disconnect => f.write_str("Disconnect"),
+        }
+    }
 }
 
 /// An event from the daemon to the app.
@@ -185,6 +214,20 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn a_configure_request_never_prints_its_mnemonic() {
+        let configure: Request = serde_json::from_str(
+            r#"{"type":"configure","mnemonic":"abandon ability able",
+                "apiBase":"https://a","serverPubkeyPin":"p"}"#,
+        )
+        .expect("configure");
+
+        let rendered = format!("{configure:?}");
+
+        assert!(rendered.starts_with("Configure"), "{rendered}");
+        assert!(!rendered.contains("abandon"), "{rendered}");
     }
 
     #[test]
