@@ -28,6 +28,9 @@ env:
 
 jobs:
   analyze:
+    # Self-hosted runners must never execute fork code: only same-repo events
+    # reach this job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: format + analyze
     runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
     steps:
@@ -44,6 +47,9 @@ jobs:
         run: flutter analyze
 
   test-pure:
+    # Self-hosted runners must never execute fork code: only same-repo events
+    # reach this job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: unit tests (no engine)
     runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
     steps:
@@ -79,6 +85,9 @@ jobs:
         working-directory: packages/warren_sdk_riverpod
 
   conformance:
+    # Self-hosted runners must never execute fork code: only same-repo events
+    # reach this job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: golden-vector conformance (real engine)
     runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
     steps:
@@ -138,6 +147,9 @@ jobs:
         working-directory: native/warrend
 
   codegen-drift:
+    # Self-hosted runners must never execute fork code: only same-repo events
+    # reach this job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: flutter_rust_bridge codegen is up to date
     runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
     steps:
