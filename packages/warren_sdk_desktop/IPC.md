@@ -15,8 +15,10 @@ client.
   directory must be owned by root (or by the daemon's own account) and not
   writable by any other account unless sticky; the daemon creates a missing one
   with mode `0755` and refuses any other, and it only ever removes a stale
-  *socket* at the path, never another kind of file. Windows: a named pipe with an
-  equivalent ACL (no Windows daemon exists yet).
+  *socket* at the path, never another kind of file. One daemon serves a socket:
+  it holds an exclusive lock on `<socket>.lock` beside it, so a second daemon
+  refuses to start without ever connecting to the first. Windows: a named pipe
+  with an equivalent ACL (no Windows daemon exists yet).
 - Filesystem permissions are only a backstop: the daemon authenticates every
   connection's peer uid (`getpeereid` / `SO_PEERCRED`) and accepts only the
   account that launched it (sudo's invoker) or root, so a shared group or a

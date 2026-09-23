@@ -33,6 +33,9 @@ pub struct Launch<'a> {
     pub path_variable: Option<&'a str>,
     /// The file-creation mask the daemon inherits.
     pub umask: Option<libc::mode_t>,
+    /// `SUDO_UID` / `SUDO_GID` as sudo would set them. Unset otherwise, even
+    /// when the test itself runs under sudo.
+    pub sudo_ids: Option<(u32, u32)>,
 }
 
 /// Starts the daemon on `socket` with stderr piped.
@@ -46,6 +49,12 @@ pub fn spawn_daemon(socket: &Path, launch: Launch<'_>) -> Child {
         .stderr(Stdio::piped());
     if let Some(path_variable) = launch.path_variable {
         command.env("PATH", path_variable);
+    }
+    command.env_remove("SUDO_UID").env_remove("SUDO_GID");
+    if let Some((uid, gid)) = launch.sudo_ids {
+        command
+            .env("SUDO_UID", uid.to_string())
+            .env("SUDO_GID", gid.to_string());
     }
     if let Some(mask) = launch.umask {
         // SAFETY: umask is async-signal-safe and touches only the child.
@@ -90,4 +99,27 @@ pub fn wait_for_exit(daemon: &mut Child) -> Option<ExitStatus> {
 pub fn stop(daemon: &mut Child) {
     daemon.kill().ok();
     daemon.wait().ok();
+}
+
+/// Connects to the daemon and has it answer: a malformed frame draws a
+/// `malformed request` error and touches nothing on the host. Returns the
+/// daemon's reply, or `None` when nothing answers.
+pub fn ask_daemon(socket: &Path) -> Option<String> {
+    use std::io::{Read, Write};
+    use std::os::unix::net::UnixStream;
+
+    let mut stream = UnixStream::connect(socket).ok()?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .ok()?;
+    let payload = b"{}";
+    stream
+        .write_all(&(payload.len() as u32).to_be_bytes())
+        .ok()?;
+    stream.write_all(payload).ok()?;
+    let mut len = [0u8; 4];
+    stream.read_exact(&mut len).ok()?;
+    let mut reply = vec![0u8; u32::from_be_bytes(len) as usize];
+    stream.read_exact(&mut reply).ok()?;
+    String::from_utf8(reply).ok()
 }
