@@ -48,3 +48,20 @@ fn the_daemon_never_runs_a_tool_planted_in_the_callers_path() {
         "the daemon ran tools planted in the caller's PATH: {ran:?}"
     );
 }
+
+#[test]
+fn the_daemon_starts_whatever_names_its_environment_holds() {
+    // A name std cannot remove (here one starting with `=`) must not abort the
+    // reset that runs before anything else.
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_warrend"))
+        .arg("--help")
+        .env("=planted", "1")
+        .output()
+        .expect("run warrend --help");
+
+    assert!(
+        output.status.success(),
+        "warrend --help failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}

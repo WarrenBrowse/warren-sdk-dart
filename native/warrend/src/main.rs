@@ -134,8 +134,16 @@ fn daemon_environment(
 /// `main`, while the process is still single-threaded: the environment is
 /// process-global and mutating it is unsound once another thread may read it.
 fn reset_environment() {
+    use std::os::unix::ffi::OsStrExt;
+
     let environment = daemon_environment(std::env::vars_os());
     for (key, _) in std::env::vars_os() {
+        // `remove_var` panics on a name it cannot express (empty, or holding
+        // `=` or NUL), and no lookup by name can read such an entry anyway.
+        let name = key.as_bytes();
+        if name.is_empty() || name.contains(&b'=') || name.contains(&0) {
+            continue;
+        }
         std::env::remove_var(key);
     }
     for (key, value) in environment {
@@ -145,6 +153,10 @@ fn reset_environment() {
 
 fn main() -> Result<()> {
     reset_environment();
+    // What root creates (the socket directory, a restored resolv.conf) gets
+    // the same modes whatever umask the launcher had.
+    // SAFETY: umask only swaps this process's file-creation mask.
+    unsafe { libc::umask(0o022) };
     let arg = std::env::args().nth(1);
     match arg.as_deref() {
         Some("--help" | "-h" | "help") => {
@@ -979,6 +991,50 @@ mod tests {
         ]
         .map(|(key, value)| (OsString::from(key), OsString::from(value)));
         assert_eq!(environment, expected);
+    }
+
+    /// Set in the child run of the environment reset test.
+    const RESET_PROBE: &str = "WARREND_RESET_PROBE";
+
+    #[test]
+    fn the_reset_leaves_only_the_kept_variables_and_the_fixed_path() {
+        // The reset runs in `main` while the process is single-threaded, so the
+        // test runs it in a child: this same test binary, filtered to this test.
+        if std::env::var_os(RESET_PROBE).is_some() {
+            reset_environment();
+            for (key, value) in std::env::vars_os() {
+                println!("ENV {}={}", key.to_string_lossy(), value.to_string_lossy());
+            }
+            return;
+        }
+        let output = std::process::Command::new(std::env::current_exe().expect("test binary"))
+            .args([
+                "--exact",
+                "tests::the_reset_leaves_only_the_kept_variables_and_the_fixed_path",
+                "--nocapture",
+                "--test-threads=1",
+            ])
+            .env(RESET_PROBE, "1")
+            .env("HTTPS_PROXY", "http://127.0.0.1:9")
+            .env("SSL_CERT_FILE", "/tmp/planted-ca.pem")
+            .env("SUDO_UID", "501")
+            .env_remove("SUDO_GID")
+            .output()
+            .expect("run the reset in a child");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let mut environment: Vec<&str> = stdout
+            .lines()
+            // libtest prints the test's name without a line break first.
+            .filter_map(|line| line.split_once("ENV ").map(|(_, entry)| entry))
+            .collect();
+        environment.sort_unstable();
+        assert_eq!(
+            environment,
+            [format!("PATH={DAEMON_PATH}").as_str(), "SUDO_UID=501"],
+            "child stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     #[test]

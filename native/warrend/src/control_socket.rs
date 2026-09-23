@@ -218,7 +218,6 @@ fn take_lock(dir: &OwnedFd, name: &CString, euid: u32, path: &Path) -> Result<Ow
 fn create_dir_if_missing(dir: &Path) -> Result<()> {
     use std::os::unix::fs::DirBuilderExt;
 
-    let _umask = UmaskGuard::set(0o022);
     match std::fs::DirBuilder::new().mode(0o755).create(dir) {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == io::ErrorKind::AlreadyExists => Ok(()),
