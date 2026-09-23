@@ -116,6 +116,9 @@ jobs:
         working-directory: packages/warren_sdk
 
   warrend:
+    # Self-hosted runners must never execute fork code: only same-repo events
+    # reach this job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: warrend daemon tests
     runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
     steps:
