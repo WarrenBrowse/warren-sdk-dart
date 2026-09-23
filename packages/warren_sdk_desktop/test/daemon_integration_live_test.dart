@@ -47,7 +47,10 @@ void main() {
             .transform(const SystemEncoding().decoder)
             .firstWhere((line) => line.contains('listening'))
             .timeout(const Duration(seconds: 10));
-        client = await connectDaemonSocket(socketPath, daemonUid: ownUid);
+        client = await connectUnprivilegedDaemonSocket(
+          socketPath,
+          daemonUid: ownUid,
+        );
       });
 
       tearDown(() async {

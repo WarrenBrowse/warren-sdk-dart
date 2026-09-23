@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
 import 'ipc/daemon_client.dart';
@@ -12,19 +13,26 @@ import 'peer_credentials.dart';
 /// or a dev path). Closing the returned client closes the socket.
 ///
 /// The kernel reports which account serves the socket, and the connection is
-/// kept only when that account is [daemonUid]: root by default, the account the
-/// privileged daemon runs as. A `configure` request carries the mnemonic, so a
-/// listener another local account planted at [socketPath] must never get a
-/// client to receive it. Passing a non-root [daemonUid] is for a daemon run
-/// unprivileged under the caller's own account, in tests.
+/// kept only when that account is root, the account the privileged daemon runs
+/// as. A `configure` request carries the mnemonic, so a listener another local
+/// account planted at [socketPath] must never get a client to receive it.
 ///
 /// Throws a [WarrenPrivilegeError] with code `privilege/daemon-untrusted` when
 /// the socket is served by another account, or when the platform cannot say
 /// which account serves it.
-Future<DaemonClient> connectDaemonSocket(
+Future<DaemonClient> connectDaemonSocket(String socketPath) =>
+    _connect(socketPath, 0);
+
+/// [connectDaemonSocket] for a daemon run unprivileged under [daemonUid], the
+/// caller's own account: the tests that drive the real daemon without root.
+@visibleForTesting
+Future<DaemonClient> connectUnprivilegedDaemonSocket(
   String socketPath, {
-  int daemonUid = 0,
-}) async {
+  required int daemonUid,
+}) =>
+    _connect(socketPath, daemonUid);
+
+Future<DaemonClient> _connect(String socketPath, int daemonUid) async {
   final socket = await Socket.connect(
     InternetAddress(socketPath, type: InternetAddressType.unix),
     0,

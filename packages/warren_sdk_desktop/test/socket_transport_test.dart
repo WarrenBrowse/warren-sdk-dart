@@ -73,7 +73,8 @@ void main() {
 
   test('connect over the socket reaches the daemon and streams state back',
       () async {
-    final client = await connectDaemonSocket(socketPath, daemonUid: ownUid);
+    final client =
+        await connectUnprivilegedDaemonSocket(socketPath, daemonUid: ownUid);
     addTearDown(client.close);
 
     final connected = client.states.firstWhere((s) => s is Connected);
