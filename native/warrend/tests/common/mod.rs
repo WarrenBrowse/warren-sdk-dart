@@ -1,7 +1,7 @@
 //! Shared helpers for the tests that launch the real `warrend` binary. Launched
-//! unprivileged, the daemon runs its whole startup (environment, firewall and
-//! DNS reconcile, socket setup) and serves its socket; only the TUN bring-up
-//! needs root, and no test here reaches it.
+//! unprivileged, the daemon runs its startup (environment reset, firewall
+//! detection, socket setup) and serves its socket, and leaves the host's DNS
+//! alone; only the TUN bring-up needs root, and no test here reaches it.
 
 #![allow(dead_code)]
 

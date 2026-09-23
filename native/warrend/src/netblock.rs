@@ -501,11 +501,16 @@ pub fn reconcile_dns_files(resolv_conf: &Path, backup: &Path) -> std::io::Result
 
 /// Reconciles the system DNS override a dead session can leave behind.
 /// Returns human-readable lines describing what was done (empty = clean).
+/// An unprivileged daemon (a test run) leaves DNS alone: it never pushed an
+/// override, so one it finds belongs to a session it does not own.
 ///
 /// # Errors
 /// Filesystem errors on the resolv.conf paths.
 #[cfg(not(target_os = "macos"))]
-pub fn reconcile_dns(_runner: &dyn CmdRunner) -> Result<Vec<String>> {
+pub fn reconcile_dns(runner: &dyn CmdRunner) -> Result<Vec<String>> {
+    if !runner.privileged() {
+        return Ok(Vec::new());
+    }
     let outcome = reconcile_dns_files(
         Path::new(RESOLV_CONF_PATH),
         Path::new(RESOLV_CONF_BACKUP_PATH),
@@ -528,13 +533,19 @@ pub fn reconcile_dns(_runner: &dyn CmdRunner) -> Result<Vec<String>> {
 /// that override and reset them to DHCP (`Empty`). A service the user had on
 /// MANUAL resolvers before the crash comes back as DHCP, not the manual list:
 /// the snapshot died with the daemon and DHCP restores connectivity, which is
-/// the non-bricking priority.
+/// the non-bricking priority. An unprivileged daemon (a test run) leaves DNS
+/// alone: it never pushed an override, so one it finds belongs to a session it
+/// does not own.
 ///
 /// # Errors
 /// When `networksetup` cannot be spawned or enumeration fails.
 #[cfg(target_os = "macos")]
 pub fn reconcile_dns(runner: &dyn CmdRunner) -> Result<Vec<String>> {
     use warrenguard_route_split::dns_push_macos::{parse_getdnsservers, parse_listall_services};
+
+    if !runner.privileged() {
+        return Ok(Vec::new());
+    }
 
     let list = runner
         .run("networksetup", &["-listallnetworkservices"], None)
@@ -997,6 +1008,34 @@ mod tests {
             .collect();
         assert_eq!(resets.len(), 1);
         assert_eq!(resets[0].1, ["-setdnsservers", "Wi-Fi", "Empty"]);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn an_unprivileged_daemon_never_resets_a_services_dns() {
+        // It never pushed a DNS override, so one it finds belongs to a session
+        // it does not own (a root daemon on the same host).
+        let listing = "An asterisk (*) denotes that a network service is disabled.\nWi-Fi\n";
+        let runner = RecordingRunner::default()
+            .unprivileged()
+            .with_reply("networksetup", "-listallnetworkservices", ok_with(listing))
+            .with_reply(
+                "networksetup",
+                "-getdnsservers Wi-Fi",
+                ok_with("10.66.0.1\n"),
+            );
+
+        let actions = reconcile_dns(&runner).expect("reconcile");
+
+        assert!(actions.is_empty(), "{actions:?}");
+        assert!(
+            !runner
+                .calls()
+                .iter()
+                .any(|(_, args, _)| args.first().map(String::as_str) == Some("-setdnsservers")),
+            "no reset may run: {:?}",
+            runner.calls()
+        );
     }
 
     #[cfg(target_os = "macos")]

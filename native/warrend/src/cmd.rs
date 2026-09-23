@@ -24,6 +24,10 @@ pub struct CmdOutput {
 
 /// Runs one external command to completion.
 pub trait CmdRunner: Send + Sync {
+    /// Whether the commands run as root, the only account that installs the
+    /// artifacts the recovery paths clear.
+    fn privileged(&self) -> bool;
+
     /// Run `program` with `args`, optionally piping `stdin` into it, and wait.
     ///
     /// # Errors
@@ -39,6 +43,11 @@ pub trait CmdRunner: Send + Sync {
 pub struct SystemRunner;
 
 impl CmdRunner for SystemRunner {
+    fn privileged(&self) -> bool {
+        // SAFETY: geteuid has no preconditions.
+        unsafe { libc::geteuid() == 0 }
+    }
+
     fn run(&self, program: &str, args: &[&str], stdin: Option<&str>) -> std::io::Result<CmdOutput> {
         use std::io::Write as _;
         use std::process::{Command, Stdio};
@@ -88,9 +97,16 @@ pub(crate) mod testing {
         /// (program, arg fragment that must appear, reply) triples; first
         /// match wins.
         replies: Vec<(String, String, CmdOutput)>,
+        /// Reports itself unprivileged (a root runner by default).
+        unprivileged: bool,
     }
 
     impl RecordingRunner {
+        pub fn unprivileged(mut self) -> Self {
+            self.unprivileged = true;
+            self
+        }
+
         pub fn with_reply(mut self, program: &str, arg_fragment: &str, reply: CmdOutput) -> Self {
             self.replies
                 .push((program.to_owned(), arg_fragment.to_owned(), reply));
@@ -121,6 +137,10 @@ pub(crate) mod testing {
     }
 
     impl CmdRunner for RecordingRunner {
+        fn privileged(&self) -> bool {
+            !self.unprivileged
+        }
+
         fn run(
             &self,
             program: &str,
