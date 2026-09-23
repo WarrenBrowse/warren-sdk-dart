@@ -208,6 +208,8 @@ fn outcome_to_dto(outcome: PortFollowOutcome) -> PortFollowOutcomeDto {
 pub struct WarrenSessionFrb {
     socks5: String,
     http: Option<String>,
+    /// What every client of the listeners presents; they refuse anyone else.
+    credentials: warren_sdk::net::ProxyCredentials,
     state_rx: Receiver<ConnectionState>,
     migration_rx: Receiver<Option<MigrationEvent>>,
     /// The definitive cause latched when the supervisor gives up, or `None`
@@ -229,6 +231,7 @@ impl WarrenSessionFrb {
     pub(crate) fn new(handle: SupervisedProxyHandle) -> Self {
         let socks5 = handle.local_addr().to_string();
         let http = handle.http_addr().map(|addr| addr.to_string());
+        let credentials = handle.credentials().clone();
         let state_rx = handle.watch_state();
         let migration_rx = handle.watch_migration();
         let fatal_rx = handle.watch_fatal();
@@ -242,6 +245,7 @@ impl WarrenSessionFrb {
             let probe_state_rx = handle.watch_state();
             rt.spawn(warren_sdk::socks_egress::run_socks5_egress_probe(
                 socks_addr,
+                credentials.clone(),
                 probe_state_rx,
                 egress_tx,
             ))
@@ -249,6 +253,7 @@ impl WarrenSessionFrb {
         Self {
             socks5,
             http,
+            credentials,
             state_rx,
             migration_rx,
             fatal_rx,
@@ -266,6 +271,18 @@ impl WarrenSessionFrb {
     /// The bound local HTTP CONNECT endpoint, if one was requested.
     pub fn http_endpoint(&self) -> Option<String> {
         self.http.clone()
+    }
+
+    /// The username every client of the endpoints presents (RFC 1929 on
+    /// SOCKS5, `Proxy-Authorization: Basic` on HTTP CONNECT).
+    pub fn proxy_username(&self) -> String {
+        self.credentials.username().to_owned()
+    }
+
+    /// The password every client of the endpoints presents. A per-session
+    /// secret: keep it out of logs and anything another account can read.
+    pub fn proxy_password(&self) -> String {
+        self.credentials.password().to_owned()
     }
 
     /// Streams connection-state transitions, emitting the current state first so

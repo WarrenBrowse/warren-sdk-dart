@@ -88,6 +88,14 @@ abstract class WarrenSessionFrb implements RustOpaqueInterface {
   /// late listener still sees an in-flight migration.
   Stream<MigrationEventDto> migrationEvents();
 
+  /// The password every client of the endpoints presents. A per-session
+  /// secret: keep it out of logs and anything another account can read.
+  Future<String> proxyPassword();
+
+  /// The username every client of the endpoints presents (RFC 1929 on
+  /// SOCKS5, `Proxy-Authorization: Basic` on HTTP CONNECT).
+  Future<String> proxyUsername();
+
   /// The bound local SOCKS5 endpoint, for example `127.0.0.1:51234`.
   Future<String> socks5Endpoint();
 

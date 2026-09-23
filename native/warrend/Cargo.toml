@@ -15,7 +15,7 @@ path = "src/main.rs"
 # Pinned by rev to carry the socket-marked control-plane transport: the
 # `marked-transport` feature tags warrend's control-plane HTTP client with the
 # Warren tunnel fwmark, so the tightened `meta mark` connecting guard permits it.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "8a0618d49e94b10841551dd03bd3b680bc4101b8", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "d84f9fcb19741852d472dbd6d459da275b650e33", features = [
     "experimental-tun",
     "marked-transport",
 ] }
@@ -55,14 +55,6 @@ zeroize = "1"
 # sibling, so resolve them (and their transitive engine deps, via the sibling's own
 # internal path-deps) from the local checkout. Keep in lockstep with the SDK's git
 # deps. Without a sibling, drop this block and cargo fetches the pinned git rev.
-# The engine repos declare the warren-quinn fork over ssh://, which requires an
-# SSH key even for a read-only build. Repoint that git-dep at the https:// form
-# of the same repo and tag (identical commit, only the transport changes) so a
-# checkout builds with plain https read access.
-[patch."ssh://git@github.com/WarrenBrowse/warren-quinn.git"]
-warren-quinn = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.16-fork.11" }
-warren-quinn-udp = { git = "https://github.com/WarrenBrowse/warren-quinn.git", tag = "v0.11.16-fork.11" }
-
 [patch."https://github.com/WarrenBrowse/warrenguard.git"]
 warrenguard-backoff = { path = "../../../warrenguard/crates/warrenguard-backoff" }
 warrenguard-wire = { path = "../../../warrenguard/crates/warrenguard-wire" }

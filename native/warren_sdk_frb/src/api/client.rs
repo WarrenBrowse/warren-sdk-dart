@@ -271,6 +271,8 @@ impl WarrenClientFrb {
                 ),
                 None => None,
             },
+            // Fresh per session, read back through the session's credentials.
+            credentials: None,
         };
 
         let handle = if failover_exit_pubkeys_hex.is_empty() {

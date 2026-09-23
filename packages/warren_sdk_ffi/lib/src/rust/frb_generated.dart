@@ -72,7 +72,7 @@ class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 40866547;
+  int get rustContentHash => 172600886;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -167,6 +167,12 @@ abstract class WarrenRustBridgeApi extends BaseApi {
       {required WarrenSessionFrb that});
 
   Stream<MigrationEventDto> crateApiDatapathWarrenSessionFrbMigrationEvents(
+      {required WarrenSessionFrb that});
+
+  Future<String> crateApiDatapathWarrenSessionFrbProxyPassword(
+      {required WarrenSessionFrb that});
+
+  Future<String> crateApiDatapathWarrenSessionFrbProxyUsername(
       {required WarrenSessionFrb that});
 
   Future<String> crateApiDatapathWarrenSessionFrbSocks5Endpoint(
@@ -909,7 +915,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       );
 
   @override
-  Future<String> crateApiDatapathWarrenSessionFrbSocks5Endpoint(
+  Future<String> crateApiDatapathWarrenSessionFrbProxyPassword(
       {required WarrenSessionFrb that}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
@@ -918,6 +924,60 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 22, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_String,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDatapathWarrenSessionFrbProxyPasswordConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDatapathWarrenSessionFrbProxyPasswordConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenSessionFrb_proxy_password",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<String> crateApiDatapathWarrenSessionFrbProxyUsername(
+      {required WarrenSessionFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 23, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_String,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiDatapathWarrenSessionFrbProxyUsernameConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiDatapathWarrenSessionFrbProxyUsernameConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenSessionFrb_proxy_username",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<String> crateApiDatapathWarrenSessionFrbSocks5Endpoint(
+      {required WarrenSessionFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 24, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -946,7 +1006,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_connection_state_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 23, port: port_);
+            funcId: 25, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -973,7 +1033,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(mnemonic, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 24, port: port_);
+            funcId: 26, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -997,7 +1057,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 25, port: port_);
+            funcId: 27, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1033,7 +1093,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_u_64(timestamp, serializer);
         sse_encode_String(nonceHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 26, port: port_);
+            funcId: 28, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_signed_request,
@@ -1065,7 +1125,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(address, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 27, port: port_);
+            funcId: 29, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1089,7 +1149,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(publicKeyHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 28, port: port_);
+            funcId: 30, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -2505,6 +2565,20 @@ class WarrenSessionFrbImpl extends RustOpaque implements WarrenSessionFrb {
   /// late listener still sees an in-flight migration.
   Stream<MigrationEventDto> migrationEvents() => WarrenRustBridge.instance.api
           .crateApiDatapathWarrenSessionFrbMigrationEvents(
+        that: this,
+      );
+
+  /// The password every client of the endpoints presents. A per-session
+  /// secret: keep it out of logs and anything another account can read.
+  Future<String> proxyPassword() => WarrenRustBridge.instance.api
+          .crateApiDatapathWarrenSessionFrbProxyPassword(
+        that: this,
+      );
+
+  /// The username every client of the endpoints presents (RFC 1929 on
+  /// SOCKS5, `Proxy-Authorization: Basic` on HTTP CONNECT).
+  Future<String> proxyUsername() => WarrenRustBridge.instance.api
+          .crateApiDatapathWarrenSessionFrbProxyUsername(
         that: this,
       );
 
