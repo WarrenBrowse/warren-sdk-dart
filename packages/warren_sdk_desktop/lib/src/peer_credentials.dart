@@ -14,14 +14,18 @@ const int _solSocket = 1;
 const int _soPeerCred = 17;
 const int _ucredSize = 12;
 
+/// `(uid_t)-1`: never an account. Linux reports it for a socket with no peer
+/// credentials.
+const int _noUid = 0xFFFFFFFF;
+
 /// The uid of the account serving the other end of [socket], as the kernel
 /// recorded it, or null when it cannot be established.
 ///
 /// Null covers a platform with no peer-credential query, a failed query, and a
-/// socket that carries no peer credentials. Dart hands back the zero-filled
-/// buffer it passed in whatever length the kernel wrote, and a zeroed uid reads
-/// as root, so an answer is only trusted when a field no real credential leaves
-/// at zero is set: the group count on macOS, the peer pid on Linux.
+/// socket that carries no peer credentials. Dart hands back the buffer it
+/// passed in whatever length the kernel actually wrote, so the buffer starts
+/// filled with `0xFF`: a field the kernel left alone then reads as `(uid_t)-1`
+/// or a wrong struct version, never as uid 0, which would pass for root.
 int? peerUid(Socket socket) {
   final bool macos;
   if (Platform.isMacOS) {
@@ -31,23 +35,20 @@ int? peerUid(Socket socket) {
   } else {
     return null;
   }
+  final size = macos ? _xucredSize : _ucredSize;
+  final buffer = Uint8List(size)..fillRange(0, size, 0xFF);
   final Uint8List value;
   try {
     value = socket.getRawOption(
       macos
-          ? RawSocketOption(_solLocal, _localPeerCred, Uint8List(_xucredSize))
-          : RawSocketOption(_solSocket, _soPeerCred, Uint8List(_ucredSize)),
+          ? RawSocketOption(_solLocal, _localPeerCred, buffer)
+          : RawSocketOption(_solSocket, _soPeerCred, buffer),
     );
   } on Exception {
     return null;
   }
   final fields = ByteData.sublistView(value);
-  if (macos) {
-    final version = fields.getUint32(0, Endian.host);
-    final groupCount = fields.getInt16(8, Endian.host);
-    if (version != _xucredVersion || groupCount < 1) return null;
-  } else if (fields.getInt32(0, Endian.host) <= 0) {
-    return null;
-  }
-  return fields.getUint32(4, Endian.host);
+  if (macos && fields.getUint32(0, Endian.host) != _xucredVersion) return null;
+  final uid = fields.getUint32(4, Endian.host);
+  return uid == _noUid ? null : uid;
 }

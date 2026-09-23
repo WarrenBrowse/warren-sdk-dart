@@ -10,8 +10,8 @@ void main() {
   test('a socket that carries no peer credentials has no account, never root',
       () async {
     // A TCP socket has no peer credentials. macOS answers the query as a
-    // zero-length IP option and leaves the buffer zero-filled, which decodes
-    // as uid 0 and would pass for the root daemon; Linux answers with pid 0.
+    // zero-length IP option and writes nothing, so a zero-filled buffer would
+    // decode as uid 0 and pass for the root daemon; Linux answers uid -1.
     final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(server.close);
     server.listen((peer) => peer.destroy());
