@@ -12,22 +12,31 @@ set -euo pipefail
 # proper per-OS privilege bootstrap (polkit / launchd helper / Windows
 # service), never a dev sudoers drop-in.
 #
-# A passwordless rule hands root to anything running as the developer's
-# account, so it is kept to exactly what the rooted tests need:
-# - it names a root-owned COPY of the daemon in a directory only root can
+# A passwordless rule hands its command to anything running as the
+# developer's account, so it grants exactly what the rooted tests need:
+# - a root-owned COPY of the daemon in a directory chain only root can
 #   write, never the build output, which that account can overwrite. Rerun
 #   this script after every rebuild; the rooted test refuses a stale copy.
-# - it pins the argument list: none (the daemon on its default socket,
-#   /var/run/warrend/warrend.sock) or `revert`. No caller picks a path the
-#   root daemon creates, removes or hands over.
+# - no argument at all: the daemon on its default socket
+#   (/var/run/warrend/warrend.sock). No caller picks a path the root daemon
+#   creates, removes or hands over.
+# `warrend revert` is deliberately NOT granted: it removes a live session's
+# kill switch and DNS override, so it keeps asking for the password.
 # The daemon resets its own environment (a fixed PATH) before it spawns
 # anything, so the caller's PATH cannot pick the tools root runs either.
+#
+# What remains once this is installed, by design of a passwordless start:
+# any process of the developer's account can start the root daemon and
+# drive it (configure any API and exit), and a process that rewrites the
+# build output before this script's next run gets that binary installed.
+# Remove the drop-in when the rooted tests are done.
 #
 # Usage:  ./scripts/dev-sudoers.sh            # install, or refresh the copy
 #         ./scripts/dev-sudoers.sh --remove   # uninstall
 # ─────────────────────────────────────────────────────────────────────
 
 SUDOERS_FILE=/etc/sudoers.d/warren-sdk-dev
+# Also named in packages/warren_sdk/test/support/daemon.dart (devDaemonCopy).
 INSTALL_DIR=/usr/local/libexec/warren-sdk-dev
 INSTALLED_BIN="$INSTALL_DIR/warrend"
 die() { echo "error: $*" >&2; exit 1; }
@@ -48,38 +57,53 @@ ROOT_GROUP=$(id -gn root)
 
 [[ -f "$BIN" ]] || die "build the daemon first: (cd '$CRATE_DIR' && cargo build --release)"
 
-# "<owner uid> <permission bits in octal>" of a path, without following a link.
+# "<owner uid> <permission bits in octal>" of a path itself, never a link's
+# target. The system stat on macOS: a GNU stat first on PATH reads -f
+# differently.
 owner_and_mode() {
   if [[ "$(uname -s)" == Darwin ]]; then
-    stat -f '%u %Lp' "$1"
+    /usr/bin/stat -f '%u %Lp' "$1"
   else
     stat -c '%u %a' "$1"
   fi
 }
 
-sudo mkdir -p "$INSTALL_DIR"
-sudo chown "root:$ROOT_GROUP" "$INSTALL_DIR"
-sudo chmod 0755 "$INSTALL_DIR"
+# Every existing component of the literal path must be a real directory owned
+# by root that no other account can write: otherwise an account that can write
+# one of them could swap what the sudoers rule names for its own binary.
+CHAIN_HELP="the dev daemon copy needs a root-only directory chain: move INSTALL_DIR here and devDaemonCopy in packages/warren_sdk/test/support/daemon.dart together"
+check_chain() {
+  local dir=$INSTALL_DIR owner mode
+  while :; do
+    if [[ -e "$dir" || -L "$dir" ]]; then
+      [[ ! -L "$dir" && -d "$dir" ]] || die "$dir is not a plain directory; $CHAIN_HELP"
+      read -r owner mode < <(owner_and_mode "$dir")
+      [[ "$owner" == 0 ]] || die "$dir is not owned by root; $CHAIN_HELP"
+      (( (8#$mode & 8#022) == 0 )) || die "$dir is writable by group or others; $CHAIN_HELP"
+    fi
+    [[ "$dir" == / ]] && break
+    dir=$(dirname "$dir")
+  done
+}
 
-# Any account that can write one directory on the way to the copy can swap it.
-dir=$(cd "$INSTALL_DIR" && pwd -P)
-while :; do
-  read -r owner mode < <(owner_and_mode "$dir")
-  [[ "$owner" == 0 ]] || die "$dir is not owned by root; pick another INSTALL_DIR"
-  (( (8#$mode & 8#022) == 0 )) || die "$dir is writable by group or others; pick another INSTALL_DIR"
-  [[ "$dir" == / ]] && break
-  dir=$(dirname "$dir")
-done
+check_chain
+sudo install -d -o root -g "$ROOT_GROUP" -m 0755 "$INSTALL_DIR"
+check_chain
 
-sudo install -m 0755 -o root -g "$ROOT_GROUP" "$BIN" "$INSTALLED_BIN"
+# Root reads the binary from this shell's stdin, never from a path the
+# developer's account controls: a link planted at $BIN would otherwise make
+# root copy any root-only file into a world-readable one.
+# shellcheck disable=SC2024 # the redirect is meant to run unprivileged
+sudo sh -c 'umask 022 && cat > "$1.new" && chown "root:$2" "$1.new" && chmod 0755 "$1.new" && mv -f "$1.new" "$1"' \
+  sh "$INSTALLED_BIN" "$ROOT_GROUP" < "$BIN"
 
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
 cat > "$tmp" <<EOF
-# Warren SDK dev-only: run a root-owned copy of the daemon without a prompt,
-# with no argument or with \`revert\` only. Test only.
+# Warren SDK dev-only: run a root-owned copy of the daemon, with no argument,
+# without a prompt. Test only.
 # Generated by native/warrend/scripts/dev-sudoers.sh.
-$DEV_USER ALL=(root) NOPASSWD: $INSTALLED_BIN "", $INSTALLED_BIN revert
+$DEV_USER ALL=(root) NOPASSWD: $INSTALLED_BIN ""
 EOF
 
 sudo visudo -c -f "$tmp" >/dev/null || die "generated sudoers failed validation; nothing installed."
