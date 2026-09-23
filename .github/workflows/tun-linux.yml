@@ -60,11 +60,11 @@ jobs:
           git clone --quiet \
             "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" \
             ../warrenguard
-          git -C ../warrenguard checkout --quiet 39b5037461eaf723c99438cb1d9434dd4bbf5ba3
+          git -C ../warrenguard checkout --quiet 8a66bf2f8da997a1a3ecdb88cc2dad0f4b925bd2
           git clone --quiet \
             "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" \
             ../warren-contract
-          git -C ../warren-contract checkout --quiet 37c0f0634cfa7b2daeabb6c3ef166cef8a4cb818
+          git -C ../warren-contract checkout --quiet 8feca4b301c290dc38ef0800c7092361e1ce84c5
       - name: build the in-process engine dylib (discovery)
         run: cargo build --release
         working-directory: native/warren_sdk_frb
