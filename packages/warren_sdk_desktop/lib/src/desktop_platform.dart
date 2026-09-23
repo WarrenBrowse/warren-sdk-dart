@@ -171,6 +171,10 @@ class DesktopClientHandle implements WarrenClientHandle {
     final DaemonClient daemon;
     try {
       daemon = await _daemonConnector();
+    } on WarrenError {
+      // Already typed by the connector (for example a socket served by another
+      // account), which calls for a different fix than a missing daemon.
+      rethrow;
     } on Object {
       // The daemon is not installed or not running; this is a privilege/setup
       // failure, not a tunnel failure. The cause may carry a local socket path,

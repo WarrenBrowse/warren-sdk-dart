@@ -162,6 +162,32 @@ void main() {
       );
     });
 
+    test('an untrusted daemon socket surfaces its own privilege error',
+        () async {
+      // The connector refused a socket another account serves. That is a
+      // different fix for the user than "install or start the daemon", so the
+      // code must survive the handle unchanged.
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => throw const WarrenPrivilegeError(
+          code: 'privilege/daemon-untrusted',
+          message: 'untrusted',
+        ),
+      );
+      final handle = await platform.createClient(config);
+
+      await expectLater(
+        handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions()),
+        throwsA(
+          isA<WarrenPrivilegeError>().having(
+            (e) => e.code,
+            'code',
+            'privilege/daemon-untrusted',
+          ),
+        ),
+      );
+    });
+
     test('the connection times out if the daemon never reports a state',
         () async {
       final daemon = _FakeDaemon(reply: null); // never replies

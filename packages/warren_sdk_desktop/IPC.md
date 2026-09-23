@@ -16,6 +16,12 @@ client.
   connection's peer uid (`getpeereid` / `SO_PEERCRED`) and accepts only the
   authorized owner, so a shared group or a permissive umask cannot let another
   user drive the root daemon.
+- The app authenticates the daemon the same way before it sends anything:
+  `connectDaemonSocket` reads the account serving the socket from the kernel
+  (`LOCAL_PEERCRED` / `SO_PEERCRED`) and refuses any account but root with a
+  `privilege/daemon-untrusted` error, failing closed where the platform cannot
+  tell. The `configure` request carries the mnemonic, so a listener another
+  local account planted at the socket path never receives it.
 - The daemon serves exactly one session at a time. A second, concurrent
   connection is refused (it receives a `privilege` error and is dropped) rather
   than allowed to tear down the live tunnel; only the owner connection's close

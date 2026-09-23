@@ -22,6 +22,10 @@ void main() {
   final apiBase = env['WARREN_API_BASE'];
   final pin = env['WARREN_SERVER_PIN'];
   const daemonBin = '../../native/warrend/target/release/warrend';
+  // The daemon runs unprivileged here, under this test's own account.
+  final ownUid = int.parse(
+    (Process.runSync('id', ['-u']).stdout as String).trim(),
+  );
   final ready = mnemonic != null &&
       apiBase != null &&
       pin != null &&
@@ -43,7 +47,7 @@ void main() {
             .transform(const SystemEncoding().decoder)
             .firstWhere((line) => line.contains('listening'))
             .timeout(const Duration(seconds: 10));
-        client = await connectDaemonSocket(socketPath);
+        client = await connectDaemonSocket(socketPath, daemonUid: ownUid);
       });
 
       tearDown(() async {
