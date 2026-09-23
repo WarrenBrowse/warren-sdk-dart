@@ -19,8 +19,8 @@ client.
   equivalent ACL (no Windows daemon exists yet).
 - Filesystem permissions are only a backstop: the daemon authenticates every
   connection's peer uid (`getpeereid` / `SO_PEERCRED`) and accepts only the
-  authorized owner, so a shared group or a permissive umask cannot let another
-  user drive the root daemon.
+  account that launched it (sudo's invoker) or root, so a shared group or a
+  permissive umask cannot let another user drive the root daemon.
 - The app authenticates the daemon the same way before it sends anything:
   `connectDaemonSocket` reads the account serving the socket from the kernel
   (`LOCAL_PEERCRED` / `SO_PEERCRED`) and refuses any account but root with a

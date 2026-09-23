@@ -2,9 +2,9 @@
 //!
 //! Owns the privileged TUN datapath through the audited `warren-sdk` engine and
 //! serves the SDK IPC protocol (see [`protocol`]) over a Unix socket. Exactly one
-//! IPC connection, from the authorized owner uid, drives one session: a second,
-//! concurrent connection is refused rather than allowed to tear down the live
-//! session.
+//! IPC connection, from the launching account or root, drives one session: a
+//! second, concurrent connection is refused rather than allowed to tear down the
+//! live session.
 //!
 //! # Kill-switch posture (shared contract)
 //!
@@ -206,9 +206,9 @@ async fn run_daemon(socket_path: String) -> Result<()> {
     let listener = bind_control_socket(&socket_path)?;
     eprintln!("warrend listening on {}", socket_path.display());
 
-    // The only peer allowed to drive the root daemon: the invoking user under
+    // The account the root daemon obeys besides root: the invoking user under
     // sudo, otherwise root itself. Filesystem permissions are a backstop, not the
-    // trust boundary; every connection is checked against this uid.
+    // trust boundary; every connection is checked with `peer_is_authorized`.
     let authorized_uid = env_id("SUDO_UID").unwrap_or_else(|| unsafe { libc::geteuid() });
 
     let tunnel: SharedTunnel = Arc::new(Mutex::new(None));
@@ -258,12 +258,9 @@ async fn run_daemon(socket_path: String) -> Result<()> {
     loop {
         let (mut stream, _) = listener.accept().await?;
 
-        match peer_uid(&stream) {
-            Some(uid) if uid == authorized_uid => {}
-            _ => {
-                let _ = send(&mut stream, &Event::error("privilege", "unauthorized peer")).await;
-                continue;
-            }
+        if !peer_is_authorized(peer_uid(&stream), authorized_uid) {
+            let _ = send(&mut stream, &Event::error("privilege", "unauthorized peer")).await;
+            continue;
         }
 
         if has_owner {
@@ -436,6 +433,13 @@ fn bind_control_socket(socket_path: &Path) -> Result<UnixListener> {
             .context("handing the daemon socket to the invoking account")?;
     }
     Ok(listener)
+}
+
+/// Whether a connecting peer may drive the daemon: the account that launched it,
+/// or root, which controls the daemon regardless. A peer the kernel does not
+/// identify is refused.
+fn peer_is_authorized(peer: Option<u32>, owner: u32) -> bool {
+    matches!(peer, Some(uid) if uid == owner || uid == 0)
 }
 
 /// The uid of the process on the other end of the control socket, or `None` if it
@@ -1090,6 +1094,21 @@ mod tests {
         assert!(!socket_dir_is_trusted(true, ROOT, 0o777, ROOT));
         // A symlink (lstat reports no directory) is never followed.
         assert!(!socket_dir_is_trusted(false, ROOT, 0o755, ROOT));
+    }
+
+    #[test]
+    fn only_the_launching_account_or_root_may_drive_the_daemon() {
+        const OWNER: u32 = 501;
+        assert!(peer_is_authorized(Some(OWNER), OWNER));
+        assert!(
+            peer_is_authorized(Some(0), OWNER),
+            "root already controls the daemon; refusing it only breaks root tooling"
+        );
+        assert!(!peer_is_authorized(Some(502), OWNER));
+        assert!(
+            !peer_is_authorized(None, OWNER),
+            "a peer the kernel cannot identify is refused"
+        );
     }
 
     #[tokio::test]
