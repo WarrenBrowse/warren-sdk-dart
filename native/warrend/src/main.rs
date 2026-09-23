@@ -30,6 +30,7 @@ mod netblock;
 mod posture;
 mod protocol;
 
+use std::ffi::OsString;
 use std::os::fd::AsRawFd;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -101,7 +102,44 @@ lockdown mode is configured on.
 /// whether to drop it (restore) or leak it (hold the block).
 type SharedTunnel = Arc<Mutex<Option<TunDatapathHandle>>>;
 
+/// The only directories the daemon, and every tool the engine spawns on its
+/// behalf, resolve programs from. The daemon runs as root and sudo passes the
+/// caller's PATH through unless the host sets `secure_path` (macOS does not), so
+/// an inherited PATH would let the launching account pick what root runs as
+/// `pfctl`, `route`, `networksetup` or `nft`.
+const DAEMON_PATH: &str = "/usr/sbin:/usr/bin:/sbin:/bin";
+
+/// What the daemon keeps from the environment it was launched with: sudo's
+/// record of the invoking account, which names the peer allowed to drive it.
+const KEPT_VARIABLES: [&str; 2] = ["SUDO_UID", "SUDO_GID"];
+
+/// The environment the daemon runs with, derived from the one it inherited.
+fn daemon_environment(
+    inherited: impl IntoIterator<Item = (OsString, OsString)>,
+) -> Vec<(OsString, OsString)> {
+    let mut environment: Vec<(OsString, OsString)> = inherited
+        .into_iter()
+        .filter(|(key, _)| KEPT_VARIABLES.iter().any(|kept| key == kept))
+        .collect();
+    environment.push(("PATH".into(), DAEMON_PATH.into()));
+    environment
+}
+
+/// Replaces the process environment with [`daemon_environment`]. Runs first in
+/// `main`, while the process is still single-threaded: the environment is
+/// process-global and mutating it is unsound once another thread may read it.
+fn reset_environment() {
+    let environment = daemon_environment(std::env::vars_os());
+    for (key, _) in std::env::vars_os() {
+        std::env::remove_var(key);
+    }
+    for (key, value) in environment {
+        std::env::set_var(key, value);
+    }
+}
+
 fn main() -> Result<()> {
+    reset_environment();
     let arg = std::env::args().nth(1);
     match arg.as_deref() {
         Some("--help" | "-h" | "help") => {
@@ -915,6 +953,32 @@ mod tests {
 
         drop(client_end);
         serve.await.expect("serve task").expect("clean end");
+    }
+
+    #[test]
+    fn the_daemon_environment_keeps_only_the_sudo_invoker_and_a_fixed_path() {
+        // Proxy and certificate variables would steer the root daemon's own
+        // control-plane client; only sudo's record of the invoker survives.
+        let inherited = [
+            ("PATH", "/Users/someone/bin:/usr/bin"),
+            ("SUDO_UID", "501"),
+            ("SUDO_GID", "20"),
+            ("HOME", "/Users/someone"),
+            ("HTTPS_PROXY", "http://127.0.0.1:8080"),
+            ("SSL_CERT_FILE", "/Users/someone/ca.pem"),
+        ]
+        .map(|(key, value)| (OsString::from(key), OsString::from(value)));
+
+        let mut environment = daemon_environment(inherited);
+        environment.sort();
+
+        let expected = [
+            ("PATH", DAEMON_PATH),
+            ("SUDO_GID", "20"),
+            ("SUDO_UID", "501"),
+        ]
+        .map(|(key, value)| (OsString::from(key), OsString::from(value)));
+        assert_eq!(environment, expected);
     }
 
     #[tokio::test]
