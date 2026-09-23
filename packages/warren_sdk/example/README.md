@@ -75,7 +75,7 @@ the **Client** tab at runtime.
 |---|---|---|
 | `WARREN_API_BASE` | the build channel's API base | Account API base. |
 | `WARREN_SERVER_PIN` | _(the Warren network pin)_ | Pinned server public key (hex). A public key, not a secret. |
-| `WARREN_DAEMON_SOCKET` | `/tmp/warren-sdk-daemon.sock` | Mode B daemon socket. |
+| `WARREN_DAEMON_SOCKET` | `/var/run/warrend/warrend.sock` | Mode B daemon socket. |
 | `WARREN_PRODUCT_ENV` | `prod` | Release channel (`prod` or `beta`); picks the default API base. |
 
 So against the test network you only need to supply a mnemonic (Client tab, or
@@ -97,7 +97,7 @@ privileged `warrend` daemon running and listening on `WARREN_DAEMON_SOCKET`:
 
 ```bash
 # from the repo root, see native/warrend
-sudo target/release/warrend /tmp/warren-sdk-daemon.sock
+sudo native/warrend/target/release/warrend
 ```
 
 Without it, selecting **System VPN** and connecting surfaces a
@@ -105,5 +105,5 @@ Without it, selecting **System VPN** and connecting surfaces a
 VPN first.
 
 > The macOS dev build intentionally **disables the App Sandbox** so the app can
-> open raw network sockets and reach the daemon's `/tmp` socket. Re-enable the
+> open raw network sockets and reach the daemon's socket. Re-enable the
 > sandbox (with `network.client` and keychain sharing) for a shipped app.

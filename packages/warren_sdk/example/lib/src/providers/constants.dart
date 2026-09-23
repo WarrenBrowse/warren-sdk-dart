@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
 
 import 'package:warren_sdk/warren_sdk.dart' show warrenApiBase;
+import 'package:warren_sdk_desktop/warren_sdk_desktop.dart'
+    show defaultDaemonSocketPath;
 
 /// Build-time defaults, overridable with `--dart-define`. These keep the test
 /// network ergonomic without baking any secret into the binary.
@@ -34,10 +36,10 @@ abstract final class AppEnv {
         '4c2c9253c426ae4db4cc88703f9ac802a020420c7fea6479c87af530ada72c3e',
   );
 
-  /// Unix socket the dev `warrend` daemon listens on (Mode B, system VPN).
+  /// Unix socket the `warrend` daemon listens on (Mode B, system VPN).
   static const String daemonSocket = String.fromEnvironment(
     'WARREN_DAEMON_SOCKET',
-    defaultValue: '/tmp/warren-sdk-daemon.sock',
+    defaultValue: defaultDaemonSocketPath,
   );
 
   /// Secure-store key under which the 12-word mnemonic is persisted.

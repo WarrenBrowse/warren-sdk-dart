@@ -6,7 +6,7 @@
 // Host-affecting, so it is opt-in: it runs only when WARREN_RUN_MODE_B=1 and a
 // mnemonic is set, with the daemon already listening:
 //
-//   sudo native/warrend/target/release/warrend /tmp/warren-sdk-daemon.sock
+//   sudo native/warrend/target/release/warrend
 //   WARREN_MNEMONIC="word1 …" WARREN_RUN_MODE_B=1 \
 //     fvm flutter test integration_test/mode_b_test.dart -d macos
 import 'dart:convert';

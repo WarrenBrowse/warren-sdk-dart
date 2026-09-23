@@ -23,7 +23,7 @@
 //! escape that needs no healthy daemon (see [`HELP`]).
 //!
 //! Run as root (TUN needs privilege). The socket path is the first argument, or
-//! `/tmp/warren-sdk-daemon.sock` by default for development.
+//! [`DEFAULT_SOCKET`].
 
 mod cmd;
 mod netblock;
@@ -32,7 +32,7 @@ mod protocol;
 
 use std::ffi::OsString;
 use std::os::fd::AsRawFd;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -75,14 +75,17 @@ use cmd::{CmdRunner, SystemRunner};
 use posture::{stop_action, StopAction, StopTrigger};
 use protocol::{ConnState, Event, Request};
 
-const DEFAULT_SOCKET: &str = "/tmp/warren-sdk-daemon.sock";
+/// The control socket when no path is given, where the SDK's
+/// `defaultDaemonSocketPath` connects. Its directory is created root-owned, so
+/// no other account can take the path first or rearrange entries under it.
+const DEFAULT_SOCKET: &str = "/var/run/warrend/warrend.sock";
 const MAX_FRAME: usize = 16 * 1024 * 1024;
 
 const HELP: &str = "\
 warrend - Warren SDK desktop system-VPN daemon (Mode B)
 
 USAGE:
-    warrend [SOCKET_PATH]    run the daemon (default /tmp/warren-sdk-daemon.sock)
+    warrend [SOCKET_PATH]    run the daemon (default /var/run/warrend/warrend.sock)
     warrend revert           tear down any Warren network block left behind
                              (kill-switch firewall rules, lockdown block, DNS
                              override) WITHOUT needing a running daemon.
@@ -173,6 +176,8 @@ fn run_revert() -> Result<()> {
 
 #[tokio::main]
 async fn run_daemon(socket_path: String) -> Result<()> {
+    let socket_path = PathBuf::from(socket_path);
+    prepare_socket_dir(&socket_path)?;
     ensure_not_already_serving(&socket_path).await?;
 
     // A dead predecessor's leftovers: report the held block (fail-closed, only
@@ -198,18 +203,13 @@ async fn run_daemon(socket_path: String) -> Result<()> {
         Err(error) => eprintln!("warrend: startup reconcile failed (continuing): {error}"),
     }
 
-    let listener = UnixListener::bind(&socket_path)
-        .with_context(|| format!("binding the daemon socket at {socket_path}"))?;
-    restrict_socket(&socket_path)?;
-    eprintln!("warrend listening on {socket_path}");
+    let listener = bind_control_socket(&socket_path)?;
+    eprintln!("warrend listening on {}", socket_path.display());
 
     // The only peer allowed to drive the root daemon: the invoking user under
     // sudo, otherwise root itself. Filesystem permissions are a backstop, not the
     // trust boundary; every connection is checked against this uid.
-    let authorized_uid = std::env::var("SUDO_UID")
-        .ok()
-        .and_then(|v| v.parse::<u32>().ok())
-        .unwrap_or_else(|| unsafe { libc::geteuid() });
+    let authorized_uid = env_id("SUDO_UID").unwrap_or_else(|| unsafe { libc::geteuid() });
 
     let tunnel: SharedTunnel = Arc::new(Mutex::new(None));
     let lockdown = Arc::new(AtomicBool::new(false));
@@ -313,21 +313,129 @@ async fn run_daemon(socket_path: String) -> Result<()> {
 
 /// Refuses to start when a live daemon already serves `socket_path` (its
 /// session state, including any DNS snapshot, must not be reconciled away
-/// under it); removes the socket file when it is a dead leftover.
-async fn ensure_not_already_serving(socket_path: &str) -> Result<()> {
-    if !Path::new(socket_path).exists() {
-        return Ok(());
-    }
+/// under it); removes the entry when it is a dead socket. Anything else at the
+/// path is left alone and refused: the daemon runs as root, so removing
+/// whatever the path names would let the path's author delete any file.
+async fn ensure_not_already_serving(socket_path: &Path) -> Result<()> {
+    use std::os::unix::fs::FileTypeExt;
+
+    let entry = match std::fs::symlink_metadata(socket_path) {
+        Ok(entry) => entry,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("inspecting the socket path {}", socket_path.display()))
+        }
+    };
+    anyhow::ensure!(
+        entry.file_type().is_socket(),
+        "{} exists and is not a socket; refusing to replace it",
+        socket_path.display()
+    );
     let probe = tokio::time::timeout(
         std::time::Duration::from_secs(1),
         UnixStream::connect(socket_path),
     )
     .await;
     if matches!(probe, Ok(Ok(_))) {
-        anyhow::bail!("another warrend is already serving {socket_path}; refusing to start");
+        anyhow::bail!(
+            "another warrend is already serving {}; refusing to start",
+            socket_path.display()
+        );
     }
     std::fs::remove_file(socket_path).ok();
     Ok(())
+}
+
+/// A numeric id from the environment (sudo's `SUDO_UID` / `SUDO_GID`).
+fn env_id(name: &str) -> Option<u32> {
+    std::env::var(name)
+        .ok()
+        .and_then(|value| value.parse().ok())
+}
+
+/// The process umask while the guard lives, restored on drop. The umask is
+/// process-wide, so a guard only spans a file creation made while no other
+/// thread creates files.
+struct UmaskGuard(libc::mode_t);
+
+impl UmaskGuard {
+    fn set(mask: libc::mode_t) -> Self {
+        // SAFETY: umask only swaps this process's file-creation mask.
+        Self(unsafe { libc::umask(mask) })
+    }
+}
+
+impl Drop for UmaskGuard {
+    fn drop(&mut self) {
+        // SAFETY: as in `set`.
+        unsafe { libc::umask(self.0) };
+    }
+}
+
+/// Whether a directory may hold the control socket. The daemon, root when it
+/// matters, removes a stale entry and hands the fresh socket to its launcher by
+/// path, which is only sound where no other account can rename or replace
+/// entries: a real directory owned by root or by the daemon's own account that
+/// is either not writable by group or others, or sticky like `/tmp`.
+fn socket_dir_is_trusted(is_dir: bool, owner: u32, mode: u32, euid: u32) -> bool {
+    const GROUP_OR_OTHER_WRITE: u32 = 0o022;
+    const STICKY: u32 = 0o1000;
+    is_dir
+        && (owner == 0 || owner == euid)
+        && (mode & GROUP_OR_OTHER_WRITE == 0 || mode & STICKY != 0)
+}
+
+/// Creates the socket's directory (mode 0755) when it is missing, and refuses a
+/// directory [`socket_dir_is_trusted`] rejects.
+fn prepare_socket_dir(socket_path: &Path) -> Result<()> {
+    use std::os::unix::fs::{DirBuilderExt, MetadataExt};
+
+    let dir = socket_path
+        .parent()
+        .filter(|dir| !dir.as_os_str().is_empty())
+        .context("the socket path must name a file inside a directory")?;
+    {
+        let _umask = UmaskGuard::set(0o022);
+        match std::fs::DirBuilder::new().mode(0o755).create(dir) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => {
+                return Err(error)
+                    .with_context(|| format!("creating the socket directory {}", dir.display()))
+            }
+        }
+    }
+    let meta = std::fs::symlink_metadata(dir)
+        .with_context(|| format!("inspecting the socket directory {}", dir.display()))?;
+    let euid = unsafe { libc::geteuid() };
+    anyhow::ensure!(
+        socket_dir_is_trusted(meta.file_type().is_dir(), meta.uid(), meta.mode(), euid),
+        "refusing the socket directory {}: it must be a directory owned by root or by this \
+         account that no other account can write to",
+        dir.display()
+    );
+    Ok(())
+}
+
+/// Binds the control socket owner-only from creation (0600: there is no instant
+/// where another account could connect) and, when sudo launched the daemon,
+/// hands it to the invoking account so that account's app can connect. The
+/// directory passed [`prepare_socket_dir`] and `lchown` never follows a link, so
+/// the entry handed over is the socket just bound.
+fn bind_control_socket(socket_path: &Path) -> Result<UnixListener> {
+    let listener = {
+        let _umask = UmaskGuard::set(0o177);
+        UnixListener::bind(socket_path)
+            .with_context(|| format!("binding the daemon socket at {}", socket_path.display()))?
+    };
+    let uid = env_id("SUDO_UID");
+    let gid = env_id("SUDO_GID");
+    if uid.is_some() || gid.is_some() {
+        std::os::unix::fs::lchown(socket_path, uid, gid)
+            .context("handing the daemon socket to the invoking account")?;
+    }
+    Ok(listener)
 }
 
 /// The uid of the process on the other end of the control socket, or `None` if it
@@ -370,25 +478,6 @@ async fn shutdown_signal() {
         _ = term.recv() => {}
         _ = interrupt.recv() => {}
     }
-}
-
-/// Restricts the control socket to its owner (mode 0660) and, when the daemon
-/// was launched via sudo, hands ownership to the invoking user so an unprivileged
-/// app can drive it without making the socket world-accessible.
-fn restrict_socket(socket_path: &str) -> Result<()> {
-    use std::os::unix::fs::PermissionsExt;
-
-    std::fs::set_permissions(socket_path, std::fs::Permissions::from_mode(0o660))?;
-    let uid = std::env::var("SUDO_UID")
-        .ok()
-        .and_then(|v| v.parse::<u32>().ok());
-    let gid = std::env::var("SUDO_GID")
-        .ok()
-        .and_then(|v| v.parse::<u32>().ok());
-    if uid.is_some() || gid.is_some() {
-        std::os::unix::fs::chown(socket_path, uid, gid)?;
-    }
-    Ok(())
 }
 
 /// Per-connection state: the configured engine client. The tunnel itself lives in
@@ -979,6 +1068,28 @@ mod tests {
         ]
         .map(|(key, value)| (OsString::from(key), OsString::from(value)));
         assert_eq!(environment, expected);
+    }
+
+    #[test]
+    fn a_socket_directory_is_trusted_only_when_no_other_account_can_swap_its_entries() {
+        const ROOT: u32 = 0;
+        const LAUNCHER: u32 = 501;
+
+        // A root daemon: its own run directory, and /tmp (sticky, so only an
+        // entry's owner can rename or remove it).
+        assert!(socket_dir_is_trusted(true, ROOT, 0o755, ROOT));
+        assert!(socket_dir_is_trusted(true, ROOT, 0o1777, ROOT));
+        // An unprivileged daemon in its own private directory.
+        assert!(socket_dir_is_trusted(true, LAUNCHER, 0o700, LAUNCHER));
+
+        // A root daemon pointed at a directory its launcher owns: the launcher
+        // could swap the socket for a link between bind and the ownership
+        // hand-off, and have root chown any file to itself.
+        assert!(!socket_dir_is_trusted(true, LAUNCHER, 0o700, ROOT));
+        assert!(!socket_dir_is_trusted(true, ROOT, 0o775, ROOT));
+        assert!(!socket_dir_is_trusted(true, ROOT, 0o777, ROOT));
+        // A symlink (lstat reports no directory) is never followed.
+        assert!(!socket_dir_is_trusted(false, ROOT, 0o755, ROOT));
     }
 
     #[tokio::test]

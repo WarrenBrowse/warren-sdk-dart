@@ -7,8 +7,10 @@ import 'ipc/daemon_client.dart';
 import 'ipc/messages.dart';
 import 'socket_transport.dart';
 
-/// The default production socket the privileged daemon listens on.
-const String defaultDaemonSocketPath = '/var/run/warren-vpn.sock';
+/// The socket the privileged `warrend` daemon listens on when it is given no
+/// path. Its directory is root-owned, so no other account can take the path
+/// before the daemon does.
+const String defaultDaemonSocketPath = '/var/run/warrend/warrend.sock';
 
 /// Desktop system-VPN (Mode B) platform implementation.
 ///

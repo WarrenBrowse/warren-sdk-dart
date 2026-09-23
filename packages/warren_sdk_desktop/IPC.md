@@ -8,10 +8,15 @@ client.
 
 ## Transport
 
-- Linux/macOS: a Unix domain socket. The daemon restricts it to its owner
-  (mode `0660`) and, when launched via `sudo`, hands ownership to the invoking
-  user (`SUDO_UID:SUDO_GID`) so an unprivileged app can drive it. Windows: a named
-  pipe with an equivalent ACL.
+- Linux/macOS: a Unix domain socket, at `/var/run/warrend/warrend.sock` unless
+  the daemon is given a path. The daemon creates it owner-only (mode `0600` from
+  the moment it is bound) and, when launched via `sudo`, hands it to the invoking
+  user (`SUDO_UID:SUDO_GID`) so that user's unprivileged app can drive it. Its
+  directory must be owned by root (or by the daemon's own account) and not
+  writable by any other account unless sticky; the daemon creates a missing one
+  with mode `0755` and refuses any other, and it only ever removes a stale
+  *socket* at the path, never another kind of file. Windows: a named pipe with an
+  equivalent ACL (no Windows daemon exists yet).
 - Filesystem permissions are only a backstop: the daemon authenticates every
   connection's peer uid (`getpeereid` / `SO_PEERCRED`) and accepts only the
   authorized owner, so a shared group or a permissive umask cannot let another
@@ -26,9 +31,10 @@ client.
   connection is refused (it receives a `privilege` error and is dropped) rather
   than allowed to tear down the live tunnel; only the owner connection's close
   reverts routing.
-- The daemon default dev socket path is `/tmp/warren-sdk-daemon.sock`; production
-  uses a root-owned path (for example `/run/warren/warrend.sock`). The app default
-  is `defaultDaemonSocketPath`.
+- The app default, `defaultDaemonSocketPath`, is the daemon default.
+- The daemon runs every tool it spawns (and the engine spawns on its behalf)
+  from a fixed `PATH` (`/usr/sbin:/usr/bin:/sbin:/bin`) and keeps nothing else
+  from its launcher's environment but `SUDO_UID` / `SUDO_GID`.
 - Framing: each message is a 4-byte big-endian length prefix followed by that
   many bytes of UTF-8 JSON, capped at 16 MiB. See `FrameCodec` / `FrameReader`.
 

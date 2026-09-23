@@ -4,7 +4,7 @@
 <dict>
 	<!--
 	  Dev/test build: App Sandbox is off so Mode B can reach the warrend daemon's
-	  /tmp socket and the engine has raw network. flutter_secure_storage uses the
+	  socket and the engine has raw network. flutter_secure_storage uses the
 	  legacy login keychain (see secure_store.dart), which works here but prompts
 	  once for access ("Always Allow"). A signed, sandboxed build with the
 	  Keychain Sharing capability is prompt-free.
