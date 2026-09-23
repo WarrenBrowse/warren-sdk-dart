@@ -255,8 +255,11 @@ async fn run_daemon(socket_path: String) -> Result<()> {
     // session; extra connections are refused so a rogue open/close cannot
     // revert routing and leak the owner's traffic.
     let mut has_owner = false;
+    let listener = &listener;
     loop {
-        let (mut stream, _) = listener.accept().await?;
+        let mut stream =
+            next_connection(|| async move { listener.accept().await.map(|(stream, _)| stream) })
+                .await;
 
         if !peer_is_authorized(peer_uid(&stream), authorized_uid) {
             let _ = send(&mut stream, &Event::error("privilege", "unauthorized peer")).await;
@@ -305,6 +308,29 @@ async fn run_daemon(socket_path: String) -> Result<()> {
             std::fs::remove_file(&socket_path).ok();
             std::process::exit(0);
         });
+    }
+}
+
+/// How long the accept loop waits after a failed `accept` before trying again,
+/// so a persistent failure (a full descriptor table) cannot spin a core.
+const ACCEPT_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(100);
+
+/// The next accepted connection. A failed `accept` is logged and retried: ending
+/// the daemon there would drop a live session's datapath handle as the runtime
+/// shuts down, a teardown no stop posture chose.
+async fn next_connection<F, Fut>(mut accept: F) -> UnixStream
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = std::io::Result<UnixStream>>,
+{
+    loop {
+        match accept().await {
+            Ok(stream) => return stream,
+            Err(error) => {
+                eprintln!("warrend: accepting a connection failed (still serving): {error}");
+                tokio::time::sleep(ACCEPT_RETRY_DELAY).await;
+            }
+        }
     }
 }
 
@@ -1109,6 +1135,29 @@ mod tests {
             !peer_is_authorized(None, OWNER),
             "a peer the kernel cannot identify is refused"
         );
+    }
+
+    #[tokio::test]
+    async fn a_failed_accept_leaves_the_daemon_serving() {
+        // A full descriptor table is transient. Ending the accept loop on it
+        // would end the daemon and, with it, a live session's datapath.
+        let (daemon_end, mut client_end) = UnixStream::pair().expect("socketpair");
+        let mut script = vec![
+            Ok(daemon_end),
+            Err(std::io::Error::from_raw_os_error(libc::EMFILE)),
+        ];
+
+        let mut accepted = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            next_connection(|| std::future::ready(script.pop().expect("accept called again"))),
+        )
+        .await
+        .expect("the connection after the failure is served");
+
+        client_end.write_all(b"x").await.expect("client write");
+        let mut byte = [0u8; 1];
+        accepted.read_exact(&mut byte).await.expect("daemon read");
+        assert_eq!(&byte, b"x");
     }
 
     #[tokio::test]
