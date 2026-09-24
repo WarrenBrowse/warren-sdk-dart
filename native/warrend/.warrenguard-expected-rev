@@ -12,4 +12,4 @@
 # Bump this in lockstep whenever you bump the consumed `warren-sdk` rev: set it to
 # the new rev's `.warrenguard-version`
 # (`git -C ../warren-sdk-rs show <rev>:.warrenguard-version`).
-8a66bf2f8da997a1a3ecdb88cc2dad0f4b925bd2
+57366727b568bddf3acf87ef6a7ccad2e342b47d

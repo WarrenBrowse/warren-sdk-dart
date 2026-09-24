@@ -60,7 +60,7 @@ jobs:
           git clone --quiet \
             "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" \
             ../warrenguard
-          git -C ../warrenguard checkout --quiet 8a66bf2f8da997a1a3ecdb88cc2dad0f4b925bd2
+          git -C ../warrenguard checkout --quiet 57366727b568bddf3acf87ef6a7ccad2e342b47d
           git clone --quiet \
             "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" \
             ../warren-contract
