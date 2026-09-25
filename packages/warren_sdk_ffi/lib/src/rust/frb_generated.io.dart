@@ -105,10 +105,22 @@ abstract class WarrenRustBridgeApiImplPlatform
   String dco_decode_String(dynamic raw);
 
   @protected
+  BanReasonDto dco_decode_ban_reason_dto(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  BanReasonDto dco_decode_box_autoadd_ban_reason_dto(dynamic raw);
+
+  @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_u_16(dynamic raw);
+
+  @protected
+  BigInt dco_decode_box_autoadd_u_64(dynamic raw);
 
   @protected
   WarrenFatalCauseDto dco_decode_box_autoadd_warren_fatal_cause_dto(
@@ -148,7 +160,16 @@ abstract class WarrenRustBridgeApiImplPlatform
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
+  BanReasonDto? dco_decode_opt_box_autoadd_ban_reason_dto(dynamic raw);
+
+  @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+
+  @protected
   int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
+
+  @protected
+  BigInt? dco_decode_opt_box_autoadd_u_64(dynamic raw);
 
   @protected
   WarrenFatalCauseDto? dco_decode_opt_box_autoadd_warren_fatal_cause_dto(
@@ -268,10 +289,23 @@ abstract class WarrenRustBridgeApiImplPlatform
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  BanReasonDto sse_decode_ban_reason_dto(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  BanReasonDto sse_decode_box_autoadd_ban_reason_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_box_autoadd_u_16(SseDeserializer deserializer);
+
+  @protected
+  BigInt sse_decode_box_autoadd_u_64(SseDeserializer deserializer);
 
   @protected
   WarrenFatalCauseDto sse_decode_box_autoadd_warren_fatal_cause_dto(
@@ -314,7 +348,17 @@ abstract class WarrenRustBridgeApiImplPlatform
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
+  BanReasonDto? sse_decode_opt_box_autoadd_ban_reason_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
   int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
+
+  @protected
+  BigInt? sse_decode_opt_box_autoadd_u_64(SseDeserializer deserializer);
 
   @protected
   WarrenFatalCauseDto? sse_decode_opt_box_autoadd_warren_fatal_cause_dto(
@@ -436,10 +480,23 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_ban_reason_dto(BanReasonDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_ban_reason_dto(
+      BanReasonDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_u_64(BigInt self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_warren_fatal_cause_dto(
@@ -484,7 +541,17 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_ban_reason_dto(
+      BanReasonDto? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_64(BigInt? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_warren_fatal_cause_dto(

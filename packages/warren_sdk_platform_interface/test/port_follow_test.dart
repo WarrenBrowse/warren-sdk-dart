@@ -37,6 +37,40 @@ void main() {
       );
     });
 
+    test('PortForwardNotAuthorized compares by what was presented', () {
+      expect(
+        const PortForwardNotAuthorized(entitlementPresented: true),
+        const PortForwardNotAuthorized(entitlementPresented: true),
+      );
+      expect(
+        const PortForwardNotAuthorized(entitlementPresented: true),
+        isNot(
+          equals(const PortForwardNotAuthorized(entitlementPresented: false)),
+        ),
+      );
+    });
+
+    test('PortForwardBanned compares by reason and lapse', () {
+      expect(
+        const PortForwardBanned(
+          reason: BanReason.portForwardingAbuse,
+          lapsesAtUnixSecs: 7,
+        ),
+        const PortForwardBanned(
+          reason: BanReason.portForwardingAbuse,
+          lapsesAtUnixSecs: 7,
+        ),
+      );
+      expect(
+        const PortForwardBanned(reason: BanReason.portForwardingAbuse),
+        isNot(equals(const PortForwardBanned(reason: BanReason.other))),
+      );
+      expect(
+        const PortForwardBanned(reason: BanReason.other, lapsesAtUnixSecs: 7),
+        isNot(equals(const PortForwardBanned(reason: BanReason.other))),
+      );
+    });
+
     test('PortFollowFailed instances are all equal', () {
       expect(const PortFollowFailed(), const PortFollowFailed());
       // A non-const instance must still equal the canonical const one.

@@ -104,6 +104,16 @@ abstract class WarrenSessionFrb implements RustOpaqueInterface {
   Stream<ConnectionStateDto> states();
 }
 
+/// Why an account is banned, mirrored for Dart as a plain enum.
+enum BanReasonDto {
+  /// Three port-forward abuse strikes inside the sliding window.
+  portForwardingAbuse,
+
+  /// Any other revocation, and any reason this build does not know.
+  other,
+  ;
+}
+
 /// Lifecycle state of a connection, mirrored for Dart as a plain enum.
 enum ConnectionStateDto {
   /// The initial connect attempt is in flight.
@@ -192,17 +202,37 @@ class PortFollowOutcomeDto {
   final int? previousPort;
 
   /// For `Kept`/`Changed`: the granted external port. For `ConflictStayed`:
-  /// the pinned port that stays requested. Absent for `Failed`.
+  /// the pinned port that stays requested. Absent otherwise.
   final int? port;
+
+  /// For `NotAuthorized`: whether the refused request carried an
+  /// entitlement. Absent otherwise.
+  final bool? entitlementPresented;
+
+  /// For `Banned`: why. Absent otherwise.
+  final BanReasonDto? banReason;
+
+  /// For `Banned`: when the ban lapses on its own, Unix seconds. Absent
+  /// otherwise, and for a ban that does not lapse.
+  final BigInt? banLapsesAtUnixSecs;
 
   const PortFollowOutcomeDto({
     required this.kind,
     this.previousPort,
     this.port,
+    this.entitlementPresented,
+    this.banReason,
+    this.banLapsesAtUnixSecs,
   });
 
   @override
-  int get hashCode => kind.hashCode ^ previousPort.hashCode ^ port.hashCode;
+  int get hashCode =>
+      kind.hashCode ^
+      previousPort.hashCode ^
+      port.hashCode ^
+      entitlementPresented.hashCode ^
+      banReason.hashCode ^
+      banLapsesAtUnixSecs.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -211,7 +241,10 @@ class PortFollowOutcomeDto {
           runtimeType == other.runtimeType &&
           kind == other.kind &&
           previousPort == other.previousPort &&
-          port == other.port;
+          port == other.port &&
+          entitlementPresented == other.entitlementPresented &&
+          banReason == other.banReason &&
+          banLapsesAtUnixSecs == other.banLapsesAtUnixSecs;
 }
 
 /// Discriminant of a [`PortFollowOutcomeDto`]. Flattened (kind plus optional
@@ -232,6 +265,16 @@ enum PortFollowOutcomeKindDto {
   /// The mapping could not be established this epoch; the supervisor keeps
   /// retrying.
   failed,
+
+  /// The exit refused the mapping as not authorized: it presented no port
+  /// entitlement, or one the exit would not spend (warren-core doc 105). The
+  /// supervisor keeps retrying.
+  notAuthorized,
+
+  /// The account is banned, so the issuer refuses its port entitlements and
+  /// every enforcing exit refuses its mappings. The supervisor keeps
+  /// retrying, which a lifted ban answers.
+  banned,
   ;
 }
 

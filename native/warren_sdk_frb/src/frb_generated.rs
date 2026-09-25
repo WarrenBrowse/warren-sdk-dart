@@ -1801,6 +1801,18 @@ impl SseDecode for String {
     }
 }
 
+impl SseDecode for crate::api::datapath::BanReasonDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::datapath::BanReasonDto::PortForwardingAbuse,
+            1 => crate::api::datapath::BanReasonDto::Other,
+            _ => unreachable!("Invalid variant for BanReasonDto: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1938,11 +1950,46 @@ impl SseDecode for Option<String> {
     }
 }
 
+impl SseDecode for Option<crate::api::datapath::BanReasonDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::datapath::BanReasonDto>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<bool> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<bool>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for Option<u16> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<u16>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<u64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u64>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -1969,10 +2016,17 @@ impl SseDecode for crate::api::datapath::PortFollowOutcomeDto {
             <crate::api::datapath::PortFollowOutcomeKindDto>::sse_decode(deserializer);
         let mut var_previousPort = <Option<u16>>::sse_decode(deserializer);
         let mut var_port = <Option<u16>>::sse_decode(deserializer);
+        let mut var_entitlementPresented = <Option<bool>>::sse_decode(deserializer);
+        let mut var_banReason =
+            <Option<crate::api::datapath::BanReasonDto>>::sse_decode(deserializer);
+        let mut var_banLapsesAtUnixSecs = <Option<u64>>::sse_decode(deserializer);
         return crate::api::datapath::PortFollowOutcomeDto {
             kind: var_kind,
             previous_port: var_previousPort,
             port: var_port,
+            entitlement_presented: var_entitlementPresented,
+            ban_reason: var_banReason,
+            ban_lapses_at_unix_secs: var_banLapsesAtUnixSecs,
         };
     }
 }
@@ -1986,6 +2040,8 @@ impl SseDecode for crate::api::datapath::PortFollowOutcomeKindDto {
             1 => crate::api::datapath::PortFollowOutcomeKindDto::Changed,
             2 => crate::api::datapath::PortFollowOutcomeKindDto::ConflictStayed,
             3 => crate::api::datapath::PortFollowOutcomeKindDto::Failed,
+            4 => crate::api::datapath::PortFollowOutcomeKindDto::NotAuthorized,
+            5 => crate::api::datapath::PortFollowOutcomeKindDto::Banned,
             _ => unreachable!("Invalid variant for PortFollowOutcomeKindDto: {}", inner),
         };
     }
@@ -2341,6 +2397,27 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<WarrenSessionFrb>> for WarrenS
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::datapath::BanReasonDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::PortForwardingAbuse => 0.into_dart(),
+            Self::Other => 1.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::datapath::BanReasonDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::BanReasonDto>
+    for crate::api::datapath::BanReasonDto
+{
+    fn into_into_dart(self) -> crate::api::datapath::BanReasonDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::datapath::ConnectionStateDto {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
@@ -2462,6 +2539,9 @@ impl flutter_rust_bridge::IntoDart for crate::api::datapath::PortFollowOutcomeDt
             self.kind.into_into_dart().into_dart(),
             self.previous_port.into_into_dart().into_dart(),
             self.port.into_into_dart().into_dart(),
+            self.entitlement_presented.into_into_dart().into_dart(),
+            self.ban_reason.into_into_dart().into_dart(),
+            self.ban_lapses_at_unix_secs.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2485,6 +2565,8 @@ impl flutter_rust_bridge::IntoDart for crate::api::datapath::PortFollowOutcomeKi
             Self::Changed => 1.into_dart(),
             Self::ConflictStayed => 2.into_dart(),
             Self::Failed => 3.into_dart(),
+            Self::NotAuthorized => 4.into_dart(),
+            Self::Banned => 5.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2761,6 +2843,22 @@ impl SseEncode for String {
     }
 }
 
+impl SseEncode for crate::api::datapath::BanReasonDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::datapath::BanReasonDto::PortForwardingAbuse => 0,
+                crate::api::datapath::BanReasonDto::Other => 1,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2889,12 +2987,42 @@ impl SseEncode for Option<String> {
     }
 }
 
+impl SseEncode for Option<crate::api::datapath::BanReasonDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::datapath::BanReasonDto>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<bool> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <bool>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for Option<u16> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <u16>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<u64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u64>::sse_encode(value, serializer);
         }
     }
 }
@@ -2915,6 +3043,9 @@ impl SseEncode for crate::api::datapath::PortFollowOutcomeDto {
         <crate::api::datapath::PortFollowOutcomeKindDto>::sse_encode(self.kind, serializer);
         <Option<u16>>::sse_encode(self.previous_port, serializer);
         <Option<u16>>::sse_encode(self.port, serializer);
+        <Option<bool>>::sse_encode(self.entitlement_presented, serializer);
+        <Option<crate::api::datapath::BanReasonDto>>::sse_encode(self.ban_reason, serializer);
+        <Option<u64>>::sse_encode(self.ban_lapses_at_unix_secs, serializer);
     }
 }
 
@@ -2927,6 +3058,8 @@ impl SseEncode for crate::api::datapath::PortFollowOutcomeKindDto {
                 crate::api::datapath::PortFollowOutcomeKindDto::Changed => 1,
                 crate::api::datapath::PortFollowOutcomeKindDto::ConflictStayed => 2,
                 crate::api::datapath::PortFollowOutcomeKindDto::Failed => 3,
+                crate::api::datapath::PortFollowOutcomeKindDto::NotAuthorized => 4,
+                crate::api::datapath::PortFollowOutcomeKindDto::Banned => 5,
                 _ => {
                     unimplemented!("");
                 }

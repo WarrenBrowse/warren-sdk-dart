@@ -107,6 +107,65 @@ final class PortFollowFailed extends PortFollowOutcome {
   String toString() => 'PortFollowFailed';
 }
 
+/// The exit refused the mapping as not authorized: the request presented no
+/// port entitlement, or one the exit would not spend (warren-core doc 105).
+/// The engine keeps retrying; the next entitlement refresh can stock one.
+final class PortForwardNotAuthorized extends PortFollowOutcome {
+  /// Creates the not-authorized outcome.
+  const PortForwardNotAuthorized({required this.entitlementPresented});
+
+  /// Whether the refused request carried an entitlement. `false` when the
+  /// account held none for the current epoch: its batch is held by its other
+  /// forwarded ports or devices, or the API has not answered.
+  final bool entitlementPresented;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PortForwardNotAuthorized &&
+      other.entitlementPresented == entitlementPresented;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, entitlementPresented);
+
+  @override
+  String toString() => 'PortForwardNotAuthorized($entitlementPresented)';
+}
+
+/// Why an account is banned.
+enum BanReason {
+  /// Three port-forward abuse strikes inside the sliding window.
+  portForwardingAbuse,
+
+  /// Any other revocation, and any reason this build does not know.
+  other,
+}
+
+/// The account is banned: the issuer refuses its port entitlements, so every
+/// enforcing exit refuses its mappings until the ban lapses or is lifted. The
+/// engine keeps retrying, which a lifted ban answers.
+final class PortForwardBanned extends PortFollowOutcome {
+  /// Creates the banned outcome.
+  const PortForwardBanned({required this.reason, this.lapsesAtUnixSecs});
+
+  /// Why the account is banned.
+  final BanReason reason;
+
+  /// When the ban lapses on its own, Unix seconds; `null` when it does not.
+  final int? lapsesAtUnixSecs;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PortForwardBanned &&
+      other.reason == reason &&
+      other.lapsesAtUnixSecs == lapsesAtUnixSecs;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, reason, lapsesAtUnixSecs);
+
+  @override
+  String toString() => 'PortForwardBanned($reason, $lapsesAtUnixSecs)';
+}
+
 /// Progress of one maintenance migration.
 enum MigrationOutcome {
   /// The drain advisory arrived and the engine is moving off the exit.

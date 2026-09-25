@@ -1312,7 +1312,25 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  BanReasonDto dco_decode_ban_reason_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return BanReasonDto.values[raw as int];
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
+  BanReasonDto dco_decode_box_autoadd_ban_reason_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_ban_reason_dto(raw);
+  }
+
+  @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
   }
@@ -1321,6 +1339,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   int dco_decode_box_autoadd_u_16(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  BigInt dco_decode_box_autoadd_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_u_64(raw);
   }
 
   @protected
@@ -1415,9 +1439,27 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  BanReasonDto? dco_decode_opt_box_autoadd_ban_reason_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_ban_reason_dto(raw);
+  }
+
+  @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_bool(raw);
+  }
+
+  @protected
   int? dco_decode_opt_box_autoadd_u_16(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_u_16(raw);
+  }
+
+  @protected
+  BigInt? dco_decode_opt_box_autoadd_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_64(raw);
   }
 
   @protected
@@ -1433,12 +1475,15 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   PortFollowOutcomeDto dco_decode_port_follow_outcome_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return PortFollowOutcomeDto(
       kind: dco_decode_port_follow_outcome_kind_dto(arr[0]),
       previousPort: dco_decode_opt_box_autoadd_u_16(arr[1]),
       port: dco_decode_opt_box_autoadd_u_16(arr[2]),
+      entitlementPresented: dco_decode_opt_box_autoadd_bool(arr[3]),
+      banReason: dco_decode_opt_box_autoadd_ban_reason_dto(arr[4]),
+      banLapsesAtUnixSecs: dco_decode_opt_box_autoadd_u_64(arr[5]),
     );
   }
 
@@ -1671,15 +1716,41 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  BanReasonDto sse_decode_ban_reason_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return BanReasonDto.values[inner];
+  }
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
   }
 
   @protected
+  BanReasonDto sse_decode_box_autoadd_ban_reason_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_ban_reason_dto(deserializer));
+  }
+
+  @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_bool(deserializer));
+  }
+
+  @protected
   int sse_decode_box_autoadd_u_16(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_u_16(deserializer));
+  }
+
+  @protected
+  BigInt sse_decode_box_autoadd_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_64(deserializer));
   }
 
   @protected
@@ -1802,11 +1873,45 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  BanReasonDto? sse_decode_opt_box_autoadd_ban_reason_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_ban_reason_dto(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_bool(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_box_autoadd_u_16(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  BigInt? sse_decode_opt_box_autoadd_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_64(deserializer));
     } else {
       return null;
     }
@@ -1831,8 +1936,17 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     var var_kind = sse_decode_port_follow_outcome_kind_dto(deserializer);
     var var_previousPort = sse_decode_opt_box_autoadd_u_16(deserializer);
     var var_port = sse_decode_opt_box_autoadd_u_16(deserializer);
+    var var_entitlementPresented =
+        sse_decode_opt_box_autoadd_bool(deserializer);
+    var var_banReason = sse_decode_opt_box_autoadd_ban_reason_dto(deserializer);
+    var var_banLapsesAtUnixSecs = sse_decode_opt_box_autoadd_u_64(deserializer);
     return PortFollowOutcomeDto(
-        kind: var_kind, previousPort: var_previousPort, port: var_port);
+        kind: var_kind,
+        previousPort: var_previousPort,
+        port: var_port,
+        entitlementPresented: var_entitlementPresented,
+        banReason: var_banReason,
+        banLapsesAtUnixSecs: var_banLapsesAtUnixSecs);
   }
 
   @protected
@@ -2097,15 +2211,40 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_ban_reason_dto(BanReasonDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
   }
 
   @protected
+  void sse_encode_box_autoadd_ban_reason_dto(
+      BanReasonDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_ban_reason_dto(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_u_16(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_64(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_64(self, serializer);
   }
 
   @protected
@@ -2209,12 +2348,43 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_ban_reason_dto(
+      BanReasonDto? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_ban_reason_dto(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_bool(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_u_16(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_64(BigInt? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_64(self, serializer);
     }
   }
 
@@ -2236,6 +2406,9 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_port_follow_outcome_kind_dto(self.kind, serializer);
     sse_encode_opt_box_autoadd_u_16(self.previousPort, serializer);
     sse_encode_opt_box_autoadd_u_16(self.port, serializer);
+    sse_encode_opt_box_autoadd_bool(self.entitlementPresented, serializer);
+    sse_encode_opt_box_autoadd_ban_reason_dto(self.banReason, serializer);
+    sse_encode_opt_box_autoadd_u_64(self.banLapsesAtUnixSecs, serializer);
   }
 
   @protected

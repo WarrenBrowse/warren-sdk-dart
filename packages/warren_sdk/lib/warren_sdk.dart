@@ -32,6 +32,8 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         PortFollowFailed,
         PortFollowOutcome,
         PortFollowPolicy,
+        PortForwardBanned,
+        PortForwardNotAuthorized,
         PortKept,
         ProxyCredentials,
         ProxyEndpoints,

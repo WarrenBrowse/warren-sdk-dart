@@ -789,7 +789,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1963,7 +1963,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2257,7 +2257,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2926,10 +2926,11 @@ dependencies = [
 [[package]]
 name = "warren-api"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "bytes",
  "data-encoding",
+ "ed25519-dalek",
  "hex",
  "http",
  "http-body-util",
@@ -2952,12 +2953,14 @@ dependencies = [
  "warrenguard-token",
  "warrenguard-tun-core",
  "webpki-roots",
+ "zeroize",
 ]
 
 [[package]]
 name = "warren-contract"
 version = "0.0.1"
 dependencies = [
+ "base64",
  "blake2",
  "bs58",
  "ed25519-dalek",
@@ -2967,12 +2970,13 @@ dependencies = [
  "sha2",
  "thiserror",
  "warrenguard-wire",
+ "zeroize",
 ]
 
 [[package]]
 name = "warren-daita"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "warrenguard-daita",
 ]
@@ -2980,7 +2984,7 @@ dependencies = [
 [[package]]
 name = "warren-discovery"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "ed25519-dalek",
  "hex",
@@ -3010,7 +3014,7 @@ dependencies = [
 [[package]]
 name = "warren-identity"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "bip39",
  "ed25519-dalek",
@@ -3022,7 +3026,7 @@ dependencies = [
 [[package]]
 name = "warren-multihop"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "warrenguard-multihop",
 ]
@@ -3030,7 +3034,7 @@ dependencies = [
 [[package]]
 name = "warren-net"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "bytes",
  "data-encoding",
@@ -3105,13 +3109,13 @@ dependencies = [
  "parking_lot",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
 name = "warren-sdk"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "bytes",
  "serde",
@@ -3135,7 +3139,7 @@ dependencies = [
 [[package]]
 name = "warren-transport"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "bytes",
  "ed25519-dalek",
@@ -3161,7 +3165,7 @@ dependencies = [
 [[package]]
 name = "warren-tun"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "warrenguard-tun-device",
 ]
@@ -3169,7 +3173,7 @@ dependencies = [
 [[package]]
 name = "warren-tun-core"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "warrenguard-tun-core",
 ]
@@ -3177,7 +3181,7 @@ dependencies = [
 [[package]]
 name = "warren-wire"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=c3b453881fcb31d7f120d1fbc7946effa2e28158#c3b453881fcb31d7f120d1fbc7946effa2e28158"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=228ac6033bccc7a54a70463f9a02edbd3e92e554#228ac6033bccc7a54a70463f9a02edbd3e92e554"
 dependencies = [
  "serde",
  "warrenguard-multihop",
@@ -3596,7 +3600,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3814,7 +3818,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d6f32a0ff4a9f6f01231eb2059cc85479330739333e0e58cadf03b6af2cca10"
 dependencies = [
  "cfg-if",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

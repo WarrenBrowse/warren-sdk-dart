@@ -10,6 +10,7 @@ use std::sync::Mutex;
 
 use flutter_rust_bridge::frb;
 use tokio::sync::watch::Receiver;
+use warren_sdk::api::BanReasonCode;
 use warren_sdk::net::MapProto;
 use warren_sdk::transport::FatalCause;
 use warren_sdk::{
@@ -163,6 +164,22 @@ pub enum PortFollowOutcomeKindDto {
     /// The mapping could not be established this epoch; the supervisor keeps
     /// retrying.
     Failed,
+    /// The exit refused the mapping as not authorized: it presented no port
+    /// entitlement, or one the exit would not spend (warren-core doc 105). The
+    /// supervisor keeps retrying.
+    NotAuthorized,
+    /// The account is banned, so the issuer refuses its port entitlements and
+    /// every enforcing exit refuses its mappings. The supervisor keeps
+    /// retrying, which a lifted ban answers.
+    Banned,
+}
+
+/// Why an account is banned, mirrored for Dart as a plain enum.
+pub enum BanReasonDto {
+    /// Three port-forward abuse strikes inside the sliding window.
+    PortForwardingAbuse,
+    /// Any other revocation, and any reason this build does not know.
+    Other,
 }
 
 /// What happened to a forwarded port on its latest (re)establish.
@@ -172,35 +189,58 @@ pub struct PortFollowOutcomeDto {
     /// For `Changed`: the previous external port, absent on the first grant.
     pub previous_port: Option<u16>,
     /// For `Kept`/`Changed`: the granted external port. For `ConflictStayed`:
-    /// the pinned port that stays requested. Absent for `Failed`.
+    /// the pinned port that stays requested. Absent otherwise.
     pub port: Option<u16>,
+    /// For `NotAuthorized`: whether the refused request carried an
+    /// entitlement. Absent otherwise.
+    pub entitlement_presented: Option<bool>,
+    /// For `Banned`: why. Absent otherwise.
+    pub ban_reason: Option<BanReasonDto>,
+    /// For `Banned`: when the ban lapses on its own, Unix seconds. Absent
+    /// otherwise, and for a ban that does not lapse.
+    pub ban_lapses_at_unix_secs: Option<u64>,
 }
 
 fn outcome_to_dto(outcome: PortFollowOutcome) -> PortFollowOutcomeDto {
+    let bare = |kind, previous_port, port| PortFollowOutcomeDto {
+        kind,
+        previous_port,
+        port,
+        entitlement_presented: None,
+        ban_reason: None,
+        ban_lapses_at_unix_secs: None,
+    };
     match outcome {
-        PortFollowOutcome::Kept { port } => PortFollowOutcomeDto {
-            kind: PortFollowOutcomeKindDto::Kept,
-            previous_port: None,
-            port: Some(port),
+        PortFollowOutcome::Kept { port } => bare(PortFollowOutcomeKindDto::Kept, None, Some(port)),
+        PortFollowOutcome::Changed { previous, port } => {
+            bare(PortFollowOutcomeKindDto::Changed, previous, Some(port))
+        }
+        PortFollowOutcome::ConflictStayed { pinned } => {
+            bare(PortFollowOutcomeKindDto::ConflictStayed, None, Some(pinned))
+        }
+        PortFollowOutcome::NotAuthorized {
+            entitlement_presented,
+        } => PortFollowOutcomeDto {
+            entitlement_presented: Some(entitlement_presented),
+            ..bare(PortFollowOutcomeKindDto::NotAuthorized, None, None)
         },
-        PortFollowOutcome::Changed { previous, port } => PortFollowOutcomeDto {
-            kind: PortFollowOutcomeKindDto::Changed,
-            previous_port: previous,
-            port: Some(port),
-        },
-        PortFollowOutcome::ConflictStayed { pinned } => PortFollowOutcomeDto {
-            kind: PortFollowOutcomeKindDto::ConflictStayed,
-            previous_port: None,
-            port: Some(pinned),
+        PortFollowOutcome::Banned {
+            reason_code,
+            lapses_at_unix_secs,
+        } => PortFollowOutcomeDto {
+            ban_reason: Some(match reason_code {
+                BanReasonCode::PortForwardingAbuse => BanReasonDto::PortForwardingAbuse,
+                // `BanReasonCode` is `#[non_exhaustive]`: a reason this build
+                // does not know is still a ban.
+                _ => BanReasonDto::Other,
+            }),
+            ban_lapses_at_unix_secs: lapses_at_unix_secs,
+            ..bare(PortFollowOutcomeKindDto::Banned, None, None)
         },
         // `Failed`, plus any `#[non_exhaustive]` future variant: no port is
         // known, and "still retrying" is the safe reading for an unknown
         // outcome (the supervisor never kills a forward loop).
-        _ => PortFollowOutcomeDto {
-            kind: PortFollowOutcomeKindDto::Failed,
-            previous_port: None,
-            port: None,
-        },
+        _ => bare(PortFollowOutcomeKindDto::Failed, None, None),
     }
 }
 
@@ -515,8 +555,38 @@ impl WarrenForwardedPortFrb {
 
 #[cfg(test)]
 mod tests {
-    use super::{fatal_to_dto, WarrenFatalCauseDto};
+    use super::{
+        fatal_to_dto, outcome_to_dto, BanReasonDto, PortFollowOutcomeKindDto, WarrenFatalCauseDto,
+    };
+    use warren_sdk::api::BanReasonCode;
     use warren_sdk::transport::FatalCause;
+    use warren_sdk::PortFollowOutcome;
+
+    #[test]
+    fn an_entitlement_refusal_crosses_the_bridge_with_what_was_presented() {
+        let dto = outcome_to_dto(PortFollowOutcome::NotAuthorized {
+            entitlement_presented: true,
+        });
+
+        assert!(matches!(dto.kind, PortFollowOutcomeKindDto::NotAuthorized));
+        assert_eq!(dto.entitlement_presented, Some(true));
+        assert_eq!(dto.port, None);
+    }
+
+    #[test]
+    fn a_ban_crosses_the_bridge_with_its_reason_and_lapse() {
+        let dto = outcome_to_dto(PortFollowOutcome::Banned {
+            reason_code: BanReasonCode::PortForwardingAbuse,
+            lapses_at_unix_secs: Some(1_790_000_000),
+        });
+
+        assert!(matches!(dto.kind, PortFollowOutcomeKindDto::Banned));
+        assert!(matches!(
+            dto.ban_reason,
+            Some(BanReasonDto::PortForwardingAbuse)
+        ));
+        assert_eq!(dto.ban_lapses_at_unix_secs, Some(1_790_000_000));
+    }
 
     #[test]
     fn fatal_cause_kinds_stay_distinct_across_the_bridge() {

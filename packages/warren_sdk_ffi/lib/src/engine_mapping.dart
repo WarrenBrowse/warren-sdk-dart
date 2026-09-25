@@ -3,6 +3,7 @@ import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
 import 'rust/api/client.dart' show ExitInfoDto, TunnelCheckDto;
 import 'rust/api/datapath.dart'
     show
+        BanReasonDto,
         ConnectionStateDto,
         MigrationEventDto,
         MigrationOutcomeDto,
@@ -127,6 +128,16 @@ PortFollowOutcome mapPortFollowOutcome(PortFollowOutcomeDto dto) {
       PortChanged(previousPort: dto.previousPort, port: port),
     PortFollowOutcomeKindDto.conflictStayed when port != null =>
       PortConflictStayed(pinnedPort: port),
+    PortFollowOutcomeKindDto.notAuthorized => PortForwardNotAuthorized(
+        entitlementPresented: dto.entitlementPresented ?? false,
+      ),
+    PortFollowOutcomeKindDto.banned => PortForwardBanned(
+        reason: switch (dto.banReason) {
+          BanReasonDto.portForwardingAbuse => BanReason.portForwardingAbuse,
+          BanReasonDto.other || null => BanReason.other,
+        },
+        lapsesAtUnixSecs: dto.banLapsesAtUnixSecs?.toInt(),
+      ),
     _ => const PortFollowFailed(),
   };
 }

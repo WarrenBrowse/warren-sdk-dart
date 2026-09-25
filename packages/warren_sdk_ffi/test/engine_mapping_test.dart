@@ -170,6 +170,45 @@ void main() {
       );
     });
 
+    test('an entitlement refusal keeps whether one was presented', () {
+      for (final presented in [true, false]) {
+        expect(
+          mapPortFollowOutcome(
+            PortFollowOutcomeDto(
+              kind: PortFollowOutcomeKindDto.notAuthorized,
+              entitlementPresented: presented,
+            ),
+          ),
+          PortForwardNotAuthorized(entitlementPresented: presented),
+        );
+      }
+    });
+
+    test('a ban keeps its reason and its lapse', () {
+      expect(
+        mapPortFollowOutcome(
+          PortFollowOutcomeDto(
+            kind: PortFollowOutcomeKindDto.banned,
+            banReason: BanReasonDto.portForwardingAbuse,
+            banLapsesAtUnixSecs: BigInt.from(1790000000),
+          ),
+        ),
+        const PortForwardBanned(
+          reason: BanReason.portForwardingAbuse,
+          lapsesAtUnixSecs: 1790000000,
+        ),
+      );
+      expect(
+        mapPortFollowOutcome(
+          const PortFollowOutcomeDto(
+            kind: PortFollowOutcomeKindDto.banned,
+            banReason: BanReasonDto.other,
+          ),
+        ),
+        const PortForwardBanned(reason: BanReason.other),
+      );
+    });
+
     test('a first grant maps to PortChanged with no previous port', () {
       expect(
         mapPortFollowOutcome(
