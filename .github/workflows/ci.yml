@@ -32,7 +32,7 @@ jobs:
     # reach this job.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: format + analyze
-    runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
+    runs-on: [self-hosted, Linux, X64, libra]
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -51,7 +51,7 @@ jobs:
     # reach this job.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: unit tests (no engine)
-    runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
+    runs-on: [self-hosted, Linux, X64, libra]
     steps:
       # These packages fake the platform and never load the native engine.
       - uses: actions/checkout@v4
@@ -89,7 +89,7 @@ jobs:
     # reach this job.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: golden-vector conformance (real engine)
-    runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
+    runs-on: [self-hosted, Linux, X64, libra]
     steps:
       # Needs the shared vectors submodule and read access to the private engine
       # for the cargo git dependency. VECTORS_TOKEN must be a PAT with read access
@@ -129,7 +129,7 @@ jobs:
     # reach this job.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: warrend daemon tests
-    runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
+    runs-on: [self-hosted, Linux, X64, libra]
     steps:
       # The daemon's unit tests plus the tests that launch the real binary
       # unprivileged: its launch environment, its control socket's mode and
@@ -151,7 +151,7 @@ jobs:
     # reach this job.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: flutter_rust_bridge codegen is up to date
-    runs-on: [self-hosted, Linux, X64, macstudio-rosetta]
+    runs-on: [self-hosted, Linux, X64, libra]
     steps:
       - uses: actions/checkout@v4
         with:
