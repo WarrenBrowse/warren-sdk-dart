@@ -340,6 +340,10 @@ void main() {
         mapFatalCause(WarrenFatalCauseDto.policyRefused),
         WarrenFatalCause.policyRefused,
       );
+      expect(
+        mapFatalCause(WarrenFatalCauseDto.banned),
+        WarrenFatalCause.banned,
+      );
       // Every engine kind reaches its own public kind: no two collapse.
       final mapped = WarrenFatalCauseDto.values.map(mapFatalCause).toList();
       expect(mapped.toSet().length, WarrenFatalCauseDto.values.length);
@@ -359,6 +363,14 @@ void main() {
           message: 'the connection failed and will not be retried',
         ),
       );
+    });
+
+    test('a banned account names the suspension, not a policy refusal', () {
+      final failed =
+          connectionFailed(WarrenFatalCause.banned) as ConnectionFailed;
+
+      expect(failed.code, 'tunnel/banned');
+      expect(failed.message, contains('suspended'));
     });
 
     test('each fatal cause yields a distinct code and carries the cause', () {

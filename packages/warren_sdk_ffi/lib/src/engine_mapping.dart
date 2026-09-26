@@ -67,6 +67,7 @@ WarrenFatalCause? mapFatalCause(WarrenFatalCauseDto? cause) => switch (cause) {
       WarrenFatalCauseDto.notAuthorized => WarrenFatalCause.notAuthorized,
       WarrenFatalCauseDto.deviceLimit => WarrenFatalCause.deviceLimit,
       WarrenFatalCauseDto.policyRefused => WarrenFatalCause.policyRefused,
+      WarrenFatalCauseDto.banned => WarrenFatalCause.banned,
     };
 
 /// Builds the terminal [ConnectionFailed] for a fatal [cause].
@@ -81,6 +82,7 @@ ConnectionState connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
         WarrenFatalCause.notAuthorized => 'tunnel/not-authorized',
         WarrenFatalCause.deviceLimit => 'tunnel/device-limit',
         WarrenFatalCause.policyRefused => 'tunnel/policy-refused',
+        WarrenFatalCause.banned => 'tunnel/banned',
       },
       message: switch (cause) {
         null => 'the connection failed and will not be retried',
@@ -90,6 +92,8 @@ ConnectionState connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
           'the account already has its maximum number of connected devices',
         WarrenFatalCause.policyRefused =>
           'the exit refused the connection for policy reasons',
+        WarrenFatalCause.banned =>
+          'the account is suspended; renewing the subscription does not help',
       },
       cause: cause,
     );

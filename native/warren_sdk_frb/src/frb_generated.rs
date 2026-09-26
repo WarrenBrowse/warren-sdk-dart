@@ -2171,6 +2171,7 @@ impl SseDecode for crate::api::datapath::WarrenFatalCauseDto {
             0 => crate::api::datapath::WarrenFatalCauseDto::NotAuthorized,
             1 => crate::api::datapath::WarrenFatalCauseDto::DeviceLimit,
             2 => crate::api::datapath::WarrenFatalCauseDto::PolicyRefused,
+            3 => crate::api::datapath::WarrenFatalCauseDto::Banned,
             _ => unreachable!("Invalid variant for WarrenFatalCauseDto: {}", inner),
         };
     }
@@ -2727,6 +2728,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::datapath::WarrenFatalCauseDto
             Self::NotAuthorized => 0.into_dart(),
             Self::DeviceLimit => 1.into_dart(),
             Self::PolicyRefused => 2.into_dart(),
+            Self::Banned => 3.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -3234,6 +3236,7 @@ impl SseEncode for crate::api::datapath::WarrenFatalCauseDto {
                 crate::api::datapath::WarrenFatalCauseDto::NotAuthorized => 0,
                 crate::api::datapath::WarrenFatalCauseDto::DeviceLimit => 1,
                 crate::api::datapath::WarrenFatalCauseDto::PolicyRefused => 2,
+                crate::api::datapath::WarrenFatalCauseDto::Banned => 3,
                 _ => {
                     unimplemented!("");
                 }

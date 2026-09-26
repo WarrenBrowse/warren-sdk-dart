@@ -92,6 +92,10 @@ enum WarrenFatalCause {
   /// The exit refused with an opaque policy-rejection code and no sealed cause
   /// arrived: definitive, but the specific reason is unknown to the client.
   policyRefused,
+
+  /// The account is banned: suspended until the ban lapses or is lifted.
+  /// Renewing the subscription does not help.
+  banned,
 }
 
 /// The connection failed and will not be retried automatically.

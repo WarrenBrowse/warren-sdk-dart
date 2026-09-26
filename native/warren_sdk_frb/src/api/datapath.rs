@@ -56,6 +56,9 @@ pub enum WarrenFatalCauseDto {
     /// The exit closed with the opaque policy-rejection code and no sealed cause
     /// arrived: definitive, but the specific reason is unknown to the client.
     PolicyRefused,
+    /// The wallet is banned (on the signed revocation list): suspended until
+    /// the ban lapses or is lifted. Renewing does not help.
+    Banned,
 }
 
 fn fatal_to_dto(cause: FatalCause) -> WarrenFatalCauseDto {
@@ -63,6 +66,7 @@ fn fatal_to_dto(cause: FatalCause) -> WarrenFatalCauseDto {
         FatalCause::NotAuthorized => WarrenFatalCauseDto::NotAuthorized,
         FatalCause::DeviceLimit => WarrenFatalCauseDto::DeviceLimit,
         FatalCause::PolicyRefused => WarrenFatalCauseDto::PolicyRefused,
+        FatalCause::Banned => WarrenFatalCauseDto::Banned,
         // `FatalCause` is `#[non_exhaustive]`. A future fatal kind is still a
         // definitive refusal (never retryable), so surface it as the opaque
         // `PolicyRefused` rather than dropping the "stop" signal.
@@ -611,6 +615,10 @@ mod tests {
         assert_eq!(
             fatal_to_dto(FatalCause::PolicyRefused),
             WarrenFatalCauseDto::PolicyRefused
+        );
+        assert_eq!(
+            fatal_to_dto(FatalCause::Banned),
+            WarrenFatalCauseDto::Banned
         );
         // The taxonomy must not collapse to one kind: a subscription rejection
         // has to stay distinguishable from a device-limit one for the client.
