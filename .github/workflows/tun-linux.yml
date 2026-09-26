@@ -1,29 +1,19 @@
 name: Linux TUN (rooted, netns)
 
 # EXPERIMENTAL, manual-only (workflow_dispatch). Deliberately NOT in the push/PR
-# gate: it needs root, a real exit, and a subscribed WARREN_MNEMONIC repo secret,
-# and the Linux TUN datapath is not yet live-validated (unlike macOS). It runs the
-# `warrend` daemon inside a Linux network namespace so its split-default route and
-# nft killswitch stay confined to the namespace and never touch the runner's host
-# routing (see scripts/ci-netns-linux-tun.sh). The script's phase 1 (kill-switch
-# fail-closed persistence + the revert/reconcile recovery paths, real nft + real
-# egress) is mnemonic-free and runs on every dispatch; without WARREN_MNEMONIC
-# only the live TUN test self-skips, so a dry run is still green AND meaningful.
+# gate: its live half needs a real exit and a subscribed WARREN_MNEMONIC repo
+# secret, and the Linux TUN datapath is not yet live-validated (unlike macOS). It
+# runs the `warrend` daemon inside a Linux network namespace so its split-default
+# route and nft killswitch stay confined to the namespace and never touch the
+# runner's host routing (see scripts/ci-netns-linux-tun.sh). The script's phase 1
+# (kill-switch fail-closed persistence + the revert/reconcile recovery paths, real
+# nft + real egress) is mnemonic-free and runs on every dispatch; without
+# WARREN_MNEMONIC only the live TUN test self-skips, so a dry run is still green
+# AND meaningful.
 #
-# CI CAPABILITY GAP (why this stays dispatch-only, and where it IS validated):
-# creating a netns + loading the nft killswitch needs CAP_NET_ADMIN + CAP_SYS_ADMIN
-# (and /dev/net/tun). The shared self-hosted Linux runner containers grant neither
-# (default Docker caps drop both; the `runner` user has apt-only sudo), so this job
-# does not actually pass there. Granting those caps to the SHARED fleet would widen
-# the blast radius for every other job on those containers, so it is not done.
-# This gate is instead validated OUT-OF-CI on a real kernel: phase 1 and the full
-# rooted TUN test are run in a real Linux VM (kernel 6.17, nftables). To bring it
-# into CI, run it on a DEDICATED capability-scoped ephemeral runner
-# (--cap-add=NET_ADMIN --cap-add=SYS_ADMIN --device /dev/net/tun on that runner's
-# container only), never by privileging the shared fleet. See the README
-# "Rooted system-VPN kill-switch gate" section.
-#
-# Runs on the org self-hosted Linux runner; needs root + ip/iptables/nft on it.
+# Runs on a GitHub-hosted runner (ubuntu-24.04, pinned): a throwaway VM with
+# passwordless sudo, a real kernel and /dev/net/tun, so creating the netns and
+# loading the nft killswitch needs no capability grant on a shared fleet.
 
 on:
   workflow_dispatch: {}
@@ -31,7 +21,7 @@ on:
 jobs:
   netns-tun:
     name: rooted system-VPN TUN in a netns
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,28 +33,21 @@ jobs:
           # Pinned to the fvm-pinned version (.fvmrc) for reproducible CI.
           flutter-version: 3.44.2
           channel: stable
-      - name: authenticate cargo for the private engine dependency
-        run: git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "https://github.com/" && git config --global url."https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+      - name: nft for the killswitch
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends nftables
+      # Both warren_sdk_frb and warrend build against the engine's warrenguard
+      # crates and the warren-contract carve-out, patched to siblings checked out
+      # at the revs the pinned engine names (the same action ci.yml uses).
+      - uses: ./.github/actions/setup-engine-build
+        with:
+          token: ${{ secrets.VECTORS_TOKEN }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            native/warren_sdk_frb
+            native/warrend
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: flutter pub get
-      - name: checkout the engine siblings (warrenguard + warren-contract)
-        # Both warren_sdk_frb and warrend build against the engine's warrenguard
-        # crates and the warren-contract carve-out, patched to these siblings;
-        # warrend also injects warrenguard's obfuscated transport config. Pinned to
-        # native/warrend/.warrenguard-expected-rev (warrend's build.rs asserts that
-        # rev is an ancestor of the sibling HEAD, so an older clone here panics the
-        # build) and to the .warren-contract-version the pinned warren-sdk rev
-        # carries. Bump both here whenever the warren-sdk rev moves.
-        run: |
-          set -euo pipefail
-          rm -rf ../warrenguard ../warren-contract
-          git clone --quiet \
-            "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warrenguard.git" \
-            ../warrenguard
-          git -C ../warrenguard checkout --quiet 88f4ed0c316f5a49a208e0b85239ba95d4c523c2
-          git clone --quiet \
-            "https://x-access-token:${{ secrets.VECTORS_TOKEN }}@github.com/WarrenBrowse/warren-contract.git" \
-            ../warren-contract
-          git -C ../warren-contract checkout --quiet 5b53995617134c31c9dadfd6e0d7e306c9e19644
       - name: build the in-process engine dylib (discovery)
         run: cargo build --release
         working-directory: native/warren_sdk_frb

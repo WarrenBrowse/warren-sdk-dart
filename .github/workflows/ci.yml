@@ -1,12 +1,8 @@
 name: CI
 
-# Runs on the WarrenBrowse org self-hosted runners (same as warren-sdk-rs and
-# warren-app); every job must stay on them. Label set:
-#   [self-hosted, Linux, X64, macstudio-rosetta] -> an x86 pool. Flutter has no
-#   Linux arm64 SDK, so these jobs cannot use the arm64 pool the pure-Rust
-#   repos use; they stay on x86. The macstudio-rosetta label is deliberately
-#   NARROWER than a bare [self-hosted, Linux, X64]: only that pool's containers
-#   ship the clang-lld linker below.
+# Runs on GitHub-hosted runners (ubuntu-24.04, pinned), free for a public
+# repository. Flutter has no Linux arm64 SDK, so every job stays on x86_64.
+# The Rust jobs restore a cargo cache that only main's runs save.
 #
 # VECTORS_TOKEN must be a REPO-LEVEL secret (gh secret set ... --repo ...), not
 # an org-level one: org secrets do not resolve in this org's runs (checkout
@@ -19,20 +15,13 @@ on:
   pull_request:
   workflow_dispatch: {}
 
-env:
-  # Rosetta-emulated x86: gcc's collect2 link driver can segfault under memory
-  # pressure on large proc-macro/build-script links. clang-lld drives the link
-  # without collect2; it is baked into the macstudio-rosetta pool image the
-  # jobs pin, and target scoped so it is inert on the flutter-only steps.
-  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang-lld
-
 jobs:
   analyze:
-    # Self-hosted runners must never execute fork code: only same-repo events
-    # reach this job.
+    # Only same-repo events reach this job: a fork's run gets no repository
+    # secret, and the engine jobs cannot build without VECTORS_TOKEN.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: format + analyze
-    runs-on: [self-hosted, Linux, X64, libra]
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -47,11 +36,11 @@ jobs:
         run: flutter analyze
 
   test-pure:
-    # Self-hosted runners must never execute fork code: only same-repo events
-    # reach this job.
+    # Only same-repo events reach this job: a fork's run gets no repository
+    # secret, and the engine jobs cannot build without VECTORS_TOKEN.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: unit tests (no engine)
-    runs-on: [self-hosted, Linux, X64, libra]
+    runs-on: ubuntu-24.04
     steps:
       # These packages fake the platform and never load the native engine.
       - uses: actions/checkout@v4
@@ -68,10 +57,9 @@ jobs:
         run: |
           set -euo pipefail
           dart run build_runner build
-          # Scope the drift check to this package: a repo-wide `git diff` also
-          # trips on the `vectors` submodule, which the persistent self-hosted
-          # runner leaves at a prior commit (this job checks out without
-          # submodules, so its gitlink and the stale working tree disagree).
+          # Scope the drift check to this package: the Dart codegen writes
+          # nowhere else, and the `vectors` submodule (not checked out here)
+          # is no concern of this gate.
           git diff --exit-code -- .
       - run: flutter test
         working-directory: packages/warren_sdk_platform_interface
@@ -85,11 +73,11 @@ jobs:
         working-directory: packages/warren_sdk_riverpod
 
   conformance:
-    # Self-hosted runners must never execute fork code: only same-repo events
-    # reach this job.
+    # Only same-repo events reach this job: a fork's run gets no repository
+    # secret, and the engine jobs cannot build without VECTORS_TOKEN.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: golden-vector conformance (real engine)
-    runs-on: [self-hosted, Linux, X64, libra]
+    runs-on: ubuntu-24.04
     steps:
       # Needs the shared vectors submodule and read access to the private engine
       # for the cargo git dependency. VECTORS_TOKEN must be a PAT with read access
@@ -110,6 +98,10 @@ jobs:
       - uses: ./.github/actions/setup-engine-build
         with:
           token: ${{ secrets.VECTORS_TOKEN }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/warren_sdk_frb
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: flutter pub get
       - name: build the native engine
         # --locked: the build must use the committed Cargo.lock exactly, never
@@ -125,11 +117,11 @@ jobs:
         working-directory: packages/warren_sdk
 
   warrend:
-    # Self-hosted runners must never execute fork code: only same-repo events
-    # reach this job.
+    # Only same-repo events reach this job: a fork's run gets no repository
+    # secret, and the engine jobs cannot build without VECTORS_TOKEN.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: warrend daemon tests
-    runs-on: [self-hosted, Linux, X64, libra]
+    runs-on: ubuntu-24.04
     steps:
       # The daemon's unit tests plus the tests that launch the real binary
       # unprivileged: its launch environment, its control socket's mode and
@@ -143,15 +135,19 @@ jobs:
       - uses: ./.github/actions/setup-engine-build
         with:
           token: ${{ secrets.VECTORS_TOKEN }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/warrend
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --locked
         working-directory: native/warrend
 
   codegen-drift:
-    # Self-hosted runners must never execute fork code: only same-repo events
-    # reach this job.
+    # Only same-repo events reach this job: a fork's run gets no repository
+    # secret, and the engine jobs cannot build without VECTORS_TOKEN.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: flutter_rust_bridge codegen is up to date
-    runs-on: [self-hosted, Linux, X64, libra]
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -178,12 +174,14 @@ jobs:
       - uses: ./.github/actions/setup-engine-build
         with:
           token: ${{ secrets.VECTORS_TOKEN }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/warren_sdk_frb
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: flutter pub get
       - run: cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
       - run: flutter_rust_bridge_codegen generate
       - name: fail if generated bindings drift from the committed ones
-        # Exclude the `vectors` submodule: it is never an FRB codegen output, and
-        # the persistent self-hosted runner can leave it at a prior commit (this
-        # job checks out without submodules), which a repo-wide diff would
-        # misreport as generated-binding drift.
+        # Exclude the `vectors` submodule: it is never an FRB codegen output
+        # (this job checks out without submodules).
         run: git diff --exit-code -- . ':(exclude)vectors'

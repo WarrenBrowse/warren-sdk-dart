@@ -199,7 +199,7 @@ CI fast with an explicit message rather than silently drifting.
 
 ### CI
 
-`.github/workflows/ci.yml` runs, on the WarrenBrowse self-hosted runners: format
+`.github/workflows/ci.yml` runs, on GitHub-hosted `ubuntu-24.04` runners: format
 + analyze, the engine-free unit tests, the golden-vector conformance replay (which
 builds the engine), and an FRB-codegen drift check. The conformance and drift jobs
 fetch the private engine (cargo git dependency), its `warrenguard` /
@@ -210,26 +210,21 @@ fetch the private engine (cargo git dependency), its `warrenguard` /
 See [CLAUDE.md](CLAUDE.md) for the engineering conventions (TDD, English-only, no
 em-dash, no-log discipline, wire compatibility) shared with the Rust engine.
 
-### Rooted system-VPN kill-switch gate (validated out-of-CI, on a real kernel)
+### Rooted system-VPN kill-switch gate
 
 `.github/workflows/tun-linux.yml` (`scripts/ci-netns-linux-tun.sh`) exercises the
 `warrend` daemon's fail-closed kill-switch and the rooted TUN datapath inside a
 Linux network namespace. It is `workflow_dispatch`-only and is **not** part of the
-push/PR gate: creating a netns and loading the nft kill-switch needs
-`CAP_NET_ADMIN` + `CAP_SYS_ADMIN` (and `/dev/net/tun`), which the shared
-self-hosted Linux runner containers deliberately do not grant (default Docker caps
-drop both; the `runner` user has apt-only sudo). Widening the shared fleet's
-capabilities to run one job would enlarge the blast radius for every other job on
-those containers, so it is not done.
+push/PR gate: its live half needs a real exit and a `WARREN_MNEMONIC` repo secret.
+It runs on a GitHub-hosted `ubuntu-24.04` runner, a throwaway VM with
+passwordless sudo and `/dev/net/tun`, so the netns and the nft kill-switch need
+no capability grant. Without `WARREN_MNEMONIC` its phase 1 (mnemonic-free
+kill-switch fail-closed persistence + the revert/reconcile recovery paths, real
+`nft`, real egress) still runs and the live TUN test self-skips.
 
-Instead this gate is validated **out-of-CI on a real kernel**: its phase 1
-(mnemonic-free kill-switch fail-closed persistence + the revert/reconcile recovery
-paths, real `nft`, real egress) and the full rooted TUN live test are run in a
-real Linux VM (kernel 6.17, nftables). To run it yourself as root:
-`sudo -E scripts/ci-netns-linux-tun.sh` (phase 1 only, no Flutter/mnemonic:
-`WARREN_NETNS_PHASE1_ONLY=1`; a NAT-filtered box: `WARREN_NETNS_LOCAL_TARGET=1`).
-To bring it into CI, run it on a **dedicated** capability-scoped ephemeral runner,
-never by privileging the shared fleet.
+To run it yourself as root: `sudo -E scripts/ci-netns-linux-tun.sh` (phase 1
+only, no Flutter/mnemonic: `WARREN_NETNS_PHASE1_ONLY=1`; a NAT-filtered box:
+`WARREN_NETNS_LOCAL_TARGET=1`).
 
 ## License
 

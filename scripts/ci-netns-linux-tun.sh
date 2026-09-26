@@ -7,11 +7,11 @@
 # WHY A NETNS
 # -----------
 # The rooted test makes the `warrend` daemon capture ALL traffic by rewriting the
-# default route and installing a killswitch. Doing that on the host of a shared
-# self-hosted runner would hijack the runner's own connectivity and break the
-# job (and every other job on that machine). A network namespace gives the daemon
-# its own routing table + nft table; with a veth pair + NAT it still reaches the
-# real exit, the discovery API and 1.1.1.1, but the blast radius is the namespace.
+# default route and installing a killswitch. Doing that on the host of a CI
+# runner would hijack the runner's own connectivity and break the job. A network
+# namespace gives the daemon its own routing table + nft table; with a veth pair
+# + NAT it still reaches the real exit, the discovery API and 1.1.1.1, but the
+# blast radius is the namespace.
 #
 # This mirrors warren-core's bench/scripts/netns-e2e-dataplane.sh, adapted for the
 # SDK daemon (which talks to a REAL exit over the internet, hence the NAT egress
