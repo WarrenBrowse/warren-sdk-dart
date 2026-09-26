@@ -38,6 +38,41 @@ void main() {
     });
   });
 
+  group('mapEngineError types a ban refusal', () {
+    test('as a WarrenAccountBannedError, still a WarrenApiError', () {
+      final mapped = mapEngineError(
+        WarrenFfiError(
+          kind: WarrenErrorKind.api,
+          message: 'the account is banned',
+          ban: BanRefusalDto(
+            reason: BanReasonDto.portForwardingAbuse,
+            lapsesAtUnixSecs: BigInt.from(1790336000),
+          ),
+        ),
+      );
+
+      expect(mapped, isA<WarrenApiError>());
+      final banned = mapped as WarrenAccountBannedError;
+      expect(banned.code, 'api/banned');
+      expect(banned.message, 'the account is banned');
+      expect(banned.reason, BanReason.portForwardingAbuse);
+      expect(banned.lapsesAtUnixSecs, 1790336000);
+    });
+
+    test('keeps an absent lapse absent and an unknown reason as other', () {
+      const dto = WarrenFfiError(
+        kind: WarrenErrorKind.api,
+        message: 'the account is banned',
+        ban: BanRefusalDto(reason: BanReasonDto.other),
+      );
+
+      final banned = mapEngineError(dto) as WarrenAccountBannedError;
+
+      expect(banned.reason, BanReason.other);
+      expect(banned.lapsesAtUnixSecs, isNull);
+    });
+  });
+
   group('exitInfoFromDto', () {
     test('maps the public exit fields', () {
       final dto = ExitInfoDto(

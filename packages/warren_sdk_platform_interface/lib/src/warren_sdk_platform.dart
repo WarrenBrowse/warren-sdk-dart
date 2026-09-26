@@ -169,7 +169,8 @@ abstract interface class WarrenClientHandle {
   /// Returns the current subscription snapshot.
   Future<SubscriptionInfo> subscription();
 
-  /// Redeems a voucher secret, crediting the account.
+  /// Redeems a voucher secret, crediting the account. A banned account is
+  /// refused with a [WarrenAccountBannedError] and the voucher stays unredeemed.
   Future<void> redeemVoucher(String secret);
 
   /// Permanently deletes the account bound to this identity. App stores require

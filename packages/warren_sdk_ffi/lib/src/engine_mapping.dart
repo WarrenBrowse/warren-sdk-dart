@@ -20,12 +20,27 @@ final BigInt _softDrainSentinel = (BigInt.one << 64) - BigInt.one;
 /// Maps the typed engine error to the sealed public [WarrenError].
 ///
 /// The bridge carries a category plus an already-redacted message; this turns
-/// it into the matching subtype with a stable, machine-readable code.
-WarrenError mapEngineError(WarrenFfiError error) => warrenErrorOfKind(
-      error.kind.name,
-      code: '${error.kind.name}/engine',
-      message: error.message,
-    );
+/// it into the matching subtype with a stable, machine-readable code. A ban
+/// refusal becomes a [WarrenAccountBannedError].
+WarrenError mapEngineError(WarrenFfiError error) => switch (error.ban) {
+      final BanRefusalDto ban => WarrenAccountBannedError(
+          message: error.message,
+          reason: mapBanReason(ban.reason),
+          lapsesAtUnixSecs: ban.lapsesAtUnixSecs?.toInt(),
+        ),
+      null => warrenErrorOfKind(
+          error.kind.name,
+          code: '${error.kind.name}/engine',
+          message: error.message,
+        ),
+    };
+
+/// Maps the bridge ban reason to the public [BanReason]; an absent reason is
+/// still a ban, of an unnamed kind.
+BanReason mapBanReason(BanReasonDto? reason) => switch (reason) {
+      BanReasonDto.portForwardingAbuse => BanReason.portForwardingAbuse,
+      BanReasonDto.other || null => BanReason.other,
+    };
 
 /// Maps an engine connection-state to the sealed public [ConnectionState].
 ///
@@ -132,10 +147,7 @@ PortFollowOutcome mapPortFollowOutcome(PortFollowOutcomeDto dto) {
         entitlementPresented: dto.entitlementPresented ?? false,
       ),
     PortFollowOutcomeKindDto.banned => PortForwardBanned(
-        reason: switch (dto.banReason) {
-          BanReasonDto.portForwardingAbuse => BanReason.portForwardingAbuse,
-          BanReasonDto.other || null => BanReason.other,
-        },
+        reason: mapBanReason(dto.banReason),
         lapsesAtUnixSecs: dto.banLapsesAtUnixSecs?.toInt(),
       ),
     _ => const PortFollowFailed(),

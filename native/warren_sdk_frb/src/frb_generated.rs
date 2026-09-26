@@ -1813,6 +1813,18 @@ impl SseDecode for crate::api::datapath::BanReasonDto {
     }
 }
 
+impl SseDecode for crate::api::error::BanRefusalDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_reason = <crate::api::datapath::BanReasonDto>::sse_decode(deserializer);
+        let mut var_lapsesAtUnixSecs = <Option<u64>>::sse_decode(deserializer);
+        return crate::api::error::BanRefusalDto {
+            reason: var_reason,
+            lapses_at_unix_secs: var_lapsesAtUnixSecs,
+        };
+    }
+}
+
 impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1957,6 +1969,17 @@ impl SseDecode for Option<crate::api::datapath::BanReasonDto> {
             return Some(<crate::api::datapath::BanReasonDto>::sse_decode(
                 deserializer,
             ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::error::BanRefusalDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::error::BanRefusalDto>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -2158,9 +2181,11 @@ impl SseDecode for crate::api::error::WarrenFfiError {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_kind = <crate::api::error::WarrenErrorKind>::sse_decode(deserializer);
         let mut var_message = <String>::sse_decode(deserializer);
+        let mut var_ban = <Option<crate::api::error::BanRefusalDto>>::sse_decode(deserializer);
         return crate::api::error::WarrenFfiError {
             kind: var_kind,
             message: var_message,
+            ban: var_ban,
         };
     }
 }
@@ -2414,6 +2439,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::BanReasonDto>
     for crate::api::datapath::BanReasonDto
 {
     fn into_into_dart(self) -> crate::api::datapath::BanReasonDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::error::BanRefusalDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.reason.into_into_dart().into_dart(),
+            self.lapses_at_unix_secs.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::error::BanRefusalDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::error::BanRefusalDto>
+    for crate::api::error::BanRefusalDto
+{
+    fn into_into_dart(self) -> crate::api::error::BanRefusalDto {
         self
     }
 }
@@ -2702,6 +2748,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::error::WarrenFfiError {
         [
             self.kind.into_into_dart().into_dart(),
             self.message.into_into_dart().into_dart(),
+            self.ban.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2859,6 +2906,14 @@ impl SseEncode for crate::api::datapath::BanReasonDto {
     }
 }
 
+impl SseEncode for crate::api::error::BanRefusalDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::api::datapath::BanReasonDto>::sse_encode(self.reason, serializer);
+        <Option<u64>>::sse_encode(self.lapses_at_unix_secs, serializer);
+    }
+}
+
 impl SseEncode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2993,6 +3048,16 @@ impl SseEncode for Option<crate::api::datapath::BanReasonDto> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::api::datapath::BanReasonDto>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::error::BanRefusalDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::error::BanRefusalDto>::sse_encode(value, serializer);
         }
     }
 }
@@ -3183,6 +3248,7 @@ impl SseEncode for crate::api::error::WarrenFfiError {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <crate::api::error::WarrenErrorKind>::sse_encode(self.kind, serializer);
         <String>::sse_encode(self.message, serializer);
+        <Option<crate::api::error::BanRefusalDto>>::sse_encode(self.ban, serializer);
     }
 }
 

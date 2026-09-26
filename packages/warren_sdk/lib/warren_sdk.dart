@@ -14,6 +14,7 @@ library;
 // are re-exported here so consumers depend on one package.
 export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart'
     show
+        BanReason,
         ConnectMode,
         ConnectOptions,
         ConnectionFailed,
@@ -40,6 +41,7 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         Reconnecting,
         SubscriptionInfo,
         TunnelCheck,
+        WarrenAccountBannedError,
         WarrenApiError,
         WarrenChannel,
         WarrenDiscoveryError,

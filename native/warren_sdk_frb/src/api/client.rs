@@ -18,13 +18,14 @@ use warren_sdk::{
 };
 use zeroize::Zeroize;
 
-use crate::api::datapath::WarrenSessionFrb;
-use crate::api::error::{WarrenErrorKind, WarrenFfiError};
+use crate::api::datapath::{ban_reason_dto, WarrenSessionFrb};
+use crate::api::error::{BanRefusalDto, WarrenErrorKind, WarrenFfiError};
 
 fn err(kind: WarrenErrorKind, message: impl Into<String>) -> WarrenFfiError {
     WarrenFfiError {
         kind,
         message: message.into(),
+        ban: None,
     }
 }
 
@@ -322,7 +323,20 @@ fn relay_to_dto(relay: &Relay) -> ExitInfoDto {
 }
 
 fn map_client_error(error: ClientError) -> WarrenFfiError {
-    err(WarrenErrorKind::Api, error.to_string())
+    let ban = match &error {
+        ClientError::Banned {
+            reason_code,
+            lapses_at_unix_secs,
+        } => Some(BanRefusalDto {
+            reason: ban_reason_dto(reason_code),
+            lapses_at_unix_secs: *lapses_at_unix_secs,
+        }),
+        _ => None,
+    };
+    WarrenFfiError {
+        ban,
+        ..err(WarrenErrorKind::Api, error.to_string())
+    }
 }
 
 fn map_sdk_error(error: SdkError) -> WarrenFfiError {
@@ -335,4 +349,48 @@ fn map_sdk_error(error: SdkError) -> WarrenFfiError {
         _ => WarrenErrorKind::Api,
     };
     err(kind, error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use warren_sdk::api::{BanReasonCode, ClientError};
+
+    use super::map_client_error;
+    use crate::api::datapath::BanReasonDto;
+    use crate::api::error::WarrenErrorKind;
+
+    #[test]
+    fn a_ban_refusal_crosses_the_bridge_typed() {
+        let mapped = map_client_error(ClientError::Banned {
+            reason_code: BanReasonCode::PortForwardingAbuse,
+            lapses_at_unix_secs: Some(1_790_336_000),
+        });
+
+        assert!(matches!(mapped.kind, WarrenErrorKind::Api));
+        let ban = mapped.ban.expect("a ban refusal carries its ban");
+        assert!(matches!(ban.reason, BanReasonDto::PortForwardingAbuse));
+        assert_eq!(ban.lapses_at_unix_secs, Some(1_790_336_000));
+    }
+
+    #[test]
+    fn a_ban_without_a_lapse_keeps_the_lapse_absent() {
+        let mapped = map_client_error(ClientError::Banned {
+            reason_code: BanReasonCode::PortForwardingAbuse,
+            lapses_at_unix_secs: None,
+        });
+
+        let ban = mapped.ban.expect("a ban refusal carries its ban");
+        assert_eq!(ban.lapses_at_unix_secs, None);
+    }
+
+    #[test]
+    fn a_plain_403_carries_no_ban() {
+        let mapped = map_client_error(ClientError::ServerStatus {
+            status: 403,
+            body: r#"{"error":"forbidden"}"#.to_owned(),
+        });
+
+        assert!(matches!(mapped.kind, WarrenErrorKind::Api));
+        assert!(mapped.ban.is_none());
+    }
 }

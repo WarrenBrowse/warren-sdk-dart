@@ -120,6 +120,24 @@ void main() {
       expect(handle.redeemedSecret, 'VOUCHER-123');
     });
 
+    test('redeemVoucher surfaces a ban refusal as the typed ban', () async {
+      handle.redeemError = const WarrenAccountBannedError(
+        message: 'the account is banned',
+        reason: BanReason.portForwardingAbuse,
+        lapsesAtUnixSecs: 1790336000,
+      );
+      final client = await create();
+
+      await expectLater(
+        client.redeemVoucher('VOUCHER-123'),
+        throwsA(
+          isA<WarrenAccountBannedError>()
+              .having((e) => e.reason, 'reason', BanReason.portForwardingAbuse)
+              .having((e) => e.lapsesAtUnixSecs, 'lapse', 1790336000),
+        ),
+      );
+    });
+
     test('deleteAccount forwards to the handle', () async {
       final client = await create();
       await client.deleteAccount();
@@ -370,8 +388,14 @@ class _FakeClientHandle implements WarrenClientHandle {
     return const SubscriptionInfo(expiresAtUnix: 1893456000);
   }
 
+  WarrenError? redeemError;
+
   @override
-  Future<void> redeemVoucher(String secret) async => redeemedSecret = secret;
+  Future<void> redeemVoucher(String secret) async {
+    final error = redeemError;
+    if (error != null) throw error;
+    redeemedSecret = secret;
+  }
 
   bool accountDeleted = false;
 

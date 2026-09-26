@@ -182,6 +182,16 @@ pub enum BanReasonDto {
     Other,
 }
 
+/// Mirrors the engine's ban reason for Dart.
+pub(crate) fn ban_reason_dto(code: &BanReasonCode) -> BanReasonDto {
+    match code {
+        BanReasonCode::PortForwardingAbuse => BanReasonDto::PortForwardingAbuse,
+        // `BanReasonCode` is `#[non_exhaustive]`: a reason this build does not
+        // know is still a ban.
+        _ => BanReasonDto::Other,
+    }
+}
+
 /// What happened to a forwarded port on its latest (re)establish.
 pub struct PortFollowOutcomeDto {
     /// The outcome discriminant.
@@ -228,12 +238,7 @@ fn outcome_to_dto(outcome: PortFollowOutcome) -> PortFollowOutcomeDto {
             reason_code,
             lapses_at_unix_secs,
         } => PortFollowOutcomeDto {
-            ban_reason: Some(match reason_code {
-                BanReasonCode::PortForwardingAbuse => BanReasonDto::PortForwardingAbuse,
-                // `BanReasonCode` is `#[non_exhaustive]`: a reason this build
-                // does not know is still a ban.
-                _ => BanReasonDto::Other,
-            }),
+            ban_reason: Some(ban_reason_dto(&reason_code)),
             ban_lapses_at_unix_secs: lapses_at_unix_secs,
             ..bare(PortFollowOutcomeKindDto::Banned, None, None)
         },
@@ -405,11 +410,13 @@ impl WarrenSessionFrb {
         let target: SocketAddr = local_target.parse().map_err(|_| WarrenFfiError {
             kind: WarrenErrorKind::Tunnel,
             message: "invalid local target address".to_owned(),
+            ban: None,
         })?;
         let guard = self.handle.lock().expect("session mutex poisoned");
         let handle = guard.as_ref().ok_or(WarrenFfiError {
             kind: WarrenErrorKind::Tunnel,
             message: "session is disconnected".to_owned(),
+            ban: None,
         })?;
         let config = PortFollowConfig {
             policy: policy.to_engine(),

@@ -4,7 +4,34 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'datapath.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+/// The server's ban refusal (403 `{"error":"banned"}`), typed for Dart.
+class BanRefusalDto {
+  /// Why the account is banned.
+  final BanReasonDto reason;
+
+  /// When the ban lapses on its own, Unix seconds. Absent for a ban that
+  /// does not lapse, and when the refusing endpoint does not say.
+  final BigInt? lapsesAtUnixSecs;
+
+  const BanRefusalDto({
+    required this.reason,
+    this.lapsesAtUnixSecs,
+  });
+
+  @override
+  int get hashCode => reason.hashCode ^ lapsesAtUnixSecs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BanRefusalDto &&
+          runtimeType == other.runtimeType &&
+          reason == other.reason &&
+          lapsesAtUnixSecs == other.lapsesAtUnixSecs;
+}
 
 /// Category of a redacted failure crossing the bridge.
 enum WarrenErrorKind {
@@ -33,13 +60,18 @@ class WarrenFfiError implements FrbException {
   /// A redacted, human-readable description. Safe to log and display.
   final String message;
 
+  /// Present when the server refused the call because the account is
+  /// banned. A refused voucher redemption leaves the voucher unredeemed.
+  final BanRefusalDto? ban;
+
   const WarrenFfiError({
     required this.kind,
     required this.message,
+    this.ban,
   });
 
   @override
-  int get hashCode => kind.hashCode ^ message.hashCode;
+  int get hashCode => kind.hashCode ^ message.hashCode ^ ban.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -47,5 +79,6 @@ class WarrenFfiError implements FrbException {
       other is WarrenFfiError &&
           runtimeType == other.runtimeType &&
           kind == other.kind &&
-          message == other.message;
+          message == other.message &&
+          ban == other.ban;
 }

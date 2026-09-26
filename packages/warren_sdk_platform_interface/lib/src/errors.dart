@@ -1,5 +1,7 @@
 import 'package:meta/meta.dart';
 
+import 'port_follow.dart' show BanReason;
+
 /// The sealed error type for every failure surfaced by the SDK.
 ///
 /// Rust engine errors are mapped to one of these at the bridge. Each carries a
@@ -28,9 +30,31 @@ final class WarrenIdentityError extends WarrenError {
 }
 
 /// An account API call failed (network, auth, server, or fallback exhaustion).
-final class WarrenApiError extends WarrenError {
+base class WarrenApiError extends WarrenError {
   /// Creates an API error.
   const WarrenApiError({required super.code, required super.message});
+}
+
+/// The server refused the call because the account is banned.
+///
+/// Every call that credits time answers a banned wallet this way before
+/// consuming anything: a refused voucher redemption leaves the voucher
+/// unredeemed, so keep it and redeem it once the ban ends. It is a
+/// [WarrenApiError], so an existing `on WarrenApiError` handler still catches it.
+final class WarrenAccountBannedError extends WarrenApiError {
+  /// Creates the ban refusal.
+  const WarrenAccountBannedError({
+    required super.message,
+    required this.reason,
+    this.lapsesAtUnixSecs,
+  }) : super(code: 'api/banned');
+
+  /// Why the account is banned.
+  final BanReason reason;
+
+  /// When the ban lapses on its own, Unix seconds; `null` for a ban that does
+  /// not lapse, and when the refusing endpoint does not say.
+  final int? lapsesAtUnixSecs;
 }
 
 /// Relay-list verification or exit selection failed (bad signature, rollback,

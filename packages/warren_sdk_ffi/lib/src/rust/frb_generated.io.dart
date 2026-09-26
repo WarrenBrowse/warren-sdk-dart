@@ -108,10 +108,16 @@ abstract class WarrenRustBridgeApiImplPlatform
   BanReasonDto dco_decode_ban_reason_dto(dynamic raw);
 
   @protected
+  BanRefusalDto dco_decode_ban_refusal_dto(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
   BanReasonDto dco_decode_box_autoadd_ban_reason_dto(dynamic raw);
+
+  @protected
+  BanRefusalDto dco_decode_box_autoadd_ban_refusal_dto(dynamic raw);
 
   @protected
   bool dco_decode_box_autoadd_bool(dynamic raw);
@@ -161,6 +167,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   BanReasonDto? dco_decode_opt_box_autoadd_ban_reason_dto(dynamic raw);
+
+  @protected
+  BanRefusalDto? dco_decode_opt_box_autoadd_ban_refusal_dto(dynamic raw);
 
   @protected
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
@@ -292,10 +301,17 @@ abstract class WarrenRustBridgeApiImplPlatform
   BanReasonDto sse_decode_ban_reason_dto(SseDeserializer deserializer);
 
   @protected
+  BanRefusalDto sse_decode_ban_refusal_dto(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
   BanReasonDto sse_decode_box_autoadd_ban_reason_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  BanRefusalDto sse_decode_box_autoadd_ban_refusal_dto(
       SseDeserializer deserializer);
 
   @protected
@@ -349,6 +365,10 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   BanReasonDto? sse_decode_opt_box_autoadd_ban_reason_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  BanRefusalDto? sse_decode_opt_box_autoadd_ban_refusal_dto(
       SseDeserializer deserializer);
 
   @protected
@@ -483,11 +503,18 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_ban_reason_dto(BanReasonDto self, SseSerializer serializer);
 
   @protected
+  void sse_encode_ban_refusal_dto(BanRefusalDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_ban_reason_dto(
       BanReasonDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_ban_refusal_dto(
+      BanRefusalDto self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
@@ -543,6 +570,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   @protected
   void sse_encode_opt_box_autoadd_ban_reason_dto(
       BanReasonDto? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_ban_refusal_dto(
+      BanRefusalDto? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);

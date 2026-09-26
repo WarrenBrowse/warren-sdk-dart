@@ -74,7 +74,9 @@ class WarrenClient {
 
   /// Redeems a voucher [secret], crediting the account.
   ///
-  /// Throws a [WarrenApiError] if the voucher is invalid or already used.
+  /// Throws a [WarrenApiError] if the voucher is invalid or already used, and
+  /// a [WarrenAccountBannedError] when the account is banned: that refusal
+  /// leaves the voucher unredeemed, so keep it to redeem once the ban ends.
   Future<void> redeemVoucher(String secret) => _handle.redeemVoucher(secret);
 
   /// Permanently deletes the account bound to this identity. App stores require

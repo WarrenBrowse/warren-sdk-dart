@@ -5,6 +5,8 @@
 //! parsing strings and without pulling in a code-generated union (freezed).
 //! Messages are already redacted by the engine (no key, address or IP).
 
+use crate::api::datapath::BanReasonDto;
+
 /// Category of a redacted failure crossing the bridge.
 pub enum WarrenErrorKind {
     /// The mnemonic, key or signing input was malformed.
@@ -25,4 +27,16 @@ pub struct WarrenFfiError {
     pub kind: WarrenErrorKind,
     /// A redacted, human-readable description. Safe to log and display.
     pub message: String,
+    /// Present when the server refused the call because the account is
+    /// banned. A refused voucher redemption leaves the voucher unredeemed.
+    pub ban: Option<BanRefusalDto>,
+}
+
+/// The server's ban refusal (403 `{"error":"banned"}`), typed for Dart.
+pub struct BanRefusalDto {
+    /// Why the account is banned.
+    pub reason: BanReasonDto,
+    /// When the ban lapses on its own, Unix seconds. Absent for a ban that
+    /// does not lapse, and when the refusing endpoint does not say.
+    pub lapses_at_unix_secs: Option<u64>,
 }
