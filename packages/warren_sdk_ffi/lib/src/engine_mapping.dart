@@ -93,7 +93,7 @@ ConnectionState connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
         WarrenFatalCause.policyRefused =>
           'the exit refused the connection for policy reasons',
         WarrenFatalCause.banned =>
-          'the account is suspended; renewing the subscription does not help',
+          'the account is revoked; renewing the subscription does not help',
       },
       cause: cause,
     );

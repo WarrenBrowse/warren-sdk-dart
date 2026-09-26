@@ -56,8 +56,8 @@ pub enum WarrenFatalCauseDto {
     /// The exit closed with the opaque policy-rejection code and no sealed cause
     /// arrived: definitive, but the specific reason is unknown to the client.
     PolicyRefused,
-    /// The wallet is banned (on the signed revocation list): suspended until
-    /// the ban lapses or is lifted. Renewing does not help.
+    /// The wallet is banned (on the signed revocation list): revoked until
+    /// the revocation lapses or is lifted. Renewing does not help.
     Banned,
 }
 

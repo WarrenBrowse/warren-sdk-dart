@@ -93,7 +93,7 @@ enum WarrenFatalCause {
   /// arrived: definitive, but the specific reason is unknown to the client.
   policyRefused,
 
-  /// The account is banned: suspended until the ban lapses or is lifted.
+  /// The account is banned: revoked until the revocation lapses or is lifted.
   /// Renewing the subscription does not help.
   banned,
 }

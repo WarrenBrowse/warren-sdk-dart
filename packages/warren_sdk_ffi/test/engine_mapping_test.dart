@@ -365,12 +365,15 @@ void main() {
       );
     });
 
-    test('a banned account names the suspension, not a policy refusal', () {
+    test('a banned account names the revocation, not a policy refusal', () {
       final failed =
           connectionFailed(WarrenFatalCause.banned) as ConnectionFailed;
 
       expect(failed.code, 'tunnel/banned');
-      expect(failed.message, contains('suspended'));
+      expect(
+        failed.message,
+        'the account is revoked; renewing the subscription does not help',
+      );
     });
 
     test('each fatal cause yields a distinct code and carries the cause', () {

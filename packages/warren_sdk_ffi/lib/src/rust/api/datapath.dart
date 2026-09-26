@@ -314,8 +314,8 @@ enum WarrenFatalCauseDto {
   /// arrived: definitive, but the specific reason is unknown to the client.
   policyRefused,
 
-  /// The wallet is banned (on the signed revocation list): suspended until
-  /// the ban lapses or is lifted. Renewing does not help.
+  /// The wallet is banned (on the signed revocation list): revoked until
+  /// the revocation lapses or is lifted. Renewing does not help.
   banned,
   ;
 }
