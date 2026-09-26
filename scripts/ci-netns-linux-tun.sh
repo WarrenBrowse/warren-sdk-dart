@@ -208,11 +208,14 @@ log "running the rooted TUN test inside the namespace"
 # Run the whole test inside the namespace: discovery (in-process engine), the
 # daemon (its route+killswitch land in THIS namespace), and the egress probe.
 cd "$ROOT/packages/warren_sdk"
+# An empty WARREN_MNEMONIC (a dispatch with no secret) must reach the test as
+# absent, the one case in which it self-skips.
+mnemonic_env=(-u WARREN_MNEMONIC)
+[ -n "${WARREN_MNEMONIC:-}" ] && mnemonic_env=("WARREN_MNEMONIC=$WARREN_MNEMONIC")
 # shellcheck disable=SC2086  # $FLUTTER may be "fvm flutter" (two words) by design.
-ip netns exec "$NS" env \
+ip netns exec "$NS" env "${mnemonic_env[@]}" \
     "PATH=$PATH" \
     "WARREN_ROOTED=${WARREN_ROOTED:-1}" \
-    "WARREN_MNEMONIC=${WARREN_MNEMONIC:-}" \
     "WARREN_API_BASE=${WARREN_API_BASE:-https://api.warrenbrowse.com}" \
     "WARREN_SERVER_PIN=${WARREN_SERVER_PIN:-}" \
     $FLUTTER test test/daemon_tun_rooted_live_test.dart --concurrency=1
