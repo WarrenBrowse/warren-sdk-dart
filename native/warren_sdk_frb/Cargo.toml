@@ -18,7 +18,7 @@ crate-type = ["cdylib", "staticlib"]
 # For local co-development against a working copy of the engine, use the
 # documented gitignored path override (see the repo README, "Local co-development")
 # so this pin stays the single source of truth for CI and releases.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "d0f350fabe0d51164ce0c727d9e88fb5c79d506c" }
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "d452e3d183f8e22ef2b8e074feb3492316e0884d" }
 
 flutter_rust_bridge = "=2.12.0"
 anyhow = "1"
