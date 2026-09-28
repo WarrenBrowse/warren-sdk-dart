@@ -1,15 +1,1 @@
-# The WarrenGuard engine rev that the pinned `warren-sdk` git rev (see
-# native/warrend/Cargo.toml) was built against. This is the `.warrenguard-version`
-# of that rev in warren-sdk-rs.
-#
-# The `[patch."https://github.com/WarrenBrowse/warrenguard.git"]` block in
-# Cargo.toml repoints every warrenguard-* crate to the LOCAL sibling
-# `../../../warrenguard`, which is NOT pinned: it follows whatever rev is checked
-# out there. build.rs asserts that this expected rev is an ancestor of the
-# sibling's HEAD, so a divergent or older checkout fails loudly instead of
-# silently compiling the SDK against a mismatched protocol engine.
-#
-# Bump this in lockstep whenever you bump the consumed `warren-sdk` rev: set it to
-# the new rev's `.warrenguard-version`
-# (`git -C ../warren-sdk-rs show <rev>:.warrenguard-version`).
-7ab01049a278bd702f7a352439da7d9bfa6ae49c
+099d4d933fb85493ffc50b652b6d3995364df75f
