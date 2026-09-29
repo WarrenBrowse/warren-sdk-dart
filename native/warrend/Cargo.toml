@@ -15,7 +15,7 @@ path = "src/main.rs"
 # Pinned by rev to carry the socket-marked control-plane transport: the
 # `marked-transport` feature tags warrend's control-plane HTTP client with the
 # Warren tunnel fwmark, so the tightened `meta mark` connecting guard permits it.
-warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "4846596ae27904cf468fec396f4fffe5db1c406b", features = [
+warren-sdk = { git = "https://github.com/WarrenBrowse/warren-sdk-rs.git", rev = "34070df2fa471ded5890598aa23e3d83db30fc06", features = [
     "experimental-tun",
     "marked-transport",
 ] }
