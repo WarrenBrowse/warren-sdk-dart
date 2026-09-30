@@ -74,6 +74,10 @@ class DaemonClient {
         switch (message) {
           case StateEvent(:final state):
             _states.add(_toConnectionState(state));
+          case ErrorEvent(fatalCause: final WarrenFatalCause cause):
+            // A definitive verdict is a terminal state, as the in-process
+            // bridge reports it, so a consumer stops instead of redialing.
+            _states.add(connectionFailed(cause));
           case ErrorEvent():
             _states.addError(_toError(message));
           case ConfigureRequest():
@@ -112,14 +116,15 @@ ConnectionState _toConnectionState(DaemonConnectionState state) =>
       DaemonConnectionState.reconnecting => const Reconnecting(),
       DaemonConnectionState.draining => const Draining(),
       DaemonConnectionState.disconnected => const Disconnected(),
-      DaemonConnectionState.failed => const ConnectionFailed(
-          code: 'tunnel/failed',
-          message: 'the connection failed and will not be retried',
-        ),
+      DaemonConnectionState.failed => connectionFailed(null),
     };
 
-WarrenError _toError(ErrorEvent event) => warrenErrorOfKind(
-      event.kind,
-      code: '${event.kind}/daemon',
-      message: event.message,
-    );
+WarrenError _toError(ErrorEvent event) => switch (event.clockSkew) {
+      final DaemonClockSkew skew =>
+        WarrenClockSkewError(offsetSecs: skew.offsetSecs),
+      null => warrenErrorOfKind(
+          event.kind,
+          code: '${event.kind}/daemon',
+          message: event.message,
+        ),
+    };

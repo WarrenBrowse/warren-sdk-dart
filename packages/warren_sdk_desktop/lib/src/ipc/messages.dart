@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
 /// The connection state the daemon reports for a system-VPN session.
 ///
@@ -184,9 +185,17 @@ final class StateEvent extends DaemonMessage {
 }
 
 /// A redacted failure (daemon to app).
+///
+/// [clockSkew] and [fatalCause] are present only when the engine typed the
+/// failure; an older daemon omits them and the event reads as before.
 final class ErrorEvent extends DaemonMessage {
   /// Creates an error event.
-  const ErrorEvent({required this.kind, required this.message});
+  const ErrorEvent({
+    required this.kind,
+    required this.message,
+    this.clockSkew,
+    this.fatalCause,
+  });
 
   /// The failure category (`identity`, `api`, `discovery`, `tunnel`,
   /// `privilege`).
@@ -195,12 +204,56 @@ final class ErrorEvent extends DaemonMessage {
   /// A redacted, human-readable description.
   final String message;
 
+  /// Present when the server refused a signed call's timestamp: the device's
+  /// clock is off, and the wallet may well be fine.
+  final DaemonClockSkew? clockSkew;
+
+  /// The engine's definitive verdict, present when no redial and no other exit
+  /// helps.
+  final WarrenFatalCause? fatalCause;
+
   @override
-  Map<String, Object?> toJson() =>
-      {'type': 'error', 'kind': kind, 'message': message};
+  Map<String, Object?> toJson() => {
+        'type': 'error',
+        'kind': kind,
+        'message': message,
+        if (clockSkew case final skew?) 'clockSkew': skew.toJson(),
+        if (fatalCause case final cause?) 'fatalCause': cause.name,
+      };
 
   static ErrorEvent _fromJson(Map<String, Object?> json) => ErrorEvent(
         kind: json['kind']! as String,
         message: json['message']! as String,
+        clockSkew: switch (json['clockSkew']) {
+          final Map<String, Object?> skew => DaemonClockSkew._fromJson(skew),
+          _ => null,
+        },
+        fatalCause: switch (json['fatalCause']) {
+          final String name => _fatalCauseNamed(name),
+          _ => null,
+        },
       );
+
+  // A cause this client does not know yet still reads as definitive: taken
+  // for a transient failure, a consumer would redial a fatal forever.
+  static WarrenFatalCause _fatalCauseNamed(String name) =>
+      WarrenFatalCause.values.asNameMap()[name] ??
+      WarrenFatalCause.policyRefused;
+}
+
+/// The server's clock refusal as the daemon reports it.
+@immutable
+final class DaemonClockSkew {
+  /// Creates the clock refusal.
+  const DaemonClockSkew({this.offsetSecs});
+
+  /// The server's clock minus this device's, in seconds (positive when the
+  /// device is behind); `null` when the refusal carried no usable date.
+  final int? offsetSecs;
+
+  /// The wire form.
+  Map<String, Object?> toJson() => {'offsetSecs': offsetSecs};
+
+  static DaemonClockSkew _fromJson(Map<String, Object?> json) =>
+      DaemonClockSkew(offsetSecs: json['offsetSecs'] as int?);
 }

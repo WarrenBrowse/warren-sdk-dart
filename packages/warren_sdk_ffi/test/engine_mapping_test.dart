@@ -401,8 +401,7 @@ void main() {
     });
 
     test('a banned account names the revocation, not a policy refusal', () {
-      final failed =
-          connectionFailed(WarrenFatalCause.banned) as ConnectionFailed;
+      final failed = connectionFailed(WarrenFatalCause.banned);
 
       expect(failed.code, 'tunnel/banned');
       expect(
@@ -412,8 +411,7 @@ void main() {
     });
 
     test('a network that routes no entry says to change network', () {
-      final failed = connectionFailed(WarrenFatalCause.noReachableEntry)
-          as ConnectionFailed;
+      final failed = connectionFailed(WarrenFatalCause.noReachableEntry);
 
       expect(failed.code, 'tunnel/no-reachable-entry');
       expect(
@@ -426,7 +424,7 @@ void main() {
     test('each fatal cause yields a distinct code and carries the cause', () {
       final byCause = {
         for (final cause in WarrenFatalCause.values)
-          cause: connectionFailed(cause) as ConnectionFailed,
+          cause: connectionFailed(cause),
       };
       // The public state carries the machine-readable cause so a consumer can
       // stop on it.

@@ -40,6 +40,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::{Context, Result};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
+use warren_sdk::api::ClientError;
 use warren_sdk::discovery::VerifiedExit;
 use warren_sdk::identity::WarrenIdentity;
 use warren_sdk::{SdkError, TunDatapathHandle, WarrenClient};
@@ -75,7 +76,7 @@ fn build_cp_transport() -> Result<CpTransport, warren_sdk::api::TransportError> 
 use cmd::{CmdRunner, SystemRunner};
 use control_socket::ControlSocket;
 use posture::{stop_action, StopAction, StopTrigger};
-use protocol::{ConnState, Event, Request};
+use protocol::{ClockSkew, ConnState, Event, Request, WireFatalCause};
 
 /// The control socket when no path is given, where the SDK's
 /// `defaultDaemonSocketPath` connects. Its directory is created root-owned, so
@@ -754,6 +755,9 @@ async fn find_exit(client: &CpClient, exit_pubkey_hex: &str) -> Result<VerifiedE
         .ok_or_else(|| Event::error("discovery", "exit not in multihop directory"))
 }
 
+/// Maps an engine failure to its error event, keeping what the engine typed:
+/// a clock refusal with its offset, and the engine's own fatal verdict on a
+/// multihop failure. The verdict is read, never re-decided here.
 fn map_sdk_error(error: SdkError) -> Event {
     let kind = match error {
         SdkError::Discovery(_)
@@ -764,7 +768,25 @@ fn map_sdk_error(error: SdkError) -> Event {
         SdkError::Api(_) => "api",
         _ => "tunnel",
     };
-    Event::error(kind, error_chain(&error))
+    let clock_skew = match &error {
+        SdkError::Api(ClientError::ClockSkew { offset_secs }) => Some(ClockSkew {
+            offset_secs: *offset_secs,
+        }),
+        _ => None,
+    };
+    let fatal_cause = match &error {
+        SdkError::Multihop(multihop) => multihop
+            .retryability()
+            .fatal_cause()
+            .map(WireFatalCause::from),
+        _ => None,
+    };
+    Event::Error {
+        kind: kind.to_owned(),
+        message: error_chain(&error),
+        clock_skew,
+        fatal_cause,
+    }
 }
 
 /// Renders an error with its `#[source]` chain (system causes like a TUN open or
@@ -1357,5 +1379,60 @@ mod connect_orchestration_tests {
             "the stale block must be cleared before the dial (else the dial is \
              blocked by the dead chain): {events:?}"
         );
+    }
+}
+
+#[cfg(test)]
+mod error_mapping_tests {
+    use super::*;
+    use warren_sdk::transport::MultihopError;
+    use warren_sdk::NoSessionTokenCause;
+
+    #[test]
+    fn a_clock_refusal_crosses_the_ipc_typed_with_its_offset() {
+        // As plain text it reads as a generic API failure, and the user is
+        // never told the fix is the device's clock.
+        let event = map_sdk_error(SdkError::Api(ClientError::ClockSkew {
+            offset_secs: Some(-3_600),
+        }));
+
+        let json = serde_json::to_value(&event).expect("event json");
+        assert_eq!(json["kind"], "api");
+        assert_eq!(json["clockSkew"]["offsetSecs"], -3_600);
+        assert!(json.get("fatalCause").is_none(), "{json}");
+    }
+
+    #[test]
+    fn a_clock_refusal_without_a_date_still_crosses_typed() {
+        let event = map_sdk_error(SdkError::Api(ClientError::ClockSkew { offset_secs: None }));
+
+        let json = serde_json::to_value(&event).expect("event json");
+        assert!(json["clockSkew"].is_object(), "{json}");
+        assert!(json["clockSkew"]["offsetSecs"].is_null(), "{json}");
+    }
+
+    #[test]
+    fn an_engine_fatal_verdict_crosses_the_ipc_with_its_cause() {
+        // Every token held by the wallet's other devices: the engine calls it
+        // the device limit, and a retry reproduces it.
+        let event = map_sdk_error(SdkError::Multihop(MultihopError::NoSessionToken(
+            NoSessionTokenCause::AllInUse,
+        )));
+
+        let json = serde_json::to_value(&event).expect("event json");
+        assert_eq!(json["kind"], "tunnel");
+        assert_eq!(json["fatalCause"], "deviceLimit");
+        assert!(json.get("clockSkew").is_none(), "{json}");
+    }
+
+    #[test]
+    fn a_failure_the_engine_calls_retryable_carries_no_fatal_cause() {
+        // The engine owns the verdict: an unroutable hop on a one-shot dial is
+        // retryable to it, so the daemon must not promote it to a fatal.
+        let event = map_sdk_error(SdkError::Multihop(MultihopError::NoRouteToHop));
+
+        let json = serde_json::to_value(&event).expect("event json");
+        assert_eq!(json["kind"], "tunnel");
+        assert!(json.get("fatalCause").is_none(), "{json}");
     }
 }

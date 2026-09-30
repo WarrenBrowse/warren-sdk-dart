@@ -125,4 +125,45 @@ void main() {
     daemonSends(const ErrorEvent(kind: 'privilege', message: 'denied'));
     expect(await caught, isA<WarrenPrivilegeError>());
   });
+
+  test('a clock refusal arrives as a WarrenClockSkewError with its offset',
+      () async {
+    final caught = client.states.first.then<Object?>(
+      (_) => null,
+      onError: (Object e) => e,
+    );
+    daemonSends(
+      const ErrorEvent(
+        kind: 'api',
+        message: 'the server refused the request',
+        clockSkew: DaemonClockSkew(offsetSecs: -3600),
+      ),
+    );
+    expect(
+      await caught,
+      isA<WarrenClockSkewError>()
+          .having((e) => e.code, 'code', 'api/clock-skew')
+          .having((e) => e.offsetSecs, 'offsetSecs', -3600),
+    );
+  });
+
+  test('an engine fatal verdict arrives as a failed state carrying its cause',
+      () async {
+    // The fatal cause is what tells a consumer to stop redialing; as a bare
+    // tunnel error it would be indistinguishable from a transient failure.
+    final next = client.states.first;
+    daemonSends(
+      const ErrorEvent(
+        kind: 'tunnel',
+        message: 'no entry relay reachable',
+        fatalCause: WarrenFatalCause.noReachableEntry,
+      ),
+    );
+    expect(
+      await next,
+      isA<ConnectionFailed>()
+          .having((s) => s.cause, 'cause', WarrenFatalCause.noReachableEntry)
+          .having((s) => s.code, 'code', 'tunnel/no-reachable-entry'),
+    );
+  });
 }

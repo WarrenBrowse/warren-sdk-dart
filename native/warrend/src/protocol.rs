@@ -7,6 +7,7 @@
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
+use warren_sdk::transport::FatalCause;
 
 /// A request from the app to the daemon.
 #[derive(Deserialize)]
@@ -83,8 +84,56 @@ impl fmt::Debug for Request {
 pub enum Event {
     /// A connection-state transition.
     State { state: ConnState },
-    /// A redacted failure.
-    Error { kind: String, message: String },
+    /// A redacted failure. The typed fields are present only when the engine
+    /// typed the failure, so a client that predates them still reads the
+    /// category and the message.
+    Error {
+        kind: String,
+        message: String,
+        /// The server refused a signed call's timestamp: the device's clock is
+        /// off, and the wallet may well be fine.
+        #[serde(rename = "clockSkew", skip_serializing_if = "Option::is_none")]
+        clock_skew: Option<ClockSkew>,
+        /// The engine's definitive verdict: no redial and no other exit helps.
+        #[serde(rename = "fatalCause", skip_serializing_if = "Option::is_none")]
+        fatal_cause: Option<WireFatalCause>,
+    },
+}
+
+/// A clock refusal, as the Dart `WarrenClockSkewError` reads it.
+#[derive(Debug, Serialize)]
+pub struct ClockSkew {
+    /// The server's clock minus this device's, in seconds (positive when the
+    /// device is behind); `null` when the refusal carried no usable `Date`.
+    #[serde(rename = "offsetSecs")]
+    pub offset_secs: Option<i64>,
+}
+
+/// The engine's fatal cause, spelled as the Dart `WarrenFatalCause` names.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WireFatalCause {
+    NotAuthorized,
+    DeviceLimit,
+    Banned,
+    PolicyRefused,
+    NoReachableEntry,
+}
+
+impl From<FatalCause> for WireFatalCause {
+    fn from(cause: FatalCause) -> Self {
+        match cause {
+            FatalCause::NotAuthorized => WireFatalCause::NotAuthorized,
+            FatalCause::DeviceLimit => WireFatalCause::DeviceLimit,
+            FatalCause::Banned => WireFatalCause::Banned,
+            FatalCause::PolicyRefused => WireFatalCause::PolicyRefused,
+            FatalCause::NoReachableEntry => WireFatalCause::NoReachableEntry,
+            // `FatalCause` is `#[non_exhaustive]`: a cause this daemon does not
+            // name yet still crosses as a definitive refusal, never as a
+            // retryable failure.
+            _ => WireFatalCause::PolicyRefused,
+        }
+    }
 }
 
 /// The connection state, serialized with the same names the Dart enum uses.
@@ -121,6 +170,8 @@ impl Event {
         Event::Error {
             kind: kind.to_owned(),
             message: message.into(),
+            clock_skew: None,
+            fatal_cause: None,
         }
     }
 }
@@ -258,5 +309,28 @@ mod tests {
             error,
             r#"{"type":"error","kind":"tunnel","message":"down"}"#
         );
+    }
+
+    #[test]
+    fn a_network_that_routes_no_entry_crosses_under_its_own_name() {
+        let cause = serde_json::to_value(WireFatalCause::from(FatalCause::NoReachableEntry))
+            .expect("cause json");
+
+        assert_eq!(cause, "noReachableEntry");
+    }
+
+    #[test]
+    fn each_engine_fatal_cause_keeps_its_name_on_the_wire() {
+        // The spellings are the Dart `WarrenFatalCause` names the client
+        // parses back.
+        for (cause, name) in [
+            (FatalCause::NotAuthorized, "notAuthorized"),
+            (FatalCause::DeviceLimit, "deviceLimit"),
+            (FatalCause::Banned, "banned"),
+            (FatalCause::PolicyRefused, "policyRefused"),
+        ] {
+            let json = serde_json::to_value(WireFatalCause::from(cause)).expect("cause json");
+            assert_eq!(json, name);
+        }
     }
 }

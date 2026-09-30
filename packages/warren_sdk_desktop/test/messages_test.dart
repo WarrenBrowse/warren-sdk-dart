@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warren_sdk_desktop/warren_sdk_desktop.dart';
+import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
 void main() {
   T roundTrip<T extends DaemonMessage>(T message) {
@@ -66,6 +67,70 @@ void main() {
       final e = roundTrip(const ErrorEvent(kind: 'tunnel', message: 'down'));
       expect(e.kind, 'tunnel');
       expect(e.message, 'down');
+    });
+  });
+
+  group('a daemon error event, as warrend frames it', () {
+    ErrorEvent parse(Map<String, Object?> json) =>
+        DaemonMessage.fromJson({'type': 'error', ...json}) as ErrorEvent;
+
+    test('carries a clock refusal and its offset', () {
+      final e = parse({
+        'kind': 'api',
+        'message': 'clock',
+        'clockSkew': {'offsetSecs': -3600},
+      });
+      expect(e.clockSkew?.offsetSecs, -3600);
+      expect(e.fatalCause, isNull);
+    });
+
+    test('keeps a clock refusal whose offset the server did not give', () {
+      final e = parse({
+        'kind': 'api',
+        'message': 'clock',
+        'clockSkew': {'offsetSecs': null},
+      });
+      expect(e.clockSkew, isNotNull);
+      expect(e.clockSkew?.offsetSecs, isNull);
+    });
+
+    test('carries the engine fatal cause by its name', () {
+      final e = parse({
+        'kind': 'tunnel',
+        'message': 'no entry',
+        'fatalCause': 'noReachableEntry',
+      });
+      expect(e.fatalCause, WarrenFatalCause.noReachableEntry);
+      expect(e.clockSkew, isNull);
+    });
+
+    test('reads a fatal cause this client does not know as a refusal', () {
+      // Still definitive: read as retryable, it would loop a fatal forever.
+      final e = parse({
+        'kind': 'tunnel',
+        'message': 'm',
+        'fatalCause': 'somethingNewer',
+      });
+      expect(e.fatalCause, WarrenFatalCause.policyRefused);
+    });
+
+    test('an untyped failure carries neither', () {
+      final e = parse({'kind': 'tunnel', 'message': 'down'});
+      expect(e.clockSkew, isNull);
+      expect(e.fatalCause, isNull);
+    });
+
+    test('round-trips its typed fields', () {
+      final e = roundTrip(
+        const ErrorEvent(
+          kind: 'api',
+          message: 'm',
+          clockSkew: DaemonClockSkew(offsetSecs: 42),
+          fatalCause: WarrenFatalCause.deviceLimit,
+        ),
+      );
+      expect(e.clockSkew?.offsetSecs, 42);
+      expect(e.fatalCause, WarrenFatalCause.deviceLimit);
     });
   });
 

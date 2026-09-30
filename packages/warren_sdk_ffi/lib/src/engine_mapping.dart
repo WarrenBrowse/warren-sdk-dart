@@ -75,39 +75,6 @@ WarrenFatalCause? mapFatalCause(WarrenFatalCauseDto? cause) => switch (cause) {
       WarrenFatalCauseDto.noReachableEntry => WarrenFatalCause.noReachableEntry,
     };
 
-/// Builds the terminal [ConnectionFailed] for a fatal [cause].
-///
-/// A non-null [cause] means no redial or other exit helps, so the code and
-/// message name the reason and a consumer stops instead of looping
-/// "reconnecting"; a `null` cause is plain retry exhaustion. The message is
-/// generic and redacted (no pubkey, address, IP, nonce or seed).
-ConnectionState connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
-      code: switch (cause) {
-        null => 'tunnel/failed',
-        WarrenFatalCause.notAuthorized => 'tunnel/not-authorized',
-        WarrenFatalCause.deviceLimit => 'tunnel/device-limit',
-        WarrenFatalCause.policyRefused => 'tunnel/policy-refused',
-        WarrenFatalCause.banned => 'tunnel/banned',
-        WarrenFatalCause.noReachableEntry => 'tunnel/no-reachable-entry',
-      },
-      message: switch (cause) {
-        null => 'the connection failed and will not be retried',
-        WarrenFatalCause.notAuthorized =>
-          'the subscription is inactive or this device is not authorized',
-        WarrenFatalCause.deviceLimit =>
-          'the account already has its maximum number of connected devices',
-        WarrenFatalCause.policyRefused =>
-          'the exit refused the connection for policy reasons',
-        WarrenFatalCause.banned =>
-          'the account is revoked; renewing the subscription does not help',
-        WarrenFatalCause.noReachableEntry =>
-          "no entry relay is reachable on this network's address families; "
-              'change network, or unpin an entry country this network cannot '
-              'reach',
-      },
-      cause: cause,
-    );
-
 /// Maps an engine exit DTO to the public [ExitInfo].
 ExitInfo exitInfoFromDto(ExitInfoDto dto) => ExitInfo(
       id: dto.id,

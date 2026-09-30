@@ -148,6 +148,55 @@ void main() {
       expect(daemon.closed, isTrue);
     });
 
+    test('a daemon clock refusal surfaces as a WarrenClockSkewError', () async {
+      final daemon = _FakeDaemon(
+        reply: const ErrorEvent(
+          kind: 'api',
+          message: 'clock',
+          clockSkew: DaemonClockSkew(offsetSecs: 900),
+        ),
+      );
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => daemon.client,
+      );
+      final handle = await platform.createClient(config);
+
+      await expectLater(
+        handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions()),
+        throwsA(
+          isA<WarrenClockSkewError>()
+              .having((e) => e.offsetSecs, 'offsetSecs', 900),
+        ),
+      );
+      expect(daemon.closed, isTrue);
+    });
+
+    test('a daemon fatal verdict throws a tunnel error named by its cause',
+        () async {
+      final daemon = _FakeDaemon(
+        reply: const ErrorEvent(
+          kind: 'tunnel',
+          message: 'no entry',
+          fatalCause: WarrenFatalCause.noReachableEntry,
+        ),
+      );
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => daemon.client,
+      );
+      final handle = await platform.createClient(config);
+
+      await expectLater(
+        handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions()),
+        throwsA(
+          isA<WarrenTunnelError>()
+              .having((e) => e.code, 'code', 'tunnel/no-reachable-entry'),
+        ),
+      );
+      expect(daemon.closed, isTrue);
+    });
+
     test('an unreachable daemon throws a privilege error', () async {
       final platform = DesktopWarrenSdkPlatform(
         inner: _FakeInnerPlatform(),
