@@ -59,6 +59,11 @@ pub enum WarrenFatalCauseDto {
     /// The wallet is banned (on the signed revocation list): revoked until
     /// the revocation lapses or is lifted. Renewing does not help.
     Banned,
+    /// This network routes none of the address families the entry relays
+    /// publish (an IPv6-only network against IPv4-only entries). Neither the
+    /// account nor the fleet is at fault: the user changes network, or unpins
+    /// an entry country the network cannot reach.
+    NoReachableEntry,
 }
 
 fn fatal_to_dto(cause: FatalCause) -> WarrenFatalCauseDto {
@@ -67,6 +72,7 @@ fn fatal_to_dto(cause: FatalCause) -> WarrenFatalCauseDto {
         FatalCause::DeviceLimit => WarrenFatalCauseDto::DeviceLimit,
         FatalCause::PolicyRefused => WarrenFatalCauseDto::PolicyRefused,
         FatalCause::Banned => WarrenFatalCauseDto::Banned,
+        FatalCause::NoReachableEntry => WarrenFatalCauseDto::NoReachableEntry,
         // `FatalCause` is `#[non_exhaustive]`. A future fatal kind is still a
         // definitive refusal (never retryable), so surface it as the opaque
         // `PolicyRefused` rather than dropping the "stop" signal.
@@ -415,12 +421,14 @@ impl WarrenSessionFrb {
             kind: WarrenErrorKind::Tunnel,
             message: "invalid local target address".to_owned(),
             ban: None,
+            clock_skew: None,
         })?;
         let guard = self.handle.lock().expect("session mutex poisoned");
         let handle = guard.as_ref().ok_or(WarrenFfiError {
             kind: WarrenErrorKind::Tunnel,
             message: "session is disconnected".to_owned(),
             ban: None,
+            clock_skew: None,
         })?;
         let config = PortFollowConfig {
             policy: policy.to_engine(),
@@ -619,6 +627,12 @@ mod tests {
         assert_eq!(
             fatal_to_dto(FatalCause::Banned),
             WarrenFatalCauseDto::Banned
+        );
+        // A network that routes no entry is not a refusal: collapsing it into
+        // PolicyRefused would send the user after their account.
+        assert_eq!(
+            fatal_to_dto(FatalCause::NoReachableEntry),
+            WarrenFatalCauseDto::NoReachableEntry
         );
         // The taxonomy must not collapse to one kind: a subscription rejection
         // has to stay distinguishable from a device-limit one for the client.

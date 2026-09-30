@@ -19,13 +19,14 @@ use warren_sdk::{
 use zeroize::Zeroize;
 
 use crate::api::datapath::{ban_reason_dto, WarrenSessionFrb};
-use crate::api::error::{BanRefusalDto, WarrenErrorKind, WarrenFfiError};
+use crate::api::error::{BanRefusalDto, ClockSkewDto, WarrenErrorKind, WarrenFfiError};
 
 fn err(kind: WarrenErrorKind, message: impl Into<String>) -> WarrenFfiError {
     WarrenFfiError {
         kind,
         message: message.into(),
         ban: None,
+        clock_skew: None,
     }
 }
 
@@ -333,13 +334,25 @@ fn map_client_error(error: ClientError) -> WarrenFfiError {
         }),
         _ => None,
     };
+    let clock_skew = match &error {
+        ClientError::ClockSkew { offset_secs } => Some(ClockSkewDto {
+            offset_secs: *offset_secs,
+        }),
+        _ => None,
+    };
     WarrenFfiError {
         ban,
+        clock_skew,
         ..err(WarrenErrorKind::Api, error.to_string())
     }
 }
 
 fn map_sdk_error(error: SdkError) -> WarrenFfiError {
+    // An account API failure keeps the typed refusals (ban, clock) it carries.
+    let error = match error {
+        SdkError::Api(api) => return map_client_error(api),
+        other => other,
+    };
     let kind = match error {
         SdkError::Discovery(_)
         | SdkError::Selector(_)
@@ -354,8 +367,9 @@ fn map_sdk_error(error: SdkError) -> WarrenFfiError {
 #[cfg(test)]
 mod tests {
     use warren_sdk::api::{BanReasonCode, ClientError};
+    use warren_sdk::SdkError;
 
-    use super::map_client_error;
+    use super::{map_client_error, map_sdk_error};
     use crate::api::datapath::BanReasonDto;
     use crate::api::error::WarrenErrorKind;
 
@@ -384,6 +398,31 @@ mod tests {
     }
 
     #[test]
+    fn a_clock_refusal_crosses_the_bridge_typed_with_its_offset() {
+        let mapped = map_client_error(ClientError::ClockSkew {
+            offset_secs: Some(-3_600),
+        });
+
+        assert!(matches!(mapped.kind, WarrenErrorKind::Api));
+        assert!(mapped.ban.is_none());
+        let skew = mapped
+            .clock_skew
+            .expect("a clock refusal carries its clock skew");
+        assert_eq!(skew.offset_secs, Some(-3_600));
+    }
+
+    #[test]
+    fn a_clock_refusal_from_a_session_call_keeps_its_type() {
+        let mapped = map_sdk_error(SdkError::Api(ClientError::ClockSkew { offset_secs: None }));
+
+        assert!(matches!(mapped.kind, WarrenErrorKind::Api));
+        let skew = mapped
+            .clock_skew
+            .expect("a clock refusal carries its clock skew");
+        assert_eq!(skew.offset_secs, None);
+    }
+
+    #[test]
     fn a_plain_403_carries_no_ban() {
         let mapped = map_client_error(ClientError::ServerStatus {
             status: 403,
@@ -392,5 +431,6 @@ mod tests {
 
         assert!(matches!(mapped.kind, WarrenErrorKind::Api));
         assert!(mapped.ban.is_none());
+        assert!(mapped.clock_skew.is_none());
     }
 }

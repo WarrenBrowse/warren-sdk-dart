@@ -1832,6 +1832,16 @@ impl SseDecode for bool {
     }
 }
 
+impl SseDecode for crate::api::error::ClockSkewDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_offsetSecs = <Option<i64>>::sse_decode(deserializer);
+        return crate::api::error::ClockSkewDto {
+            offset_secs: var_offsetSecs,
+        };
+    }
+}
+
 impl SseDecode for crate::api::datapath::ConnectionStateDto {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1873,6 +1883,13 @@ impl SseDecode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_i32::<NativeEndian>().unwrap()
+    }
+}
+
+impl SseDecode for i64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_i64::<NativeEndian>().unwrap()
     }
 }
 
@@ -1991,6 +2008,28 @@ impl SseDecode for Option<bool> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<bool>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::error::ClockSkewDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::error::ClockSkewDto>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<i64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<i64>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -2172,6 +2211,7 @@ impl SseDecode for crate::api::datapath::WarrenFatalCauseDto {
             1 => crate::api::datapath::WarrenFatalCauseDto::DeviceLimit,
             2 => crate::api::datapath::WarrenFatalCauseDto::PolicyRefused,
             3 => crate::api::datapath::WarrenFatalCauseDto::Banned,
+            4 => crate::api::datapath::WarrenFatalCauseDto::NoReachableEntry,
             _ => unreachable!("Invalid variant for WarrenFatalCauseDto: {}", inner),
         };
     }
@@ -2183,10 +2223,12 @@ impl SseDecode for crate::api::error::WarrenFfiError {
         let mut var_kind = <crate::api::error::WarrenErrorKind>::sse_decode(deserializer);
         let mut var_message = <String>::sse_decode(deserializer);
         let mut var_ban = <Option<crate::api::error::BanRefusalDto>>::sse_decode(deserializer);
+        let mut var_clockSkew = <Option<crate::api::error::ClockSkewDto>>::sse_decode(deserializer);
         return crate::api::error::WarrenFfiError {
             kind: var_kind,
             message: var_message,
             ban: var_ban,
+            clock_skew: var_clockSkew,
         };
     }
 }
@@ -2465,6 +2507,23 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::error::BanRefusalDto>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::error::ClockSkewDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [self.offset_secs.into_into_dart().into_dart()].into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::error::ClockSkewDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::error::ClockSkewDto>
+    for crate::api::error::ClockSkewDto
+{
+    fn into_into_dart(self) -> crate::api::error::ClockSkewDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::datapath::ConnectionStateDto {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
@@ -2729,6 +2788,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::datapath::WarrenFatalCauseDto
             Self::DeviceLimit => 1.into_dart(),
             Self::PolicyRefused => 2.into_dart(),
             Self::Banned => 3.into_dart(),
+            Self::NoReachableEntry => 4.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2751,6 +2811,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::error::WarrenFfiError {
             self.kind.into_into_dart().into_dart(),
             self.message.into_into_dart().into_dart(),
             self.ban.into_into_dart().into_dart(),
+            self.clock_skew.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2923,6 +2984,13 @@ impl SseEncode for bool {
     }
 }
 
+impl SseEncode for crate::api::error::ClockSkewDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<i64>>::sse_encode(self.offset_secs, serializer);
+    }
+}
+
 impl SseEncode for crate::api::datapath::ConnectionStateDto {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2959,6 +3027,13 @@ impl SseEncode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_i32::<NativeEndian>(self).unwrap();
+    }
+}
+
+impl SseEncode for i64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_i64::<NativeEndian>(self).unwrap();
     }
 }
 
@@ -3070,6 +3145,26 @@ impl SseEncode for Option<bool> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <bool>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::error::ClockSkewDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::error::ClockSkewDto>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<i64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <i64>::sse_encode(value, serializer);
         }
     }
 }
@@ -3237,6 +3332,7 @@ impl SseEncode for crate::api::datapath::WarrenFatalCauseDto {
                 crate::api::datapath::WarrenFatalCauseDto::DeviceLimit => 1,
                 crate::api::datapath::WarrenFatalCauseDto::PolicyRefused => 2,
                 crate::api::datapath::WarrenFatalCauseDto::Banned => 3,
+                crate::api::datapath::WarrenFatalCauseDto::NoReachableEntry => 4,
                 _ => {
                     unimplemented!("");
                 }
@@ -3252,6 +3348,7 @@ impl SseEncode for crate::api::error::WarrenFfiError {
         <crate::api::error::WarrenErrorKind>::sse_encode(self.kind, serializer);
         <String>::sse_encode(self.message, serializer);
         <Option<crate::api::error::BanRefusalDto>>::sse_encode(self.ban, serializer);
+        <Option<crate::api::error::ClockSkewDto>>::sse_encode(self.clock_skew, serializer);
     }
 }
 

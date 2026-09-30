@@ -30,6 +30,9 @@ pub struct WarrenFfiError {
     /// Present when the server refused the call because the account is
     /// banned. A refused voucher redemption leaves the voucher unredeemed.
     pub ban: Option<BanRefusalDto>,
+    /// Present when the server refused a signed call's timestamp: this
+    /// device's clock is off, and the wallet may well be fine.
+    pub clock_skew: Option<ClockSkewDto>,
 }
 
 /// The server's ban refusal (403 `{"error":"banned"}`), typed for Dart.
@@ -39,4 +42,11 @@ pub struct BanRefusalDto {
     /// When the ban lapses on its own, Unix seconds. Absent for a ban that
     /// does not lapse, and when the refusing endpoint does not say.
     pub lapses_at_unix_secs: Option<u64>,
+}
+
+/// The server's clock refusal (401 `{"error":"clock_skew"}`), typed for Dart.
+pub struct ClockSkewDto {
+    /// The server's clock minus this device's, in seconds (positive when the
+    /// device is behind). Absent when the refusal carried no usable `Date`.
+    pub offset_secs: Option<i64>,
 }

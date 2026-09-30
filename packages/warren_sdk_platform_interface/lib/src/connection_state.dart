@@ -77,8 +77,8 @@ final class Disconnected extends _SingletonState {
 /// Why a connection failed for good, when the failure is definitive.
 ///
 /// Present on a [ConnectionFailed] exactly when no redial and no other exit
-/// resolves it: the engine classified the refusal as tied to the account or an
-/// opaque policy close. A [ConnectionFailed] whose [ConnectionFailed.cause] is
+/// resolves it: the engine classified the failure as tied to the account, an
+/// opaque policy close, or a network that routes no entry relay. A [ConnectionFailed] whose [ConnectionFailed.cause] is
 /// `null` is mere retry exhaustion, a transient failure that never resolved. The
 /// engine owns this classification; the SDK maps it, it never re-decides.
 enum WarrenFatalCause {
@@ -96,6 +96,12 @@ enum WarrenFatalCause {
   /// The account is banned: revoked until the revocation lapses or is lifted.
   /// Renewing the subscription does not help.
   banned,
+
+  /// This network routes none of the address families the entry relays
+  /// publish (an IPv6-only network against IPv4-only entries). Neither the
+  /// account nor the fleet is at fault: the user changes network, or unpins
+  /// an entry country the network cannot reach.
+  noReachableEntry,
 }
 
 /// The connection failed and will not be retried automatically.

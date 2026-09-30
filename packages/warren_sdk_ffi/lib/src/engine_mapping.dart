@@ -21,14 +21,18 @@ final BigInt _softDrainSentinel = (BigInt.one << 64) - BigInt.one;
 ///
 /// The bridge carries a category plus an already-redacted message; this turns
 /// it into the matching subtype with a stable, machine-readable code. A ban
-/// refusal becomes a [WarrenAccountBannedError].
-WarrenError mapEngineError(WarrenFfiError error) => switch (error.ban) {
-      final BanRefusalDto ban => WarrenAccountBannedError(
+/// refusal becomes a [WarrenAccountBannedError], a clock refusal a
+/// [WarrenClockSkewError].
+WarrenError mapEngineError(WarrenFfiError error) =>
+    switch ((error.ban, error.clockSkew)) {
+      (final BanRefusalDto ban, _) => WarrenAccountBannedError(
           message: error.message,
           reason: mapBanReason(ban.reason),
           lapsesAtUnixSecs: ban.lapsesAtUnixSecs?.toInt(),
         ),
-      null => warrenErrorOfKind(
+      (null, final ClockSkewDto skew) =>
+        WarrenClockSkewError(offsetSecs: skew.offsetSecs?.toInt()),
+      (null, null) => warrenErrorOfKind(
           error.kind.name,
           code: '${error.kind.name}/engine',
           message: error.message,
@@ -68,6 +72,7 @@ WarrenFatalCause? mapFatalCause(WarrenFatalCauseDto? cause) => switch (cause) {
       WarrenFatalCauseDto.deviceLimit => WarrenFatalCause.deviceLimit,
       WarrenFatalCauseDto.policyRefused => WarrenFatalCause.policyRefused,
       WarrenFatalCauseDto.banned => WarrenFatalCause.banned,
+      WarrenFatalCauseDto.noReachableEntry => WarrenFatalCause.noReachableEntry,
     };
 
 /// Builds the terminal [ConnectionFailed] for a fatal [cause].
@@ -83,6 +88,7 @@ ConnectionState connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
         WarrenFatalCause.deviceLimit => 'tunnel/device-limit',
         WarrenFatalCause.policyRefused => 'tunnel/policy-refused',
         WarrenFatalCause.banned => 'tunnel/banned',
+        WarrenFatalCause.noReachableEntry => 'tunnel/no-reachable-entry',
       },
       message: switch (cause) {
         null => 'the connection failed and will not be retried',
@@ -94,6 +100,10 @@ ConnectionState connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
           'the exit refused the connection for policy reasons',
         WarrenFatalCause.banned =>
           'the account is revoked; renewing the subscription does not help',
+        WarrenFatalCause.noReachableEntry =>
+          "no entry relay is reachable on this network's address families; "
+              'change network, or unpin an entry country this network cannot '
+              'reach',
       },
       cause: cause,
     );

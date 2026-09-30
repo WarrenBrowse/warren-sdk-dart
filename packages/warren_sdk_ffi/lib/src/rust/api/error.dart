@@ -33,6 +33,27 @@ class BanRefusalDto {
           lapsesAtUnixSecs == other.lapsesAtUnixSecs;
 }
 
+/// The server's clock refusal (401 `{"error":"clock_skew"}`), typed for Dart.
+class ClockSkewDto {
+  /// The server's clock minus this device's, in seconds (positive when the
+  /// device is behind). Absent when the refusal carried no usable `Date`.
+  final PlatformInt64? offsetSecs;
+
+  const ClockSkewDto({
+    this.offsetSecs,
+  });
+
+  @override
+  int get hashCode => offsetSecs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClockSkewDto &&
+          runtimeType == other.runtimeType &&
+          offsetSecs == other.offsetSecs;
+}
+
 /// Category of a redacted failure crossing the bridge.
 enum WarrenErrorKind {
   /// The mnemonic, key or signing input was malformed.
@@ -64,14 +85,20 @@ class WarrenFfiError implements FrbException {
   /// banned. A refused voucher redemption leaves the voucher unredeemed.
   final BanRefusalDto? ban;
 
+  /// Present when the server refused a signed call's timestamp: this
+  /// device's clock is off, and the wallet may well be fine.
+  final ClockSkewDto? clockSkew;
+
   const WarrenFfiError({
     required this.kind,
     required this.message,
     this.ban,
+    this.clockSkew,
   });
 
   @override
-  int get hashCode => kind.hashCode ^ message.hashCode ^ ban.hashCode;
+  int get hashCode =>
+      kind.hashCode ^ message.hashCode ^ ban.hashCode ^ clockSkew.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -80,5 +107,6 @@ class WarrenFfiError implements FrbException {
           runtimeType == other.runtimeType &&
           kind == other.kind &&
           message == other.message &&
-          ban == other.ban;
+          ban == other.ban &&
+          clockSkew == other.clockSkew;
 }

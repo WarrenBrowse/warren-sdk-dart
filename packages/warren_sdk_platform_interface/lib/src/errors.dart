@@ -57,6 +57,28 @@ final class WarrenAccountBannedError extends WarrenApiError {
   final int? lapsesAtUnixSecs;
 }
 
+/// The server refused a signed call's timestamp: this device's clock is off,
+/// and the wallet may well be fine.
+///
+/// The engine already corrects its stamps from the server's `Date`; this is
+/// raised when that correction could not bring them inside the server's
+/// window. What the user can do is set the device's date and time. It is a
+/// [WarrenApiError], so an existing `on WarrenApiError` handler still catches
+/// it.
+final class WarrenClockSkewError extends WarrenApiError {
+  /// Creates the clock refusal.
+  const WarrenClockSkewError({this.offsetSecs})
+      : super(
+          code: 'api/clock-skew',
+          message: "this device's clock is off, so the server refused the "
+              'request; set the date and time automatically, then retry',
+        );
+
+  /// The server's clock minus this device's, in seconds (positive when the
+  /// device is behind); `null` when the refusal carried no usable date.
+  final int? offsetSecs;
+}
+
 /// Relay-list verification or exit selection failed (bad signature, rollback,
 /// expiry, or no exit matched the query).
 final class WarrenDiscoveryError extends WarrenError {

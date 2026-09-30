@@ -1354,6 +1354,18 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  ClockSkewDto dco_decode_box_autoadd_clock_skew_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_clock_skew_dto(raw);
+  }
+
+  @protected
+  PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_i_64(raw);
+  }
+
+  @protected
   int dco_decode_box_autoadd_u_16(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -1370,6 +1382,17 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_warren_fatal_cause_dto(raw);
+  }
+
+  @protected
+  ClockSkewDto dco_decode_clock_skew_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return ClockSkewDto(
+      offsetSecs: dco_decode_opt_box_autoadd_i_64(arr[0]),
+    );
   }
 
   @protected
@@ -1399,6 +1422,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   int dco_decode_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeI64(raw);
   }
 
   @protected
@@ -1472,6 +1501,18 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_bool(raw);
+  }
+
+  @protected
+  ClockSkewDto? dco_decode_opt_box_autoadd_clock_skew_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_clock_skew_dto(raw);
+  }
+
+  @protected
+  PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_i_64(raw);
   }
 
   @protected
@@ -1598,12 +1639,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   WarrenFfiError dco_decode_warren_ffi_error(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return WarrenFfiError(
       kind: dco_decode_warren_error_kind(arr[0]),
       message: dco_decode_String(arr[1]),
       ban: dco_decode_opt_box_autoadd_ban_refusal_dto(arr[2]),
+      clockSkew: dco_decode_opt_box_autoadd_clock_skew_dto(arr[3]),
     );
   }
 
@@ -1783,6 +1825,19 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  ClockSkewDto sse_decode_box_autoadd_clock_skew_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_clock_skew_dto(deserializer));
+  }
+
+  @protected
+  PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_i_64(deserializer));
+  }
+
+  @protected
   int sse_decode_box_autoadd_u_16(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_u_16(deserializer));
@@ -1799,6 +1854,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_warren_fatal_cause_dto(deserializer));
+  }
+
+  @protected
+  ClockSkewDto sse_decode_clock_skew_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_offsetSecs = sse_decode_opt_box_autoadd_i_64(deserializer);
+    return ClockSkewDto(offsetSecs: var_offsetSecs);
   }
 
   @protected
@@ -1833,6 +1895,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
+  }
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getPlatformInt64();
   }
 
   @protected
@@ -1943,6 +2011,29 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_box_autoadd_bool(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  ClockSkewDto? sse_decode_opt_box_autoadd_clock_skew_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_clock_skew_dto(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_i_64(deserializer));
     } else {
       return null;
     }
@@ -2093,7 +2184,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     var var_kind = sse_decode_warren_error_kind(deserializer);
     var var_message = sse_decode_String(deserializer);
     var var_ban = sse_decode_opt_box_autoadd_ban_refusal_dto(deserializer);
-    return WarrenFfiError(kind: var_kind, message: var_message, ban: var_ban);
+    var var_clockSkew = sse_decode_opt_box_autoadd_clock_skew_dto(deserializer);
+    return WarrenFfiError(
+        kind: var_kind,
+        message: var_message,
+        ban: var_ban,
+        clockSkew: var_clockSkew);
   }
 
   @protected
@@ -2305,6 +2401,20 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_clock_skew_dto(
+      ClockSkewDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_clock_skew_dto(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_i_64(
+      PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_u_16(self, serializer);
@@ -2321,6 +2431,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       WarrenFatalCauseDto self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_warren_fatal_cause_dto(self, serializer);
+  }
+
+  @protected
+  void sse_encode_clock_skew_dto(ClockSkewDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_box_autoadd_i_64(self.offsetSecs, serializer);
   }
 
   @protected
@@ -2346,6 +2462,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
+  }
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putPlatformInt64(self);
   }
 
   @protected
@@ -2445,6 +2567,28 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_bool(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_clock_skew_dto(
+      ClockSkewDto? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_clock_skew_dto(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_64(
+      PlatformInt64? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_i_64(self, serializer);
     }
   }
 
@@ -2574,6 +2718,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_warren_error_kind(self.kind, serializer);
     sse_encode_String(self.message, serializer);
     sse_encode_opt_box_autoadd_ban_refusal_dto(self.ban, serializer);
+    sse_encode_opt_box_autoadd_clock_skew_dto(self.clockSkew, serializer);
   }
 }
 

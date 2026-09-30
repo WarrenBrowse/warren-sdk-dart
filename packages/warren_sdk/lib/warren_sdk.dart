@@ -44,6 +44,7 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         WarrenAccountBannedError,
         WarrenApiError,
         WarrenChannel,
+        WarrenClockSkewError,
         WarrenDiscoveryError,
         WarrenError,
         WarrenFatalCause,

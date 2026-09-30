@@ -125,6 +125,12 @@ abstract class WarrenRustBridgeApiImplPlatform
   bool dco_decode_box_autoadd_bool(dynamic raw);
 
   @protected
+  ClockSkewDto dco_decode_box_autoadd_clock_skew_dto(dynamic raw);
+
+  @protected
+  PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_u_16(dynamic raw);
 
   @protected
@@ -135,6 +141,9 @@ abstract class WarrenRustBridgeApiImplPlatform
       dynamic raw);
 
   @protected
+  ClockSkewDto dco_decode_clock_skew_dto(dynamic raw);
+
+  @protected
   ConnectionStateDto dco_decode_connection_state_dto(dynamic raw);
 
   @protected
@@ -142,6 +151,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   int dco_decode_i_32(dynamic raw);
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
@@ -175,6 +187,12 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+
+  @protected
+  ClockSkewDto? dco_decode_opt_box_autoadd_clock_skew_dto(dynamic raw);
+
+  @protected
+  PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
@@ -320,6 +338,13 @@ abstract class WarrenRustBridgeApiImplPlatform
   bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
 
   @protected
+  ClockSkewDto sse_decode_box_autoadd_clock_skew_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_box_autoadd_u_16(SseDeserializer deserializer);
 
   @protected
@@ -330,6 +355,9 @@ abstract class WarrenRustBridgeApiImplPlatform
       SseDeserializer deserializer);
 
   @protected
+  ClockSkewDto sse_decode_clock_skew_dto(SseDeserializer deserializer);
+
+  @protected
   ConnectionStateDto sse_decode_connection_state_dto(
       SseDeserializer deserializer);
 
@@ -338,6 +366,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
@@ -375,6 +406,13 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
+  ClockSkewDto? sse_decode_opt_box_autoadd_clock_skew_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
 
   @protected
   int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
@@ -522,6 +560,14 @@ abstract class WarrenRustBridgeApiImplPlatform
   void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_clock_skew_dto(
+      ClockSkewDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_i_64(
+      PlatformInt64 self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer);
 
   @protected
@@ -532,6 +578,9 @@ abstract class WarrenRustBridgeApiImplPlatform
       WarrenFatalCauseDto self, SseSerializer serializer);
 
   @protected
+  void sse_encode_clock_skew_dto(ClockSkewDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_connection_state_dto(
       ConnectionStateDto self, SseSerializer serializer);
 
@@ -540,6 +589,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
@@ -579,6 +631,14 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_clock_skew_dto(
+      ClockSkewDto? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_64(
+      PlatformInt64? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);

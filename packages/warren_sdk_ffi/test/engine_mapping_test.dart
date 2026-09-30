@@ -73,6 +73,37 @@ void main() {
     });
   });
 
+  group('mapEngineError types a clock refusal', () {
+    test('as a WarrenClockSkewError, still a WarrenApiError', () {
+      final mapped = mapEngineError(
+        const WarrenFfiError(
+          kind: WarrenErrorKind.api,
+          message: 'the server refused the request timestamp',
+          clockSkew: ClockSkewDto(offsetSecs: -3600),
+        ),
+      );
+
+      expect(mapped, isA<WarrenApiError>());
+      final skew = mapped as WarrenClockSkewError;
+      expect(skew.code, 'api/clock-skew');
+      expect(skew.offsetSecs, -3600);
+      expect(skew.message, contains('clock'));
+      expect(skew.message, contains('date and time'));
+    });
+
+    test('keeps an unknown offset unknown', () {
+      final skew = mapEngineError(
+        const WarrenFfiError(
+          kind: WarrenErrorKind.api,
+          message: 'the server refused the request timestamp',
+          clockSkew: ClockSkewDto(),
+        ),
+      ) as WarrenClockSkewError;
+
+      expect(skew.offsetSecs, isNull);
+    });
+  });
+
   group('exitInfoFromDto', () {
     test('maps the public exit fields', () {
       final dto = ExitInfoDto(
@@ -344,6 +375,10 @@ void main() {
         mapFatalCause(WarrenFatalCauseDto.banned),
         WarrenFatalCause.banned,
       );
+      expect(
+        mapFatalCause(WarrenFatalCauseDto.noReachableEntry),
+        WarrenFatalCause.noReachableEntry,
+      );
       // Every engine kind reaches its own public kind: no two collapse.
       final mapped = WarrenFatalCauseDto.values.map(mapFatalCause).toList();
       expect(mapped.toSet().length, WarrenFatalCauseDto.values.length);
@@ -373,6 +408,18 @@ void main() {
       expect(
         failed.message,
         'the account is revoked; renewing the subscription does not help',
+      );
+    });
+
+    test('a network that routes no entry says to change network', () {
+      final failed = connectionFailed(WarrenFatalCause.noReachableEntry)
+          as ConnectionFailed;
+
+      expect(failed.code, 'tunnel/no-reachable-entry');
+      expect(
+        failed.message,
+        "no entry relay is reachable on this network's address families; "
+        'change network, or unpin an entry country this network cannot reach',
       );
     });
 

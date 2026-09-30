@@ -317,5 +317,11 @@ enum WarrenFatalCauseDto {
   /// The wallet is banned (on the signed revocation list): revoked until
   /// the revocation lapses or is lifted. Renewing does not help.
   banned,
+
+  /// This network routes none of the address families the entry relays
+  /// publish (an IPv6-only network against IPv4-only entries). Neither the
+  /// account nor the fleet is at fault: the user changes network, or unpins
+  /// an entry country the network cannot reach.
+  noReachableEntry,
   ;
 }
