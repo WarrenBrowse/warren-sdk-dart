@@ -140,7 +140,10 @@ impl WarrenClientFrb {
             builder = builder
                 .generation_store(Arc::new(relay_gen))
                 .multihop_generation_store(Arc::new(mh_gen))
-                .server_key_store(Arc::new(key_store));
+                .server_key_store(Arc::new(key_store))
+                // A restarted app leads with its predecessor's token serial, so
+                // the exit hands back its inner address and forwarded ports.
+                .token_rotation(warren_sdk::kept_token_rotation(&dir.join("token_rotation")));
         }
         let inner = builder
             .build()
