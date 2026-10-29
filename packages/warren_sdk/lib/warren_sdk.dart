@@ -45,11 +45,17 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         WarrenApiError,
         WarrenChannel,
         WarrenClockSkewError,
+        WarrenDevice,
+        WarrenDeviceLimitReachedError,
+        WarrenDeviceList,
+        WarrenDevicePlatform,
+        WarrenDeviceRevokedError,
         WarrenDiscoveryError,
         WarrenError,
         WarrenFatalCause,
         WarrenForwardedPort,
         WarrenIdentityError,
+        WarrenInvalidDeviceIdError,
         WarrenPrivilegeError,
         WarrenTunnelError,
         WarrenUnsupportedError,
@@ -58,5 +64,6 @@ export 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart
         warrenChannelSelector;
 
 export 'src/warren_client.dart';
+export 'src/warren_devices.dart';
 export 'src/warren_identity.dart';
 export 'src/warren_session.dart';

@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'connection_state.dart';
+import 'devices.dart';
 import 'errors.dart';
 import 'models.dart';
 import 'port_follow.dart';
@@ -28,6 +29,7 @@ class WarrenClientConfig {
     this.requestIpv6 = true,
     this.lockdown = false,
     this.stateDir,
+    this.appVersion,
   });
 
   /// The 12-word BIP39 mnemonic. Sensitive; see the class doc for its handling.
@@ -76,6 +78,13 @@ class WarrenClientConfig {
   /// protection does not survive a restart. Pass a private, app-owned path.
   final String? stateDir;
 
+  /// The embedding app's version (semver, at most 32 characters of
+  /// `[0-9A-Za-z.+-]`). When set, the client registers this install as a
+  /// device of the account (warren-core doc 115) on the platform it runs on,
+  /// keeping the device identity in [stateDir], which it then requires. The
+  /// account's device list shows it, and the account can revoke it.
+  final String? appVersion;
+
   @override
   bool operator ==(Object other) =>
       other is WarrenClientConfig &&
@@ -88,7 +97,8 @@ class WarrenClientConfig {
       other.daitaMachine == daitaMachine &&
       other.requestIpv6 == requestIpv6 &&
       other.lockdown == lockdown &&
-      other.stateDir == stateDir;
+      other.stateDir == stateDir &&
+      other.appVersion == appVersion;
 
   @override
   int get hashCode => Object.hash(
@@ -102,6 +112,7 @@ class WarrenClientConfig {
         requestIpv6,
         lockdown,
         stateDir,
+        appVersion,
       );
 
   static bool _hostsEqual(List<String> a, List<String> b) {
@@ -183,6 +194,41 @@ abstract interface class WarrenClientHandle {
 
   /// Fetches and verifies the signed relay list and returns the exits.
   Future<List<ExitInfo>> listExits();
+
+  /// This install's device identifier, or `null` when the client was created
+  /// without an app version and registers no device. Keep it out of logs.
+  String? get deviceId;
+
+  /// The name this install's device registers under, as this client last
+  /// knew it, or `null` without a device. The account's list is the authority
+  /// on the current name; this is what a first registration sends.
+  Future<String?> deviceName();
+
+  /// The account's devices, this install's marked.
+  Future<WarrenDeviceList> listDevices();
+
+  /// Renames the account's device [deviceId] to [name] (1 to 40 characters
+  /// once trimmed, no control character). Throws a
+  /// [WarrenInvalidDeviceIdError] for a malformed identifier.
+  Future<void> renameDevice(String deviceId, String name);
+
+  /// Revokes the account's device [deviceId]. Revoking this install's own
+  /// device is a logout. Throws a [WarrenInvalidDeviceIdError] for a
+  /// malformed identifier.
+  Future<void> revokeDevice(String deviceId);
+
+  /// Erases this install's kept device identity, once it was revoked or
+  /// logged out: the next client draws a new one.
+  Future<void> forgetDevice();
+
+  /// Whether the last credential refresh found the account's device cap
+  /// reached, so this install is issued nothing until another device is
+  /// revoked. Not sticky.
+  Future<bool> deviceLimitReached();
+
+  /// Whether this install's device was revoked from another device of the
+  /// account (broadcast, latest on listen). Sticky: once `true`, it stays.
+  Stream<bool> get deviceRevoked;
 
   /// Opens a connection to [exit] using [mode] and [options].
   Future<WarrenSessionHandle> connect(

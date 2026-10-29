@@ -43,6 +43,22 @@ void main() {
     expect(exits.single.city, 'Bucharest');
   });
 
+  test('devicesProvider reads the account devices through the client',
+      () async {
+    final container = containerWithClient();
+    addTearDown(container.dispose);
+    final list = await container.read(devicesProvider.future);
+    expect(list.thisDevice?.name, 'quiet otter');
+  });
+
+  test('deviceRevokedProvider mirrors the revocation of this device', () async {
+    final container = containerWithClient();
+    addTearDown(container.dispose);
+    final subscription = container.listen(deviceRevokedProvider, (_, __) {});
+    addTearDown(subscription.close);
+    expect(await container.read(deviceRevokedProvider.future), isTrue);
+  });
+
   test('connectionStateProvider mirrors a session state stream', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -122,6 +138,42 @@ class _FakeClientHandle implements WarrenClientHandle {
 
   @override
   Future<void> dispose() async {}
+
+  @override
+  final String? deviceId = 'AAAAAAAAAAAAAAAAAAAAAA';
+
+  @override
+  Future<String?> deviceName() async => 'quiet otter';
+
+  @override
+  Future<WarrenDeviceList> listDevices() async => WarrenDeviceList(
+        devices: [
+          WarrenDevice(
+            deviceId: 'AAAAAAAAAAAAAAAAAAAAAA',
+            name: 'quiet otter',
+            platform: WarrenDevicePlatform.macos,
+            appVersion: '1.2.0',
+            registeredOn: DateTime.utc(2026, 10, 1),
+            lastSeenOn: DateTime.utc(2026, 10, 28),
+            isThisDevice: true,
+          ),
+        ],
+      );
+
+  @override
+  Future<void> renameDevice(String deviceId, String name) async {}
+
+  @override
+  Future<void> revokeDevice(String deviceId) async {}
+
+  @override
+  Future<void> forgetDevice() async {}
+
+  @override
+  Future<bool> deviceLimitReached() async => false;
+
+  @override
+  Stream<bool> get deviceRevoked => Stream.value(true);
 }
 
 class _FakePlatform extends WarrenSdkPlatform {

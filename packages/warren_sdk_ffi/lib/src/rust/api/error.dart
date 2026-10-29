@@ -7,6 +7,8 @@ import '../frb_generated.dart';
 import 'datapath.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `eq`, `fmt`
+
 /// The server's ban refusal (403 `{"error":"banned"}`), typed for Dart.
 class BanRefusalDto {
   /// Why the account is banned.
@@ -54,6 +56,24 @@ class ClockSkewDto {
           offsetSecs == other.offsetSecs;
 }
 
+/// A device registry refusal (warren-core doc 115), typed for Dart.
+enum DeviceRefusalDto {
+  /// This install's device was revoked from another device of the account:
+  /// disconnect, forget the device identity, and ask for the recovery
+  /// phrase again.
+  revoked,
+
+  /// The account already holds as many devices as it may, so this install
+  /// is not registered and is issued nothing until another device is
+  /// revoked: open the device list.
+  limitReached,
+
+  /// A device identifier argument is not 16 bytes of base64url without
+  /// padding.
+  invalidId,
+  ;
+}
+
 /// Category of a redacted failure crossing the bridge.
 enum WarrenErrorKind {
   /// The mnemonic, key or signing input was malformed.
@@ -89,16 +109,25 @@ class WarrenFfiError implements FrbException {
   /// device's clock is off, and the wallet may well be fine.
   final ClockSkewDto? clockSkew;
 
+  /// Present when the account's device registry refused the call, or a
+  /// device identifier argument was malformed (warren-core doc 115).
+  final DeviceRefusalDto? device;
+
   const WarrenFfiError({
     required this.kind,
     required this.message,
     this.ban,
     this.clockSkew,
+    this.device,
   });
 
   @override
   int get hashCode =>
-      kind.hashCode ^ message.hashCode ^ ban.hashCode ^ clockSkew.hashCode;
+      kind.hashCode ^
+      message.hashCode ^
+      ban.hashCode ^
+      clockSkew.hashCode ^
+      device.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -108,5 +137,6 @@ class WarrenFfiError implements FrbException {
           kind == other.kind &&
           message == other.message &&
           ban == other.ban &&
-          clockSkew == other.clockSkew;
+          clockSkew == other.clockSkew &&
+          device == other.device;
 }

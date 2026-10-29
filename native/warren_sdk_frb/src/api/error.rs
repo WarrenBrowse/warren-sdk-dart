@@ -33,6 +33,25 @@ pub struct WarrenFfiError {
     /// Present when the server refused a signed call's timestamp: this
     /// device's clock is off, and the wallet may well be fine.
     pub clock_skew: Option<ClockSkewDto>,
+    /// Present when the account's device registry refused the call, or a
+    /// device identifier argument was malformed (warren-core doc 115).
+    pub device: Option<DeviceRefusalDto>,
+}
+
+/// A device registry refusal (warren-core doc 115), typed for Dart.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DeviceRefusalDto {
+    /// This install's device was revoked from another device of the account:
+    /// disconnect, forget the device identity, and ask for the recovery
+    /// phrase again.
+    Revoked,
+    /// The account already holds as many devices as it may, so this install
+    /// is not registered and is issued nothing until another device is
+    /// revoked: open the device list.
+    LimitReached,
+    /// A device identifier argument is not 16 bytes of base64url without
+    /// padding.
+    InvalidId,
 }
 
 /// The server's ban refusal (403 `{"error":"banned"}`), typed for Dart.

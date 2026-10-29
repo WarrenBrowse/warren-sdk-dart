@@ -422,6 +422,7 @@ impl WarrenSessionFrb {
             message: "invalid local target address".to_owned(),
             ban: None,
             clock_skew: None,
+            device: None,
         })?;
         let guard = self.handle.lock().expect("session mutex poisoned");
         let handle = guard.as_ref().ok_or(WarrenFfiError {
@@ -429,6 +430,7 @@ impl WarrenSessionFrb {
             message: "session is disconnected".to_owned(),
             ban: None,
             clock_skew: None,
+            device: None,
         })?;
         let config = PortFollowConfig {
             policy: policy.to_engine(),

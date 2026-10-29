@@ -8,6 +8,7 @@
 library;
 
 export 'src/connection_state.dart';
+export 'src/devices.dart';
 export 'src/errors.dart';
 export 'src/latest_broadcast.dart';
 export 'src/models.dart';

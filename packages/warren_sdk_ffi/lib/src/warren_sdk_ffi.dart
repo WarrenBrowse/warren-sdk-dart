@@ -173,9 +173,11 @@ class WarrenSdkFfi extends WarrenSdkPlatform {
         daitaMachine: config.daitaMachine,
         requestIpv6: config.requestIpv6,
         stateDir: config.stateDir,
+        appVersion: config.appVersion,
       );
       final address = await client.address();
-      return FfiClientHandle(client, address);
+      final deviceId = await client.deviceId();
+      return FfiClientHandle(client, address, deviceId: deviceId);
     } on WarrenFfiError catch (error) {
       throw mapEngineError(error);
     }

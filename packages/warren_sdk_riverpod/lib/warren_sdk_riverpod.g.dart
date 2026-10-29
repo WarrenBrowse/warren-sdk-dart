@@ -130,6 +130,94 @@ final class ExitsProvider extends $FunctionalProvider<
 
 String _$exitsHash() => r'68f2457581caebfb8a866299278f872626d4bef4';
 
+/// The account's devices, this install's marked. Invalidate it after a
+/// rename or a disconnect to read the registry again.
+
+@ProviderFor(devices)
+const devicesProvider = DevicesProvider._();
+
+/// The account's devices, this install's marked. Invalidate it after a
+/// rename or a disconnect to read the registry again.
+
+final class DevicesProvider extends $FunctionalProvider<
+        AsyncValue<WarrenDeviceList>,
+        WarrenDeviceList,
+        FutureOr<WarrenDeviceList>>
+    with $FutureModifier<WarrenDeviceList>, $FutureProvider<WarrenDeviceList> {
+  /// The account's devices, this install's marked. Invalidate it after a
+  /// rename or a disconnect to read the registry again.
+  const DevicesProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'devicesProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$devicesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<WarrenDeviceList> $createElement(
+          $ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<WarrenDeviceList> create(Ref ref) {
+    return devices(ref);
+  }
+}
+
+String _$devicesHash() => r'1ae9cbd54652bb2663d0d187b926df66db757787';
+
+/// Whether this install's device was revoked from another device of the
+/// account. Once `true` the app disconnects, forgets the device and asks for
+/// the recovery phrase again.
+
+@ProviderFor(deviceRevoked)
+const deviceRevokedProvider = DeviceRevokedProvider._();
+
+/// Whether this install's device was revoked from another device of the
+/// account. Once `true` the app disconnects, forgets the device and asks for
+/// the recovery phrase again.
+
+final class DeviceRevokedProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, Stream<bool>>
+    with $FutureModifier<bool>, $StreamProvider<bool> {
+  /// Whether this install's device was revoked from another device of the
+  /// account. Once `true` the app disconnects, forgets the device and asks for
+  /// the recovery phrase again.
+  const DeviceRevokedProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'deviceRevokedProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$deviceRevokedHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<bool> create(Ref ref) {
+    return deviceRevoked(ref);
+  }
+}
+
+String _$deviceRevokedHash() => r'4a016250068f388f3517409614a36f91efa6711c';
+
 /// The live connection state for a [WarrenSession]. Pass the active session as
 /// the family argument; the provider mirrors its broadcast state stream.
 

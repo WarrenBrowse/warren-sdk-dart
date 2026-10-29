@@ -292,6 +292,64 @@ void main() {
       expect(handle.disposed, isTrue);
     });
 
+    test('create forwards the app version that registers the device', () async {
+      await WarrenClient.create(
+        mnemonic: 'm',
+        apiBase: Uri.parse('https://api.example.com'),
+        serverPubkeyPin: 'pin',
+        stateDir: '/tmp/warren-state',
+        appVersion: '1.2.0',
+      );
+      expect(platform.lastConfig?.appVersion, '1.2.0');
+    });
+
+    test("devices exposes this install's identifier", () async {
+      final client = await create();
+      expect(client.devices.thisDeviceId, 'AAAAAAAAAAAAAAAAAAAAAA');
+    });
+
+    test('devices.list returns the account list', () async {
+      final client = await create();
+      final list = await client.devices.list();
+      expect(list.thisDevice?.name, 'quiet otter');
+      expect(list.olderClientSeenOn, DateTime.utc(2026, 10, 27));
+    });
+
+    test('devices.rename and devices.revoke forward the identifier', () async {
+      final client = await create();
+      await client.devices.rename('BBBBBBBBBBBBBBBBBBBBBB', 'loud heron');
+      await client.devices.revoke('BBBBBBBBBBBBBBBBBBBBBB');
+      expect(handle.renamed, ('BBBBBBBBBBBBBBBBBBBBBB', 'loud heron'));
+      expect(handle.revoked, 'BBBBBBBBBBBBBBBBBBBBBB');
+    });
+
+    test('devices.revoke surfaces a malformed identifier typed', () async {
+      handle.deviceError = const WarrenInvalidDeviceIdError();
+      final client = await create();
+      await expectLater(
+        client.devices.revoke('nope'),
+        throwsA(isA<WarrenInvalidDeviceIdError>()),
+      );
+    });
+
+    test('devices.forgetThisDevice erases the kept identity', () async {
+      final client = await create();
+      await client.devices.forgetThisDevice();
+      expect(handle.forgotten, isTrue);
+    });
+
+    test('devices.limitReached reads the device cap', () async {
+      handle.limitReached = true;
+      final client = await create();
+      expect(await client.devices.limitReached(), isTrue);
+    });
+
+    test('devices.revoked reports a revocation of this install', () async {
+      handle.revokedNow = true;
+      final client = await create();
+      expect(await client.devices.revoked.first, isTrue);
+    });
+
     test('an engine error propagates as its sealed type', () async {
       handle.subscriptionError = const WarrenApiError(
         code: 'api/engine',
@@ -430,6 +488,58 @@ class _FakeClientHandle implements WarrenClientHandle {
 
   @override
   Future<void> dispose() async => disposed = true;
+
+  (String, String)? renamed;
+  String? revoked;
+  bool forgotten = false;
+  bool limitReached = false;
+  bool revokedNow = false;
+  WarrenError? deviceError;
+
+  @override
+  final String? deviceId = 'AAAAAAAAAAAAAAAAAAAAAA';
+
+  @override
+  Future<String?> deviceName() async => 'quiet otter';
+
+  @override
+  Future<WarrenDeviceList> listDevices() async => WarrenDeviceList(
+        devices: [
+          WarrenDevice(
+            deviceId: 'AAAAAAAAAAAAAAAAAAAAAA',
+            name: 'quiet otter',
+            platform: WarrenDevicePlatform.linux,
+            appVersion: '1.2.0',
+            registeredOn: DateTime.utc(2026, 10, 1),
+            lastSeenOn: DateTime.utc(2026, 10, 28),
+            isThisDevice: true,
+          ),
+        ],
+        olderClientSeenOn: DateTime.utc(2026, 10, 27),
+      );
+
+  @override
+  Future<void> renameDevice(String deviceId, String name) async {
+    final error = deviceError;
+    if (error != null) throw error;
+    renamed = (deviceId, name);
+  }
+
+  @override
+  Future<void> revokeDevice(String deviceId) async {
+    final error = deviceError;
+    if (error != null) throw error;
+    revoked = deviceId;
+  }
+
+  @override
+  Future<void> forgetDevice() async => forgotten = true;
+
+  @override
+  Future<bool> deviceLimitReached() async => limitReached;
+
+  @override
+  Stream<bool> get deviceRevoked => Stream.value(revokedNow);
 }
 
 class _FakePlatform extends WarrenSdkPlatform {

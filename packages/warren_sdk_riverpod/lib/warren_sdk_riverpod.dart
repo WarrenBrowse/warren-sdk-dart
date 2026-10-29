@@ -58,6 +58,23 @@ Future<List<ExitInfo>> exits(Ref ref) async {
   return client.listExits();
 }
 
+/// The account's devices, this install's marked. Invalidate it after a
+/// rename or a disconnect to read the registry again.
+@riverpod
+Future<WarrenDeviceList> devices(Ref ref) async {
+  final client = await ref.watch(warrenClientProvider.future);
+  return client.devices.list();
+}
+
+/// Whether this install's device was revoked from another device of the
+/// account. Once `true` the app disconnects, forgets the device and asks for
+/// the recovery phrase again.
+@riverpod
+Stream<bool> deviceRevoked(Ref ref) async* {
+  final client = await ref.watch(warrenClientProvider.future);
+  yield* client.devices.revoked;
+}
+
 /// The live connection state for a [WarrenSession]. Pass the active session as
 /// the family argument; the provider mirrors its broadcast state stream.
 @riverpod

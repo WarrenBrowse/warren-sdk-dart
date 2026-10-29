@@ -113,6 +113,101 @@ void main() {
       expect(connect.dnsOverTunnel, isFalse);
     });
 
+    test("the daemon registers the app's own device", () async {
+      final daemon = _FakeDaemon(
+        reply: const StateEvent(DaemonConnectionState.connected),
+      );
+      final inner = _FakeInnerPlatform()
+        ..handle.deviceIdValue = 'CQkJCQkJCQkJCQkJCQkJCQ';
+      final platform = DesktopWarrenSdkPlatform(
+        inner: inner,
+        daemonConnector: () async => daemon.client,
+      );
+      final handle = await platform.createClient(
+        WarrenClientConfig(
+          mnemonic: config.mnemonic,
+          apiBase: config.apiBase,
+          serverPubkeyPin: 'deadbeef',
+          stateDir: '/tmp/warren-state',
+          appVersion: '1.2.0',
+        ),
+      );
+
+      await handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions());
+
+      final configure = daemon.received().whereType<ConfigureRequest>().single;
+      expect(configure.appVersion, '1.2.0');
+      expect(configure.deviceId, 'CQkJCQkJCQkJCQkJCQkJCQ');
+      expect(configure.deviceName, 'quiet otter');
+    });
+
+    test('an app without a version sends the daemon no device', () async {
+      final daemon = _FakeDaemon(
+        reply: const StateEvent(DaemonConnectionState.connected),
+      );
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => daemon.client,
+      );
+      final handle = await platform.createClient(config);
+
+      await handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions());
+
+      final configure = daemon.received().whereType<ConfigureRequest>().single;
+      expect(configure.appVersion, isNull);
+      expect(configure.deviceId, isNull);
+    });
+
+    test('a revoked device fails the connect under its own code', () async {
+      final daemon = _FakeDaemon(
+        reply: const ErrorEvent(
+          kind: 'api',
+          message: 'revoked',
+          fatalCause: WarrenFatalCause.deviceRevoked,
+        ),
+      );
+      final platform = DesktopWarrenSdkPlatform(
+        inner: _FakeInnerPlatform(),
+        daemonConnector: () async => daemon.client,
+      );
+      final handle = await platform.createClient(config);
+
+      await expectLater(
+        handle.connect(exit, ConnectMode.systemVpn, const ConnectOptions()),
+        throwsA(
+          isA<WarrenTunnelError>()
+              .having((e) => e.code, 'code', 'tunnel/device-revoked'),
+        ),
+      );
+    });
+
+    test('device calls go to the in-process engine', () async {
+      final inner = _FakeInnerPlatform()..handle.deviceIdValue = 'id';
+      final platform = DesktopWarrenSdkPlatform(
+        inner: inner,
+        daemonConnector: () async => throw StateError('not used'),
+      );
+      final handle = await platform.createClient(config);
+
+      expect(handle.deviceId, 'id');
+      await handle.listDevices();
+      await handle.renameDevice('id', 'loud heron');
+      await handle.revokeDevice('id');
+      await handle.forgetDevice();
+      expect(await handle.deviceLimitReached(), isTrue);
+      expect(await handle.deviceRevoked.first, isTrue);
+
+      expect(
+        inner.handle.calls,
+        containsAll([
+          'listDevices',
+          'renameDevice:id:loud heron',
+          'revokeDevice:id',
+          'forgetDevice',
+        ]),
+      );
+    });
+
     test('a daemon failure state throws a tunnel error and closes the daemon',
         () async {
       final daemon = _FakeDaemon(
@@ -473,6 +568,38 @@ class _FakeInnerHandle implements WarrenClientHandle {
 
   @override
   Future<void> dispose() async => calls.add('dispose');
+
+  String? deviceIdValue;
+
+  @override
+  String? get deviceId => deviceIdValue;
+
+  @override
+  Future<String?> deviceName() async =>
+      deviceIdValue == null ? null : 'quiet otter';
+
+  @override
+  Future<WarrenDeviceList> listDevices() async {
+    calls.add('listDevices');
+    return const WarrenDeviceList(devices: []);
+  }
+
+  @override
+  Future<void> renameDevice(String deviceId, String name) async =>
+      calls.add('renameDevice:$deviceId:$name');
+
+  @override
+  Future<void> revokeDevice(String deviceId) async =>
+      calls.add('revokeDevice:$deviceId');
+
+  @override
+  Future<void> forgetDevice() async => calls.add('forgetDevice');
+
+  @override
+  Future<bool> deviceLimitReached() async => true;
+
+  @override
+  Stream<bool> get deviceRevoked => Stream.value(true);
 }
 
 class _FakeProxySession implements WarrenSessionHandle {

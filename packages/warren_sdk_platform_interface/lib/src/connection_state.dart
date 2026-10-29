@@ -102,6 +102,11 @@ enum WarrenFatalCause {
   /// account nor the fleet is at fault: the user changes network, or unpins
   /// an entry country the network cannot reach.
   noReachableEntry,
+
+  /// This install's device was revoked from another device of the account
+  /// (warren-core doc 115). The app disconnects, forgets the device identity
+  /// and asks for the recovery phrase again.
+  deviceRevoked,
 }
 
 /// The connection failed and will not be retried automatically.
@@ -162,6 +167,7 @@ ConnectionFailed connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
         WarrenFatalCause.policyRefused => 'tunnel/policy-refused',
         WarrenFatalCause.banned => 'tunnel/banned',
         WarrenFatalCause.noReachableEntry => 'tunnel/no-reachable-entry',
+        WarrenFatalCause.deviceRevoked => 'tunnel/device-revoked',
       },
       message: switch (cause) {
         null => 'the connection failed and will not be retried',
@@ -177,6 +183,9 @@ ConnectionFailed connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
           "no entry relay is reachable on this network's address families; "
               'change network, or unpin an entry country this network cannot '
               'reach',
+        WarrenFatalCause.deviceRevoked =>
+          'this device was disconnected from another device of the account; '
+              'sign in again with the recovery phrase',
       },
       cause: cause,
     );

@@ -5,6 +5,7 @@
 
 import 'api/client.dart';
 import 'api/datapath.dart';
+import 'api/device.dart';
 import 'api/error.dart';
 import 'api/identity.dart';
 import 'dart:async';
@@ -72,7 +73,7 @@ class WarrenRustBridge extends BaseEntrypoint<WarrenRustBridgeApi,
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 172600886;
+  int get rustContentHash => -1631435856;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -107,9 +108,28 @@ abstract class WarrenRustBridgeApi extends BaseApi {
       required bool daita,
       String? daitaMachine,
       required bool requestIpv6,
-      String? stateDir});
+      String? stateDir,
+      String? appVersion});
 
   Future<void> crateApiClientWarrenClientFrbDeleteAccount(
+      {required WarrenClientFrb that});
+
+  Future<String?> crateApiClientWarrenClientFrbDeviceId(
+      {required WarrenClientFrb that});
+
+  Future<bool> crateApiClientWarrenClientFrbDeviceLimitReached(
+      {required WarrenClientFrb that});
+
+  Future<String?> crateApiClientWarrenClientFrbDeviceName(
+      {required WarrenClientFrb that});
+
+  Future<bool> crateApiClientWarrenClientFrbDeviceRevoked(
+      {required WarrenClientFrb that});
+
+  Future<void> crateApiClientWarrenClientFrbForgetDevice(
+      {required WarrenClientFrb that});
+
+  Future<DeviceListDto> crateApiClientWarrenClientFrbListDevices(
       {required WarrenClientFrb that});
 
   Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
@@ -117,6 +137,14 @@ abstract class WarrenRustBridgeApi extends BaseApi {
 
   Future<BigInt> crateApiClientWarrenClientFrbRedeemVoucher(
       {required WarrenClientFrb that, required String secret});
+
+  Future<void> crateApiClientWarrenClientFrbRenameDevice(
+      {required WarrenClientFrb that,
+      required String deviceId,
+      required String name});
+
+  Future<void> crateApiClientWarrenClientFrbRevokeDevice(
+      {required WarrenClientFrb that, required String deviceId});
 
   Future<BigInt> crateApiClientWarrenClientFrbSubscriptionExpiry(
       {required WarrenClientFrb that});
@@ -351,7 +379,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       required bool daita,
       String? daitaMachine,
       required bool requestIpv6,
-      String? stateDir}) {
+      String? stateDir,
+      String? appVersion}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -364,6 +393,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_opt_String(daitaMachine, serializer);
         sse_encode_bool(requestIpv6, serializer);
         sse_encode_opt_String(stateDir, serializer);
+        sse_encode_opt_String(appVersion, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 4, port: port_);
       },
@@ -382,7 +412,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         daita,
         daitaMachine,
         requestIpv6,
-        stateDir
+        stateDir,
+        appVersion
       ],
       apiImpl: this,
     ));
@@ -400,7 +431,8 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
           "daita",
           "daitaMachine",
           "requestIpv6",
-          "stateDir"
+          "stateDir",
+          "appVersion"
         ],
       );
 
@@ -432,7 +464,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       );
 
   @override
-  Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
+  Future<String?> crateApiClientWarrenClientFrbDeviceId(
       {required WarrenClientFrb that}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
@@ -441,6 +473,168 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 6, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_opt_String,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbDeviceIdConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbDeviceIdConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_device_id",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<bool> crateApiClientWarrenClientFrbDeviceLimitReached(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 7, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_bool,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbDeviceLimitReachedConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbDeviceLimitReachedConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_device_limit_reached",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<String?> crateApiClientWarrenClientFrbDeviceName(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 8, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_opt_String,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbDeviceNameConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbDeviceNameConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_device_name",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<bool> crateApiClientWarrenClientFrbDeviceRevoked(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 9, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_bool,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbDeviceRevokedConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbDeviceRevokedConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_device_revoked",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<void> crateApiClientWarrenClientFrbForgetDevice(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 10, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbForgetDeviceConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbForgetDeviceConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_forget_device",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<DeviceListDto> crateApiClientWarrenClientFrbListDevices(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 11, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_device_list_dto,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbListDevicesConstMeta,
+      argValues: [that],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbListDevicesConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_list_devices",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<List<ExitInfoDto>> crateApiClientWarrenClientFrbListExits(
+      {required WarrenClientFrb that}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 12, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_exit_info_dto,
@@ -468,7 +662,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_String(secret, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
+            funcId: 13, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -487,6 +681,65 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       );
 
   @override
+  Future<void> crateApiClientWarrenClientFrbRenameDevice(
+      {required WarrenClientFrb that,
+      required String deviceId,
+      required String name}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        sse_encode_String(deviceId, serializer);
+        sse_encode_String(name, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 14, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbRenameDeviceConstMeta,
+      argValues: [that, deviceId, name],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbRenameDeviceConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_rename_device",
+        argNames: ["that", "deviceId", "name"],
+      );
+
+  @override
+  Future<void> crateApiClientWarrenClientFrbRevokeDevice(
+      {required WarrenClientFrb that, required String deviceId}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
+            that, serializer);
+        sse_encode_String(deviceId, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 15, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: sse_decode_warren_ffi_error,
+      ),
+      constMeta: kCrateApiClientWarrenClientFrbRevokeDeviceConstMeta,
+      argValues: [that, deviceId],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiClientWarrenClientFrbRevokeDeviceConstMeta =>
+      const TaskConstMeta(
+        debugName: "WarrenClientFrb_revoke_device",
+        argNames: ["that", "deviceId"],
+      );
+
+  @override
   Future<BigInt> crateApiClientWarrenClientFrbSubscriptionExpiry(
       {required WarrenClientFrb that}) {
     return handler.executeNormal(NormalTask(
@@ -495,7 +748,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenClientFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
+            funcId: 16, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -522,7 +775,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
+            funcId: 17, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_box_autoadd_u_16,
@@ -552,7 +805,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_opt_box_autoadd_u_16_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 10, port: port_);
+            funcId: 18, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -581,7 +834,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
+            funcId: 19, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_16,
@@ -611,7 +864,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_port_follow_outcome_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 12, port: port_);
+            funcId: 20, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -639,7 +892,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenForwardedPortFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 13, port: port_);
+            funcId: 21, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -666,7 +919,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 14, port: port_);
+            funcId: 22, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -693,7 +946,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 15, port: port_);
+            funcId: 23, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_bool,
@@ -722,7 +975,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_bool_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 16, port: port_);
+            funcId: 24, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -750,7 +1003,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 17, port: port_);
+            funcId: 25, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_box_autoadd_warren_fatal_cause_dto,
@@ -783,7 +1036,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_u_16(internalPort, serializer);
         sse_encode_String(localTarget, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 18, port: port_);
+            funcId: 26, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -822,7 +1075,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_port_follow_policy_dto(policy, serializer);
         sse_encode_opt_box_autoadd_u_16(pinnedExternalPort, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 19, port: port_);
+            funcId: 27, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -866,7 +1119,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 20, port: port_);
+            funcId: 28, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_String,
@@ -895,7 +1148,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_migration_event_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 21, port: port_);
+            funcId: 29, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -923,7 +1176,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 22, port: port_);
+            funcId: 30, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -950,7 +1203,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 23, port: port_);
+            funcId: 31, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -977,7 +1230,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWarrenSessionFrb(
             that, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 24, port: port_);
+            funcId: 32, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1006,7 +1259,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
             that, serializer);
         sse_encode_StreamSink_connection_state_dto_Sse(sink, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 25, port: port_);
+            funcId: 33, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -1033,7 +1286,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(mnemonic, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 26, port: port_);
+            funcId: 34, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1057,7 +1310,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 27, port: port_);
+            funcId: 35, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1093,7 +1346,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         sse_encode_u_64(timestamp, serializer);
         sse_encode_String(nonceHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 28, port: port_);
+            funcId: 36, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_signed_request,
@@ -1125,7 +1378,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(address, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 29, port: port_);
+            funcId: 37, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1149,7 +1402,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(publicKeyHex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 30, port: port_);
+            funcId: 38, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1360,6 +1613,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  DeviceRefusalDto dco_decode_box_autoadd_device_refusal_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_device_refusal_dto(raw);
+  }
+
+  @protected
   PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_i_64(raw);
@@ -1402,6 +1661,47 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  DeviceDto dco_decode_device_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    return DeviceDto(
+      deviceId: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      platform: dco_decode_device_platform_dto(arr[2]),
+      appVersion: dco_decode_String(arr[3]),
+      registeredOn: dco_decode_String(arr[4]),
+      lastSeenOn: dco_decode_String(arr[5]),
+      thisDevice: dco_decode_bool(arr[6]),
+    );
+  }
+
+  @protected
+  DeviceListDto dco_decode_device_list_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return DeviceListDto(
+      devices: dco_decode_list_device_dto(arr[0]),
+      olderClientSeenOn: dco_decode_opt_String(arr[1]),
+    );
+  }
+
+  @protected
+  DevicePlatformDto dco_decode_device_platform_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DevicePlatformDto.values[raw as int];
+  }
+
+  @protected
+  DeviceRefusalDto dco_decode_device_refusal_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DeviceRefusalDto.values[raw as int];
+  }
+
+  @protected
   ExitInfoDto dco_decode_exit_info_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1434,6 +1734,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   List<String> dco_decode_list_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_String).toList();
+  }
+
+  @protected
+  List<DeviceDto> dco_decode_list_device_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_device_dto).toList();
   }
 
   @protected
@@ -1507,6 +1813,12 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   ClockSkewDto? dco_decode_opt_box_autoadd_clock_skew_dto(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_clock_skew_dto(raw);
+  }
+
+  @protected
+  DeviceRefusalDto? dco_decode_opt_box_autoadd_device_refusal_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_device_refusal_dto(raw);
   }
 
   @protected
@@ -1639,13 +1951,14 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   WarrenFfiError dco_decode_warren_ffi_error(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return WarrenFfiError(
       kind: dco_decode_warren_error_kind(arr[0]),
       message: dco_decode_String(arr[1]),
       ban: dco_decode_opt_box_autoadd_ban_refusal_dto(arr[2]),
       clockSkew: dco_decode_opt_box_autoadd_clock_skew_dto(arr[3]),
+      device: dco_decode_opt_box_autoadd_device_refusal_dto(arr[4]),
     );
   }
 
@@ -1832,6 +2145,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  DeviceRefusalDto sse_decode_box_autoadd_device_refusal_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_device_refusal_dto(deserializer));
+  }
+
+  @protected
   PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_i_64(deserializer));
@@ -1869,6 +2189,50 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return ConnectionStateDto.values[inner];
+  }
+
+  @protected
+  DeviceDto sse_decode_device_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_deviceId = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_platform = sse_decode_device_platform_dto(deserializer);
+    var var_appVersion = sse_decode_String(deserializer);
+    var var_registeredOn = sse_decode_String(deserializer);
+    var var_lastSeenOn = sse_decode_String(deserializer);
+    var var_thisDevice = sse_decode_bool(deserializer);
+    return DeviceDto(
+        deviceId: var_deviceId,
+        name: var_name,
+        platform: var_platform,
+        appVersion: var_appVersion,
+        registeredOn: var_registeredOn,
+        lastSeenOn: var_lastSeenOn,
+        thisDevice: var_thisDevice);
+  }
+
+  @protected
+  DeviceListDto sse_decode_device_list_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_devices = sse_decode_list_device_dto(deserializer);
+    var var_olderClientSeenOn = sse_decode_opt_String(deserializer);
+    return DeviceListDto(
+        devices: var_devices, olderClientSeenOn: var_olderClientSeenOn);
+  }
+
+  @protected
+  DevicePlatformDto sse_decode_device_platform_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return DevicePlatformDto.values[inner];
+  }
+
+  @protected
+  DeviceRefusalDto sse_decode_device_refusal_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return DeviceRefusalDto.values[inner];
   }
 
   @protected
@@ -1911,6 +2275,18 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     var ans_ = <String>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<DeviceDto> sse_decode_list_device_dto(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <DeviceDto>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_device_dto(deserializer));
     }
     return ans_;
   }
@@ -2023,6 +2399,18 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_box_autoadd_clock_skew_dto(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  DeviceRefusalDto? sse_decode_opt_box_autoadd_device_refusal_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_device_refusal_dto(deserializer));
     } else {
       return null;
     }
@@ -2185,11 +2573,14 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     var var_message = sse_decode_String(deserializer);
     var var_ban = sse_decode_opt_box_autoadd_ban_refusal_dto(deserializer);
     var var_clockSkew = sse_decode_opt_box_autoadd_clock_skew_dto(deserializer);
+    var var_device =
+        sse_decode_opt_box_autoadd_device_refusal_dto(deserializer);
     return WarrenFfiError(
         kind: var_kind,
         message: var_message,
         ban: var_ban,
-        clockSkew: var_clockSkew);
+        clockSkew: var_clockSkew,
+        device: var_device);
   }
 
   @protected
@@ -2408,6 +2799,13 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_box_autoadd_device_refusal_dto(
+      DeviceRefusalDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_device_refusal_dto(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_i_64(
       PlatformInt64 self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -2447,6 +2845,40 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
   }
 
   @protected
+  void sse_encode_device_dto(DeviceDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.deviceId, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_device_platform_dto(self.platform, serializer);
+    sse_encode_String(self.appVersion, serializer);
+    sse_encode_String(self.registeredOn, serializer);
+    sse_encode_String(self.lastSeenOn, serializer);
+    sse_encode_bool(self.thisDevice, serializer);
+  }
+
+  @protected
+  void sse_encode_device_list_dto(
+      DeviceListDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_device_dto(self.devices, serializer);
+    sse_encode_opt_String(self.olderClientSeenOn, serializer);
+  }
+
+  @protected
+  void sse_encode_device_platform_dto(
+      DevicePlatformDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_device_refusal_dto(
+      DeviceRefusalDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
   void sse_encode_exit_info_dto(ExitInfoDto self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.id, serializer);
@@ -2476,6 +2908,16 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_device_dto(
+      List<DeviceDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_device_dto(item, serializer);
     }
   }
 
@@ -2578,6 +3020,17 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_clock_skew_dto(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_device_refusal_dto(
+      DeviceRefusalDto? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_device_refusal_dto(self, serializer);
     }
   }
 
@@ -2719,6 +3172,7 @@ class WarrenRustBridgeApiImpl extends WarrenRustBridgeApiImplPlatform
     sse_encode_String(self.message, serializer);
     sse_encode_opt_box_autoadd_ban_refusal_dto(self.ban, serializer);
     sse_encode_opt_box_autoadd_clock_skew_dto(self.clockSkew, serializer);
+    sse_encode_opt_box_autoadd_device_refusal_dto(self.device, serializer);
   }
 }
 
@@ -2788,6 +3242,54 @@ class WarrenClientFrbImpl extends RustOpaque implements WarrenClientFrb {
         that: this,
       );
 
+  /// This install's device identifier (base64url), when the client was
+  /// built with an app version. Keep it out of every log.
+  Future<String?> deviceId() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbDeviceId(
+        that: this,
+      );
+
+  /// Whether the last credential refresh found the account's device cap
+  /// reached: this install is not registered and is issued no session token
+  /// until another device is revoked. Not sticky.
+  Future<bool> deviceLimitReached() => WarrenRustBridge.instance.api
+          .crateApiClientWarrenClientFrbDeviceLimitReached(
+        that: this,
+      );
+
+  /// The name this install's device registers under, as this client last
+  /// knew it, when the client was built with an app version. A rename
+  /// made from another device reaches it only through the next list.
+  Future<String?> deviceName() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbDeviceName(
+        that: this,
+      );
+
+  /// Whether this install's device was revoked from another device of the
+  /// account, as the last credential refresh learned. Sticky. When it reads
+  /// `true` the app disconnects, says "This device was disconnected from
+  /// another device of your account", calls [`Self::forget_device`] and asks
+  /// for the recovery phrase again.
+  Future<bool> deviceRevoked() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbDeviceRevoked(
+        that: this,
+      );
+
+  /// Erases this install's kept device identity from the state directory,
+  /// once it was revoked or logged out: the next client draws a new one.
+  /// Does nothing for a client without a device.
+  Future<void> forgetDevice() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbForgetDevice(
+        that: this,
+      );
+
+  /// The account's devices, this install's marked `this_device`, and the
+  /// last day an older client of the account was superseded.
+  Future<DeviceListDto> listDevices() =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbListDevices(
+        that: this,
+      );
+
   /// Fetches and verifies the signed relay list, returning the exits.
   Future<List<ExitInfoDto>> listExits() =>
       WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbListExits(
@@ -2798,6 +3300,18 @@ class WarrenClientFrbImpl extends RustOpaque implements WarrenClientFrb {
   Future<BigInt> redeemVoucher({required String secret}) => WarrenRustBridge
       .instance.api
       .crateApiClientWarrenClientFrbRedeemVoucher(that: this, secret: secret);
+
+  /// Renames a device of the account. Renaming this install's own device
+  /// also keeps the name for its later registrations.
+  Future<void> renameDevice({required String deviceId, required String name}) =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbRenameDevice(
+          that: this, deviceId: deviceId, name: name);
+
+  /// Revokes a device of the account. Revoking this install's own device is
+  /// a logout: the next refresh reads it revoked.
+  Future<void> revokeDevice({required String deviceId}) =>
+      WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbRevokeDevice(
+          that: this, deviceId: deviceId);
 
   /// Unix-seconds subscription expiry (`0` means no active subscription).
   Future<BigInt> subscriptionExpiry() => WarrenRustBridge.instance.api

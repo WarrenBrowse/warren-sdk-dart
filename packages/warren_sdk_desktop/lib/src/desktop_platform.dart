@@ -101,6 +101,7 @@ class DesktopWarrenSdkPlatform extends WarrenSdkPlatform {
         daitaMachine: config.daitaMachine,
         requestIpv6: config.requestIpv6,
         lockdown: config.lockdown,
+        appVersion: config.appVersion,
       ),
       connectTimeout: _connectTimeout,
     );
@@ -150,6 +151,34 @@ class DesktopClientHandle implements WarrenClientHandle {
   Future<List<ExitInfo>> listExits() => _inner.listExits();
 
   @override
+  String? get deviceId => _inner.deviceId;
+
+  @override
+  Future<String?> deviceName() => _inner.deviceName();
+
+  @override
+  Future<WarrenDeviceList> listDevices() => _inner.listDevices();
+
+  @override
+  Future<void> renameDevice(String deviceId, String name) =>
+      _inner.renameDevice(deviceId, name);
+
+  @override
+  Future<void> revokeDevice(String deviceId) => _inner.revokeDevice(deviceId);
+
+  @override
+  Future<void> forgetDevice() => _inner.forgetDevice();
+
+  @override
+  Future<bool> deviceLimitReached() => _inner.deviceLimitReached();
+
+  /// The in-process engine's flag. A system-VPN session learns a revocation
+  /// from the daemon instead, which ends it on
+  /// [WarrenFatalCause.deviceRevoked].
+  @override
+  Stream<bool> get deviceRevoked => _inner.deviceRevoked;
+
+  @override
   Future<void> dispose() async {
     _configure = null;
     await _inner.dispose();
@@ -165,9 +194,16 @@ class DesktopClientHandle implements WarrenClientHandle {
       return _inner.connect(exit, mode, options);
     }
 
-    final configure = _configure;
+    var configure = _configure;
     if (configure == null) {
       throw StateError('DesktopClientHandle used after dispose()');
+    }
+    // The daemon issues this session's credentials, so it registers as the
+    // same device the in-process engine keeps: one install, one device.
+    final deviceId = _inner.deviceId;
+    final deviceName = await _inner.deviceName();
+    if (deviceId != null && deviceName != null) {
+      configure = configure.withDevice(id: deviceId, name: deviceName);
     }
 
     final DaemonClient daemon;

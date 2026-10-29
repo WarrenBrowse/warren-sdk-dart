@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 172600886;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1631435856;
 
 // Section: executor
 
@@ -254,6 +254,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
             let api_daita_machine = <Option<String>>::sse_decode(&mut deserializer);
             let api_request_ipv6 = <bool>::sse_decode(&mut deserializer);
             let api_state_dir = <Option<String>>::sse_decode(&mut deserializer);
+            let api_app_version = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::api::error::WarrenFfiError>(
@@ -268,6 +269,7 @@ fn wire__crate__api__client__WarrenClientFrb_create_impl(
                             api_daita_machine,
                             api_request_ipv6,
                             api_state_dir,
+                            api_app_version,
                         )
                         .await?;
                         Ok(output_ok)
@@ -326,6 +328,317 @@ fn wire__crate__api__client__WarrenClientFrb_delete_account_impl(
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
                             crate::api::client::WarrenClientFrb::delete_account(&*api_that_guard)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_device_id_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_device_id",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::client::WarrenClientFrb::device_id(&*api_that_guard),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_device_limit_reached_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_device_limit_reached",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::client::WarrenClientFrb::device_limit_reached(&*api_that_guard),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_device_name_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_device_name",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::client::WarrenClientFrb::device_name(&*api_that_guard),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_device_revoked_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_device_revoked",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::client::WarrenClientFrb::device_revoked(&*api_that_guard),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_forget_device_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_forget_device",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::error::WarrenFfiError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok =
+                        crate::api::client::WarrenClientFrb::forget_device(&*api_that_guard)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_list_devices_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_list_devices",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::error::WarrenFfiError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::client::WarrenClientFrb::list_devices(&*api_that_guard)
                                 .await?;
                         Ok(output_ok)
                     })()
@@ -442,6 +755,128 @@ fn wire__crate__api__client__WarrenClientFrb_redeem_voucher_impl(
                         let output_ok = crate::api::client::WarrenClientFrb::redeem_voucher(
                             &*api_that_guard,
                             api_secret,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_rename_device_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_rename_device",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            let api_device_id = <String>::sse_decode(&mut deserializer);
+            let api_name = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::error::WarrenFfiError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::client::WarrenClientFrb::rename_device(
+                            &*api_that_guard,
+                            api_device_id,
+                            api_name,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__client__WarrenClientFrb_revoke_device_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "WarrenClientFrb_revoke_device",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>,
+            >>::sse_decode(&mut deserializer);
+            let api_device_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::error::WarrenFfiError>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_that, 0, false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_that_guard =
+                                        Some(api_that.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::client::WarrenClientFrb::revoke_device(
+                            &*api_that_guard,
+                            api_device_id,
                         )
                         .await?;
                         Ok(output_ok)
@@ -1857,6 +2292,71 @@ impl SseDecode for crate::api::datapath::ConnectionStateDto {
     }
 }
 
+impl SseDecode for crate::api::device::DeviceDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_deviceId = <String>::sse_decode(deserializer);
+        let mut var_name = <String>::sse_decode(deserializer);
+        let mut var_platform = <crate::api::device::DevicePlatformDto>::sse_decode(deserializer);
+        let mut var_appVersion = <String>::sse_decode(deserializer);
+        let mut var_registeredOn = <String>::sse_decode(deserializer);
+        let mut var_lastSeenOn = <String>::sse_decode(deserializer);
+        let mut var_thisDevice = <bool>::sse_decode(deserializer);
+        return crate::api::device::DeviceDto {
+            device_id: var_deviceId,
+            name: var_name,
+            platform: var_platform,
+            app_version: var_appVersion,
+            registered_on: var_registeredOn,
+            last_seen_on: var_lastSeenOn,
+            this_device: var_thisDevice,
+        };
+    }
+}
+
+impl SseDecode for crate::api::device::DeviceListDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_devices = <Vec<crate::api::device::DeviceDto>>::sse_decode(deserializer);
+        let mut var_olderClientSeenOn = <Option<String>>::sse_decode(deserializer);
+        return crate::api::device::DeviceListDto {
+            devices: var_devices,
+            older_client_seen_on: var_olderClientSeenOn,
+        };
+    }
+}
+
+impl SseDecode for crate::api::device::DevicePlatformDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::device::DevicePlatformDto::Android,
+            1 => crate::api::device::DevicePlatformDto::Ios,
+            2 => crate::api::device::DevicePlatformDto::Macos,
+            3 => crate::api::device::DevicePlatformDto::Windows,
+            4 => crate::api::device::DevicePlatformDto::Linux,
+            5 => crate::api::device::DevicePlatformDto::Cli,
+            6 => crate::api::device::DevicePlatformDto::Browser,
+            7 => crate::api::device::DevicePlatformDto::Other,
+            _ => unreachable!("Invalid variant for DevicePlatformDto: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::error::DeviceRefusalDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::error::DeviceRefusalDto::Revoked,
+            1 => crate::api::error::DeviceRefusalDto::LimitReached,
+            2 => crate::api::error::DeviceRefusalDto::InvalidId,
+            _ => unreachable!("Invalid variant for DeviceRefusalDto: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for crate::api::client::ExitInfoDto {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1900,6 +2400,18 @@ impl SseDecode for Vec<String> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<String>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::api::device::DeviceDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::device::DeviceDto>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -2019,6 +2531,19 @@ impl SseDecode for Option<crate::api::error::ClockSkewDto> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<crate::api::error::ClockSkewDto>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::error::DeviceRefusalDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::error::DeviceRefusalDto>::sse_decode(
+                deserializer,
+            ));
         } else {
             return None;
         }
@@ -2224,11 +2749,14 @@ impl SseDecode for crate::api::error::WarrenFfiError {
         let mut var_message = <String>::sse_decode(deserializer);
         let mut var_ban = <Option<crate::api::error::BanRefusalDto>>::sse_decode(deserializer);
         let mut var_clockSkew = <Option<crate::api::error::ClockSkewDto>>::sse_decode(deserializer);
+        let mut var_device =
+            <Option<crate::api::error::DeviceRefusalDto>>::sse_decode(deserializer);
         return crate::api::error::WarrenFfiError {
             kind: var_kind,
             message: var_message,
             ban: var_ban,
             clock_skew: var_clockSkew,
+            device: var_device,
         };
     }
 }
@@ -2266,136 +2794,184 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__client__WarrenClientFrb_list_exits_impl(
+        6 => wire__crate__api__client__WarrenClientFrb_device_id_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__client__WarrenClientFrb_redeem_voucher_impl(
+        7 => wire__crate__api__client__WarrenClientFrb_device_limit_reached_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        8 => wire__crate__api__client__WarrenClientFrb_subscription_expiry_impl(
+        8 => wire__crate__api__client__WarrenClientFrb_device_name_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_port_impl(
+        9 => wire__crate__api__client__WarrenClientFrb_device_revoked_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_ports_impl(
+        10 => wire__crate__api__client__WarrenClientFrb_forget_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        11 => wire__crate__api__datapath__WarrenForwardedPortFrb_internal_port_impl(
+        11 => wire__crate__api__client__WarrenClientFrb_list_devices_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__datapath__WarrenForwardedPortFrb_outcomes_impl(
+        12 => wire__crate__api__client__WarrenClientFrb_list_exits_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__datapath__WarrenForwardedPortFrb_shutdown_impl(
+        13 => wire__crate__api__client__WarrenClientFrb_redeem_voucher_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
+        14 => wire__crate__api__client__WarrenClientFrb_rename_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__datapath__WarrenSessionFrb_egress_dead_impl(
+        15 => wire__crate__api__client__WarrenClientFrb_revoke_device_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__datapath__WarrenSessionFrb_egress_health_impl(
+        16 => wire__crate__api__client__WarrenClientFrb_subscription_expiry_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__datapath__WarrenSessionFrb_fatal_cause_impl(
+        17 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_port_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_impl(
+        18 => wire__crate__api__datapath__WarrenForwardedPortFrb_external_ports_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_with_policy_impl(
+        19 => wire__crate__api__datapath__WarrenForwardedPortFrb_internal_port_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        20 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
+        20 => wire__crate__api__datapath__WarrenForwardedPortFrb_outcomes_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        21 => wire__crate__api__datapath__WarrenSessionFrb_migration_events_impl(
+        21 => wire__crate__api__datapath__WarrenForwardedPortFrb_shutdown_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__datapath__WarrenSessionFrb_proxy_password_impl(
+        22 => wire__crate__api__datapath__WarrenSessionFrb_disconnect_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        23 => wire__crate__api__datapath__WarrenSessionFrb_proxy_username_impl(
+        23 => wire__crate__api__datapath__WarrenSessionFrb_egress_dead_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        24 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
+        24 => wire__crate__api__datapath__WarrenSessionFrb_egress_health_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        25 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
+        25 => wire__crate__api__datapath__WarrenSessionFrb_fatal_cause_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        26 => wire__crate__api__identity__address_from_mnemonic_impl(
+        26 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        27 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__datapath__WarrenSessionFrb_forward_port_with_policy_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        28 => wire__crate__api__datapath__WarrenSessionFrb_http_endpoint_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        29 => wire__crate__api__datapath__WarrenSessionFrb_migration_events_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        30 => wire__crate__api__datapath__WarrenSessionFrb_proxy_password_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        31 => wire__crate__api__datapath__WarrenSessionFrb_proxy_username_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        32 => wire__crate__api__datapath__WarrenSessionFrb_socks5_endpoint_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        33 => wire__crate__api__datapath__WarrenSessionFrb_states_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        34 => wire__crate__api__identity__address_from_mnemonic_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        35 => wire__crate__api__identity__generate_mnemonic_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__identity__sign_request_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__identity__ss58_decode_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__identity__ss58_encode_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2544,6 +3120,99 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::datapath::ConnectionStateDto>
     for crate::api::datapath::ConnectionStateDto
 {
     fn into_into_dart(self) -> crate::api::datapath::ConnectionStateDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::device::DeviceDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.device_id.into_into_dart().into_dart(),
+            self.name.into_into_dart().into_dart(),
+            self.platform.into_into_dart().into_dart(),
+            self.app_version.into_into_dart().into_dart(),
+            self.registered_on.into_into_dart().into_dart(),
+            self.last_seen_on.into_into_dart().into_dart(),
+            self.this_device.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::device::DeviceDto {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::device::DeviceDto>
+    for crate::api::device::DeviceDto
+{
+    fn into_into_dart(self) -> crate::api::device::DeviceDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::device::DeviceListDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.devices.into_into_dart().into_dart(),
+            self.older_client_seen_on.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::device::DeviceListDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::device::DeviceListDto>
+    for crate::api::device::DeviceListDto
+{
+    fn into_into_dart(self) -> crate::api::device::DeviceListDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::device::DevicePlatformDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Android => 0.into_dart(),
+            Self::Ios => 1.into_dart(),
+            Self::Macos => 2.into_dart(),
+            Self::Windows => 3.into_dart(),
+            Self::Linux => 4.into_dart(),
+            Self::Cli => 5.into_dart(),
+            Self::Browser => 6.into_dart(),
+            Self::Other => 7.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::device::DevicePlatformDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::device::DevicePlatformDto>
+    for crate::api::device::DevicePlatformDto
+{
+    fn into_into_dart(self) -> crate::api::device::DevicePlatformDto {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::error::DeviceRefusalDto {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Revoked => 0.into_dart(),
+            Self::LimitReached => 1.into_dart(),
+            Self::InvalidId => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::error::DeviceRefusalDto
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::error::DeviceRefusalDto>
+    for crate::api::error::DeviceRefusalDto
+{
+    fn into_into_dart(self) -> crate::api::error::DeviceRefusalDto {
         self
     }
 }
@@ -2812,6 +3481,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::error::WarrenFfiError {
             self.message.into_into_dart().into_dart(),
             self.ban.into_into_dart().into_dart(),
             self.clock_skew.into_into_dart().into_dart(),
+            self.device.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -3010,6 +3680,66 @@ impl SseEncode for crate::api::datapath::ConnectionStateDto {
     }
 }
 
+impl SseEncode for crate::api::device::DeviceDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.device_id, serializer);
+        <String>::sse_encode(self.name, serializer);
+        <crate::api::device::DevicePlatformDto>::sse_encode(self.platform, serializer);
+        <String>::sse_encode(self.app_version, serializer);
+        <String>::sse_encode(self.registered_on, serializer);
+        <String>::sse_encode(self.last_seen_on, serializer);
+        <bool>::sse_encode(self.this_device, serializer);
+    }
+}
+
+impl SseEncode for crate::api::device::DeviceListDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::api::device::DeviceDto>>::sse_encode(self.devices, serializer);
+        <Option<String>>::sse_encode(self.older_client_seen_on, serializer);
+    }
+}
+
+impl SseEncode for crate::api::device::DevicePlatformDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::device::DevicePlatformDto::Android => 0,
+                crate::api::device::DevicePlatformDto::Ios => 1,
+                crate::api::device::DevicePlatformDto::Macos => 2,
+                crate::api::device::DevicePlatformDto::Windows => 3,
+                crate::api::device::DevicePlatformDto::Linux => 4,
+                crate::api::device::DevicePlatformDto::Cli => 5,
+                crate::api::device::DevicePlatformDto::Browser => 6,
+                crate::api::device::DevicePlatformDto::Other => 7,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::api::error::DeviceRefusalDto {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::error::DeviceRefusalDto::Revoked => 0,
+                crate::api::error::DeviceRefusalDto::LimitReached => 1,
+                crate::api::error::DeviceRefusalDto::InvalidId => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for crate::api::client::ExitInfoDto {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -3043,6 +3773,16 @@ impl SseEncode for Vec<String> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <String>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::api::device::DeviceDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::device::DeviceDto>::sse_encode(item, serializer);
         }
     }
 }
@@ -3155,6 +3895,16 @@ impl SseEncode for Option<crate::api::error::ClockSkewDto> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::api::error::ClockSkewDto>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::error::DeviceRefusalDto> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::error::DeviceRefusalDto>::sse_encode(value, serializer);
         }
     }
 }
@@ -3349,6 +4099,7 @@ impl SseEncode for crate::api::error::WarrenFfiError {
         <String>::sse_encode(self.message, serializer);
         <Option<crate::api::error::BanRefusalDto>>::sse_encode(self.ban, serializer);
         <Option<crate::api::error::ClockSkewDto>>::sse_encode(self.clock_skew, serializer);
+        <Option<crate::api::error::DeviceRefusalDto>>::sse_encode(self.device, serializer);
     }
 }
 

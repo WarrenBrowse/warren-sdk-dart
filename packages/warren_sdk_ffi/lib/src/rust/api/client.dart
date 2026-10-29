@@ -5,10 +5,11 @@
 
 import '../frb_generated.dart';
 import 'datapath.dart';
+import 'device.dart';
 import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `err`, `map_client_error`, `map_sdk_error`, `relay_to_dto`
+// These functions are ignored because they are not marked as `pub`: `device_refusal`, `err`, `map_client_error`, `map_sdk_error`, `parse_device_id`, `relay_to_dto`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenClientFrb>>
 abstract class WarrenClientFrb implements RustOpaqueInterface {
@@ -43,6 +44,10 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
   ///
   /// The mnemonic is consumed here and not retained; the engine zeroizes the
   /// derived signing key on drop.
+  ///
+  /// With an `app_version`, the client registers this install as a device
+  /// of the account (warren-core doc 115) on the platform this build runs
+  /// on, keeping the device identity in `state_dir`, which it then needs.
   static Future<WarrenClientFrb> create(
           {required String mnemonic,
           required String apiBase,
@@ -52,7 +57,8 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
           required bool daita,
           String? daitaMachine,
           required bool requestIpv6,
-          String? stateDir}) =>
+          String? stateDir,
+          String? appVersion}) =>
       WarrenRustBridge.instance.api.crateApiClientWarrenClientFrbCreate(
           mnemonic: mnemonic,
           apiBase: apiBase,
@@ -62,17 +68,56 @@ abstract class WarrenClientFrb implements RustOpaqueInterface {
           daita: daita,
           daitaMachine: daitaMachine,
           requestIpv6: requestIpv6,
-          stateDir: stateDir);
+          stateDir: stateDir,
+          appVersion: appVersion);
 
   /// Permanently deletes the account bound to this identity (signed
   /// `DELETE /v1/account`). App stores require an in-app account-deletion path.
   Future<void> deleteAccount();
+
+  /// This install's device identifier (base64url), when the client was
+  /// built with an app version. Keep it out of every log.
+  Future<String?> deviceId();
+
+  /// Whether the last credential refresh found the account's device cap
+  /// reached: this install is not registered and is issued no session token
+  /// until another device is revoked. Not sticky.
+  Future<bool> deviceLimitReached();
+
+  /// The name this install's device registers under, as this client last
+  /// knew it, when the client was built with an app version. A rename
+  /// made from another device reaches it only through the next list.
+  Future<String?> deviceName();
+
+  /// Whether this install's device was revoked from another device of the
+  /// account, as the last credential refresh learned. Sticky. When it reads
+  /// `true` the app disconnects, says "This device was disconnected from
+  /// another device of your account", calls [`Self::forget_device`] and asks
+  /// for the recovery phrase again.
+  Future<bool> deviceRevoked();
+
+  /// Erases this install's kept device identity from the state directory,
+  /// once it was revoked or logged out: the next client draws a new one.
+  /// Does nothing for a client without a device.
+  Future<void> forgetDevice();
+
+  /// The account's devices, this install's marked `this_device`, and the
+  /// last day an older client of the account was superseded.
+  Future<DeviceListDto> listDevices();
 
   /// Fetches and verifies the signed relay list, returning the exits.
   Future<List<ExitInfoDto>> listExits();
 
   /// Redeems a voucher and returns the new expiry (Unix seconds).
   Future<BigInt> redeemVoucher({required String secret});
+
+  /// Renames a device of the account. Renaming this install's own device
+  /// also keeps the name for its later registrations.
+  Future<void> renameDevice({required String deviceId, required String name});
+
+  /// Revokes a device of the account. Revoking this install's own device is
+  /// a logout: the next refresh reads it revoked.
+  Future<void> revokeDevice({required String deviceId});
 
   /// Unix-seconds subscription expiry (`0` means no active subscription).
   Future<BigInt> subscriptionExpiry();

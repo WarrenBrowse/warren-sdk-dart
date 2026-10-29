@@ -1,5 +1,6 @@
 import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
+import 'device_revocation.dart';
 import 'engine_mapping.dart';
 import 'rust/api/client.dart' as rust;
 import 'rust/api/datapath.dart' as rust_session;
@@ -7,18 +8,66 @@ import 'rust/api/error.dart';
 
 /// A live engine client handle backed by the in-process Rust client.
 ///
-/// Wraps the opaque `WarrenClientFrb`. The bound address is read once at
-/// creation so the synchronous [address] getter needs no bridge round-trip.
-/// Every fallible call maps the typed engine error to a sealed [WarrenError].
+/// Wraps the opaque `WarrenClientFrb`. The bound address and device id are
+/// read once at creation so their synchronous getters need no bridge
+/// round-trip. Every fallible call maps the typed engine error to a sealed
+/// [WarrenError].
 class FfiClientHandle implements WarrenClientHandle {
-  /// Wraps an opaque engine client and its already-resolved [address].
-  FfiClientHandle(this._client, this.address);
+  /// Wraps an opaque engine client, its already-resolved [address] and, when
+  /// it registers this install as a device, its [deviceId]. A registered
+  /// client asks the engine whether the device was revoked every
+  /// [revocationCheck] while anyone watches.
+  FfiClientHandle(
+    this._client,
+    this.address, {
+    this.deviceId,
+    Duration revocationCheck = defaultRevocationCheck,
+  }) : _revocation = deviceId == null
+            ? null
+            : DeviceRevocationWatch(
+                _client.deviceRevoked,
+                every: revocationCheck,
+              );
+
+  /// How often a watched client asks the engine about a revocation. The
+  /// engine learns one from its credential refresh, every 10 minutes, so a
+  /// check a fraction of that adds little to how long a revoked app runs.
+  static const Duration defaultRevocationCheck = Duration(seconds: 30);
 
   final rust.WarrenClientFrb _client;
+  final DeviceRevocationWatch? _revocation;
   bool _disposed = false;
 
   @override
   final String address;
+
+  @override
+  final String? deviceId;
+
+  @override
+  Future<String?> deviceName() => _mapped(_client.deviceName);
+
+  @override
+  Future<WarrenDeviceList> listDevices() =>
+      _mapped(() async => deviceListFromDto(await _client.listDevices()));
+
+  @override
+  Future<void> renameDevice(String deviceId, String name) =>
+      _mapped(() => _client.renameDevice(deviceId: deviceId, name: name));
+
+  @override
+  Future<void> revokeDevice(String deviceId) =>
+      _mapped(() => _client.revokeDevice(deviceId: deviceId));
+
+  @override
+  Future<void> forgetDevice() => _mapped(_client.forgetDevice);
+
+  @override
+  Future<bool> deviceLimitReached() => _mapped(_client.deviceLimitReached);
+
+  @override
+  Stream<bool> get deviceRevoked =>
+      _revocation?.stream ?? Stream<bool>.value(false);
 
   @override
   Future<SubscriptionInfo> subscription() => _mapped(() async {
@@ -79,6 +128,7 @@ class FfiClientHandle implements WarrenClientHandle {
         return FfiSessionHandle(
           session,
           ProxyEndpoints(socks5: socks5, http: http, credentials: credentials),
+          deviceRevoked: deviceRevoked,
         );
       });
 
@@ -86,6 +136,7 @@ class FfiClientHandle implements WarrenClientHandle {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    await _revocation?.close();
     _client.dispose();
   }
 
@@ -107,14 +158,19 @@ class FfiClientHandle implements WarrenClientHandle {
 ///
 /// The connection-state stream is a replaying broadcast view over the engine's
 /// transition stream, so every listener, including one that attaches after the
-/// tunnel is already up, observes the current state.
+/// tunnel is already up, observes the current state. A revocation of this
+/// install's device ends it on [WarrenFatalCause.deviceRevoked].
 class FfiSessionHandle implements WarrenSessionHandle {
   /// Wraps an opaque engine session and its resolved local endpoints.
+  /// [deviceRevoked] is the owning client's revocation flag.
   FfiSessionHandle(
     rust_session.WarrenSessionFrb session,
-    this._endpoints,
-  )   : _session = session,
-        _states = LatestBroadcast(_mapStates(session)),
+    this._endpoints, {
+    Stream<bool> deviceRevoked = const Stream<bool>.empty(),
+  })  : _session = session,
+        _states = LatestBroadcast(
+          withDeviceRevocation(_mapStates(session), deviceRevoked),
+        ),
         _migrationEvents = LatestBroadcast(
           session.migrationEvents().map(mapMigrationEvent),
         );

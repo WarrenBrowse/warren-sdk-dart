@@ -11,6 +11,7 @@ import 'rust/api/datapath.dart'
         PortFollowOutcomeKindDto,
         PortFollowPolicyDto,
         WarrenFatalCauseDto;
+import 'rust/api/device.dart';
 import 'rust/api/error.dart';
 
 /// The engine's `u64::MAX` drain-deadline sentinel: a soft drain with no
@@ -22,8 +23,15 @@ final BigInt _softDrainSentinel = (BigInt.one << 64) - BigInt.one;
 /// The bridge carries a category plus an already-redacted message; this turns
 /// it into the matching subtype with a stable, machine-readable code. A ban
 /// refusal becomes a [WarrenAccountBannedError], a clock refusal a
-/// [WarrenClockSkewError].
-WarrenError mapEngineError(WarrenFfiError error) =>
+/// [WarrenClockSkewError], and a device registry refusal its own device error.
+WarrenError mapEngineError(WarrenFfiError error) => switch (error.device) {
+      DeviceRefusalDto.revoked => const WarrenDeviceRevokedError(),
+      DeviceRefusalDto.limitReached => const WarrenDeviceLimitReachedError(),
+      DeviceRefusalDto.invalidId => const WarrenInvalidDeviceIdError(),
+      null => _mapUntypedDevice(error),
+    };
+
+WarrenError _mapUntypedDevice(WarrenFfiError error) =>
     switch ((error.ban, error.clockSkew)) {
       (final BanRefusalDto ban, _) => WarrenAccountBannedError(
           message: error.message,
@@ -142,3 +150,56 @@ PortFollowPolicyDto portFollowPolicyToDto(PortFollowPolicy policy) =>
       PortFollowPolicy.keepPortOrStay => PortFollowPolicyDto.keepPortOrStay,
       PortFollowPolicy.disabled => PortFollowPolicyDto.disabled,
     };
+
+/// Maps the engine's account device list to the public [WarrenDeviceList].
+///
+/// Throws a [WarrenApiError] when the registry answered a day that is not
+/// `YYYY-MM-DD`, rather than inventing one.
+WarrenDeviceList deviceListFromDto(DeviceListDto dto) => WarrenDeviceList(
+      devices: dto.devices.map(deviceFromDto).toList(growable: false),
+      olderClientSeenOn: switch (dto.olderClientSeenOn) {
+        final String day => registryDay(day),
+        null => null,
+      },
+    );
+
+/// Maps one engine device to the public [WarrenDevice].
+WarrenDevice deviceFromDto(DeviceDto dto) => WarrenDevice(
+      deviceId: dto.deviceId,
+      name: dto.name,
+      platform: devicePlatformFromDto(dto.platform),
+      appVersion: dto.appVersion,
+      registeredOn: registryDay(dto.registeredOn),
+      lastSeenOn: registryDay(dto.lastSeenOn),
+      isThisDevice: dto.thisDevice,
+    );
+
+/// Maps the engine's device platform to the public [WarrenDevicePlatform].
+WarrenDevicePlatform devicePlatformFromDto(DevicePlatformDto platform) =>
+    switch (platform) {
+      DevicePlatformDto.android => WarrenDevicePlatform.android,
+      DevicePlatformDto.ios => WarrenDevicePlatform.ios,
+      DevicePlatformDto.macos => WarrenDevicePlatform.macos,
+      DevicePlatformDto.windows => WarrenDevicePlatform.windows,
+      DevicePlatformDto.linux => WarrenDevicePlatform.linux,
+      DevicePlatformDto.cli => WarrenDevicePlatform.cli,
+      DevicePlatformDto.browser => WarrenDevicePlatform.browser,
+      DevicePlatformDto.other => WarrenDevicePlatform.other,
+    };
+
+final RegExp _registryDayShape = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
+/// Parses a registry day (`YYYY-MM-DD`) as UTC midnight.
+///
+/// Throws a [WarrenApiError] for anything else.
+DateTime registryDay(String day) {
+  final parsed =
+      _registryDayShape.hasMatch(day) ? DateTime.tryParse(day) : null;
+  if (parsed == null) {
+    throw const WarrenApiError(
+      code: 'api/malformed-device-list',
+      message: 'the device registry answered a malformed day',
+    );
+  }
+  return DateTime.utc(parsed.year, parsed.month, parsed.day);
+}

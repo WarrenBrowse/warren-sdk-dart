@@ -134,6 +134,56 @@ void main() {
     });
   });
 
+  group("the app's device on configure", () {
+    const versioned = ConfigureRequest(
+      mnemonic: 'm',
+      apiBase: 'https://a',
+      serverPubkeyPin: 'p',
+      appVersion: '1.2.0',
+    );
+
+    test('round-trips the version, the identifier and the name', () {
+      final request = roundTrip(
+        versioned.withDevice(id: 'CQkJCQkJCQkJCQkJCQkJCQ', name: 'quiet otter'),
+      );
+      expect(request.appVersion, '1.2.0');
+      expect(request.deviceId, 'CQkJCQkJCQkJCQkJCQkJCQ');
+      expect(request.deviceName, 'quiet otter');
+    });
+
+    test('names no device for an app that registers none', () {
+      const unversioned = ConfigureRequest(
+        mnemonic: 'm',
+        apiBase: 'https://a',
+        serverPubkeyPin: 'p',
+      );
+      final json = unversioned
+          .withDevice(id: 'CQkJCQkJCQkJCQkJCQkJCQ', name: 'quiet otter')
+          .toJson();
+      expect(json.containsKey('deviceId'), isFalse);
+      expect(json.containsKey('deviceName'), isFalse);
+      expect(json.containsKey('appVersion'), isFalse);
+    });
+
+    test('never renders the device', () {
+      final rendered = versioned
+          .withDevice(id: 'CQkJCQkJCQkJCQkJCQkJCQ', name: 'quiet otter')
+          .toString();
+      expect(rendered, isNot(contains('CQkJ')));
+      expect(rendered, isNot(contains('otter')));
+    });
+  });
+
+  test('a revoked device is read under its own fatal cause', () {
+    final e = DaemonMessage.fromJson(const {
+      'type': 'error',
+      'kind': 'api',
+      'message': 'revoked',
+      'fatalCause': 'deviceRevoked',
+    }) as ErrorEvent;
+    expect(e.fatalCause, WarrenFatalCause.deviceRevoked);
+  });
+
   test('ConfigureRequest.toString never leaks the mnemonic', () {
     const request = ConfigureRequest(
       mnemonic: 'super secret seed phrase',

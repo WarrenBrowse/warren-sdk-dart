@@ -5,6 +5,7 @@
 
 import 'api/client.dart';
 import 'api/datapath.dart';
+import 'api/device.dart';
 import 'api/error.dart';
 import 'api/identity.dart';
 import 'dart:async';
@@ -126,6 +127,9 @@ abstract class WarrenRustBridgeApiImplPlatform
   ClockSkewDto dco_decode_box_autoadd_clock_skew_dto(dynamic raw);
 
   @protected
+  DeviceRefusalDto dco_decode_box_autoadd_device_refusal_dto(dynamic raw);
+
+  @protected
   PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw);
 
   @protected
@@ -145,6 +149,18 @@ abstract class WarrenRustBridgeApiImplPlatform
   ConnectionStateDto dco_decode_connection_state_dto(dynamic raw);
 
   @protected
+  DeviceDto dco_decode_device_dto(dynamic raw);
+
+  @protected
+  DeviceListDto dco_decode_device_list_dto(dynamic raw);
+
+  @protected
+  DevicePlatformDto dco_decode_device_platform_dto(dynamic raw);
+
+  @protected
+  DeviceRefusalDto dco_decode_device_refusal_dto(dynamic raw);
+
+  @protected
   ExitInfoDto dco_decode_exit_info_dto(dynamic raw);
 
   @protected
@@ -155,6 +171,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<DeviceDto> dco_decode_list_device_dto(dynamic raw);
 
   @protected
   List<ExitInfoDto> dco_decode_list_exit_info_dto(dynamic raw);
@@ -188,6 +207,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   ClockSkewDto? dco_decode_opt_box_autoadd_clock_skew_dto(dynamic raw);
+
+  @protected
+  DeviceRefusalDto? dco_decode_opt_box_autoadd_device_refusal_dto(dynamic raw);
 
   @protected
   PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
@@ -340,6 +362,10 @@ abstract class WarrenRustBridgeApiImplPlatform
       SseDeserializer deserializer);
 
   @protected
+  DeviceRefusalDto sse_decode_box_autoadd_device_refusal_dto(
+      SseDeserializer deserializer);
+
+  @protected
   PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer);
 
   @protected
@@ -360,6 +386,19 @@ abstract class WarrenRustBridgeApiImplPlatform
       SseDeserializer deserializer);
 
   @protected
+  DeviceDto sse_decode_device_dto(SseDeserializer deserializer);
+
+  @protected
+  DeviceListDto sse_decode_device_list_dto(SseDeserializer deserializer);
+
+  @protected
+  DevicePlatformDto sse_decode_device_platform_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  DeviceRefusalDto sse_decode_device_refusal_dto(SseDeserializer deserializer);
+
+  @protected
   ExitInfoDto sse_decode_exit_info_dto(SseDeserializer deserializer);
 
   @protected
@@ -370,6 +409,9 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<DeviceDto> sse_decode_list_device_dto(SseDeserializer deserializer);
 
   @protected
   List<ExitInfoDto> sse_decode_list_exit_info_dto(SseDeserializer deserializer);
@@ -407,6 +449,10 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   ClockSkewDto? sse_decode_opt_box_autoadd_clock_skew_dto(
+      SseDeserializer deserializer);
+
+  @protected
+  DeviceRefusalDto? sse_decode_opt_box_autoadd_device_refusal_dto(
       SseDeserializer deserializer);
 
   @protected
@@ -562,6 +608,10 @@ abstract class WarrenRustBridgeApiImplPlatform
       ClockSkewDto self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_device_refusal_dto(
+      DeviceRefusalDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_i_64(
       PlatformInt64 self, SseSerializer serializer);
 
@@ -583,6 +633,20 @@ abstract class WarrenRustBridgeApiImplPlatform
       ConnectionStateDto self, SseSerializer serializer);
 
   @protected
+  void sse_encode_device_dto(DeviceDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_device_list_dto(DeviceListDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_device_platform_dto(
+      DevicePlatformDto self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_device_refusal_dto(
+      DeviceRefusalDto self, SseSerializer serializer);
+
+  @protected
   void sse_encode_exit_info_dto(ExitInfoDto self, SseSerializer serializer);
 
   @protected
@@ -593,6 +657,10 @@ abstract class WarrenRustBridgeApiImplPlatform
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_device_dto(
+      List<DeviceDto> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_exit_info_dto(
@@ -633,6 +701,10 @@ abstract class WarrenRustBridgeApiImplPlatform
   @protected
   void sse_encode_opt_box_autoadd_clock_skew_dto(
       ClockSkewDto? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_device_refusal_dto(
+      DeviceRefusalDto? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_i_64(

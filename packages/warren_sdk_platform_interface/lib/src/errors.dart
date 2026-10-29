@@ -79,6 +79,47 @@ final class WarrenClockSkewError extends WarrenApiError {
   final int? offsetSecs;
 }
 
+/// This install's device was revoked from another device of the account
+/// (warren-core doc 115).
+///
+/// The app disconnects, forgets the device identity, and shows "This device
+/// was disconnected from another device of your account. Sign in with your
+/// recovery phrase to use it again." It is a [WarrenApiError], so an existing
+/// `on WarrenApiError` handler still catches it.
+final class WarrenDeviceRevokedError extends WarrenApiError {
+  /// Creates the revocation refusal.
+  const WarrenDeviceRevokedError()
+      : super(
+          code: 'api/device-revoked',
+          message: 'this device was disconnected from another device of the '
+              'account; sign in again with the recovery phrase',
+        );
+}
+
+/// The account already holds as many devices as it may, so this install is
+/// not registered and is issued nothing until another device is revoked.
+///
+/// The app opens the account's device list. It is a [WarrenApiError], so an
+/// existing `on WarrenApiError` handler still catches it.
+final class WarrenDeviceLimitReachedError extends WarrenApiError {
+  /// Creates the device cap refusal.
+  const WarrenDeviceLimitReachedError()
+      : super(
+          code: 'api/device-limit-reached',
+          message: 'the account already has as many devices as it may; '
+              'disconnect one of them to use this one',
+        );
+}
+
+/// A device identifier passed to a device call is not one the registry
+/// issues (16 bytes of base64url without padding). It is a [WarrenApiError],
+/// so an existing `on WarrenApiError` handler still catches it.
+final class WarrenInvalidDeviceIdError extends WarrenApiError {
+  /// Creates the malformed identifier refusal.
+  const WarrenInvalidDeviceIdError()
+      : super(code: 'api/invalid-device-id', message: 'invalid device id');
+}
+
 /// Relay-list verification or exit selection failed (bad signature, rollback,
 /// expiry, or no exit matched the query).
 final class WarrenDiscoveryError extends WarrenError {

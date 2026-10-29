@@ -1,6 +1,7 @@
 import 'package:warren_sdk_ffi/warren_sdk_ffi.dart';
 import 'package:warren_sdk_platform_interface/warren_sdk_platform_interface.dart';
 
+import 'warren_devices.dart';
 import 'warren_session.dart';
 
 /// The entry point of the Warren VPN SDK.
@@ -19,12 +20,16 @@ import 'warren_session.dart';
 /// `warren_sdk_riverpod` package.
 /// {@endtemplate}
 class WarrenClient {
-  WarrenClient._(this._handle);
+  WarrenClient._(this._handle) : devices = WarrenDevices(_handle);
 
   final WarrenClientHandle _handle;
 
   /// The SS58 `wb...` address of the bound identity.
   String get address => _handle.address;
+
+  /// The account's devices: list, rename and disconnect them, and learn when
+  /// this install was disconnected from another device.
+  final WarrenDevices devices;
 
   /// Creates a client bound to an identity and an account API.
   ///
@@ -32,8 +37,14 @@ class WarrenClient {
   /// never retained in Dart. Read it from the platform secure store, pass it
   /// here, and drop your own reference.
   ///
+  /// With an [appVersion] (the embedding app's semver), the client registers
+  /// this install as a device of the account on the platform it runs on, so
+  /// the account can list and disconnect it ([devices]); the device identity
+  /// is kept in [stateDir], which it then requires.
+  ///
   /// Throws a [WarrenIdentityError] if the mnemonic is invalid, or a
-  /// [WarrenApiError] if the API base is unreachable during setup.
+  /// [WarrenApiError] if the API base is unreachable during setup or an
+  /// [appVersion] comes without a [stateDir].
   static Future<WarrenClient> create({
     required String mnemonic,
     required Uri apiBase,
@@ -45,6 +56,7 @@ class WarrenClient {
     bool requestIpv6 = true,
     bool lockdown = false,
     String? stateDir,
+    String? appVersion,
   }) async {
     // Ensure the default in-process engine is registered. A privileged Mode B
     // implementation may have already overridden the instance; if so, this is a
@@ -62,6 +74,7 @@ class WarrenClient {
         requestIpv6: requestIpv6,
         lockdown: lockdown,
         stateDir: stateDir,
+        appVersion: appVersion,
       ),
     );
     return WarrenClient._(handle);

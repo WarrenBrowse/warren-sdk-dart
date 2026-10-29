@@ -58,7 +58,12 @@ sealed class DaemonMessage {
 /// Binds an identity and account API in the daemon (app to daemon).
 ///
 /// The mnemonic crosses a local, root-owned socket; the daemon zeroizes the
-/// derived key and never logs it. It is never echoed in [toString].
+/// derived key and never logs it. It is never echoed in [toString], nor are
+/// the device's identifier and name.
+///
+/// With [appVersion], [deviceId] and [deviceName] the daemon registers the
+/// app's own device (warren-core doc 115), so the install is one device of
+/// its account whichever engine issues its credentials.
 final class ConfigureRequest extends DaemonMessage {
   /// Creates a configure request.
   const ConfigureRequest({
@@ -70,6 +75,9 @@ final class ConfigureRequest extends DaemonMessage {
     this.daitaMachine,
     this.requestIpv6 = true,
     this.lockdown = false,
+    this.appVersion,
+    this.deviceId,
+    this.deviceName,
   });
 
   /// The 12-word BIP39 mnemonic.
@@ -97,6 +105,34 @@ final class ConfigureRequest extends DaemonMessage {
   /// network blocked instead of restoring it.
   final bool lockdown;
 
+  /// The app's version, which the daemon registers the device with.
+  final String? appVersion;
+
+  /// The app's device identifier, kept in the app's state directory.
+  final String? deviceId;
+
+  /// The name the app's device registers under.
+  final String? deviceName;
+
+  /// This request naming the app's device [id] and [name], for a client
+  /// created with an [appVersion]; unchanged without one.
+  ConfigureRequest withDevice({required String id, required String name}) =>
+      appVersion == null
+          ? this
+          : ConfigureRequest(
+              mnemonic: mnemonic,
+              apiBase: apiBase,
+              serverPubkeyPin: serverPubkeyPin,
+              multihopRootPin: multihopRootPin,
+              daita: daita,
+              daitaMachine: daitaMachine,
+              requestIpv6: requestIpv6,
+              lockdown: lockdown,
+              appVersion: appVersion,
+              deviceId: id,
+              deviceName: name,
+            );
+
   @override
   Map<String, Object?> toJson() => {
         'type': 'configure',
@@ -108,6 +144,9 @@ final class ConfigureRequest extends DaemonMessage {
         if (daitaMachine != null) 'daitaMachine': daitaMachine,
         'requestIpv6': requestIpv6,
         if (lockdown) 'lockdown': lockdown,
+        if (appVersion != null) 'appVersion': appVersion,
+        if (deviceId != null) 'deviceId': deviceId,
+        if (deviceName != null) 'deviceName': deviceName,
       };
 
   static ConfigureRequest _fromJson(Map<String, Object?> json) =>
@@ -120,6 +159,9 @@ final class ConfigureRequest extends DaemonMessage {
         daitaMachine: json['daitaMachine'] as String?,
         requestIpv6: json['requestIpv6'] as bool? ?? true,
         lockdown: json['lockdown'] as bool? ?? false,
+        appVersion: json['appVersion'] as String?,
+        deviceId: json['deviceId'] as String?,
+        deviceName: json['deviceName'] as String?,
       );
 
   // Never render the mnemonic.

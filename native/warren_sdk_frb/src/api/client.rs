@@ -1,15 +1,15 @@
 //! Stateful engine client wrapper for the account API.
 //!
 //! Holds a live `warren-sdk` client behind an opaque handle and exposes the
-//! account surface (subscription, voucher redemption, exit listing). All
+//! account surface (subscription, voucher redemption, exit listing, the
+//! account's devices). All
 //! protocol logic stays in the audited engine; this is thin delegation plus
 //! error categorization for the bridge.
 
-use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 
 use warren_sdk::api::dto::RegisterAccountRequest;
-use warren_sdk::api::ClientError;
+use warren_sdk::api::{ClientError, DeviceId};
 use warren_sdk::discovery::{Relay, VerifiedExit};
 use warren_sdk::identity::WarrenIdentity;
 use warren_sdk::net::ProxyConfig;
@@ -19,7 +19,15 @@ use warren_sdk::{
 use zeroize::Zeroize;
 
 use crate::api::datapath::{ban_reason_dto, WarrenSessionFrb};
-use crate::api::error::{BanRefusalDto, ClockSkewDto, WarrenErrorKind, WarrenFfiError};
+use crate::api::device::{device_list_to_dto, device_platform_for, DeviceListDto};
+use crate::api::error::{
+    BanRefusalDto, ClockSkewDto, DeviceRefusalDto, WarrenErrorKind, WarrenFfiError,
+};
+
+/// The file in the client's state directory that keeps this install's device
+/// identity, the name the engine's own FFI uses, so an app moving between the
+/// two bindings keeps one device.
+const DEVICE_FILE: &str = "device";
 
 fn err(kind: WarrenErrorKind, message: impl Into<String>) -> WarrenFfiError {
     WarrenFfiError {
@@ -27,7 +35,20 @@ fn err(kind: WarrenErrorKind, message: impl Into<String>) -> WarrenFfiError {
         message: message.into(),
         ban: None,
         clock_skew: None,
+        device: None,
     }
+}
+
+fn device_refusal(refusal: DeviceRefusalDto, message: &str) -> WarrenFfiError {
+    WarrenFfiError {
+        device: Some(refusal),
+        ..err(WarrenErrorKind::Api, message)
+    }
+}
+
+fn parse_device_id(id: String) -> Result<DeviceId, WarrenFfiError> {
+    DeviceId::try_from(id)
+        .map_err(|_| device_refusal(DeviceRefusalDto::InvalidId, "invalid device id"))
 }
 
 /// An exit advertised by the verified signed relay list. Only fields the relay
@@ -70,6 +91,10 @@ pub struct TunnelCheckDto {
 pub struct WarrenClientFrb {
     inner: Arc<DefaultClient>,
     address: String,
+    /// The name this install's device registers under, as this client last
+    /// knew it. A system-VPN daemon registering the same device takes it
+    /// from here; the registry keeps the name of a device it already holds.
+    device_name: Mutex<Option<String>>,
 }
 
 impl WarrenClientFrb {
@@ -77,6 +102,10 @@ impl WarrenClientFrb {
     ///
     /// The mnemonic is consumed here and not retained; the engine zeroizes the
     /// derived signing key on drop.
+    ///
+    /// With an `app_version`, the client registers this install as a device
+    /// of the account (warren-core doc 115) on the platform this build runs
+    /// on, keeping the device identity in `state_dir`, which it then needs.
     #[allow(clippy::too_many_arguments)]
     pub async fn create(
         mnemonic: String,
@@ -88,6 +117,7 @@ impl WarrenClientFrb {
         daita_machine: Option<String>,
         request_ipv6: bool,
         state_dir: Option<String>,
+        app_version: Option<String>,
     ) -> Result<WarrenClientFrb, WarrenFfiError> {
         let mut mnemonic = mnemonic;
         let identity_result = WarrenIdentity::from_mnemonic(&mnemonic);
@@ -119,12 +149,12 @@ impl WarrenClientFrb {
         if request_ipv6 {
             builder = builder.request_ipv6();
         }
-        if let Some(dir) = state_dir {
+        let state_dir = state_dir.map(std::path::PathBuf::from);
+        if let Some(dir) = state_dir.as_deref() {
             // Persist the anti-rollback floors and the TOFU server pin across
             // restarts, so a downgraded relay/multihop list or a swapped server
             // key cannot slip past on the next launch. Mirrors the engine FFI's
             // `with_persistence`; the filenames must match for state continuity.
-            let dir = Path::new(&dir);
             let io_err = |_| {
                 err(
                     WarrenErrorKind::Api,
@@ -145,6 +175,26 @@ impl WarrenClientFrb {
                 // the exit hands back its inner address and forwarded ports.
                 .token_rotation(warren_sdk::kept_token_rotation(&dir.join("token_rotation")));
         }
+        let mut device_name = None;
+        if let Some(app_version) = app_version {
+            let dir = state_dir.as_deref().ok_or_else(|| {
+                err(
+                    WarrenErrorKind::Api,
+                    "a device needs a state directory to keep its identity",
+                )
+            })?;
+            let platform = device_platform_for(std::env::consts::OS).ok_or_else(|| {
+                err(
+                    WarrenErrorKind::Api,
+                    "this platform cannot register a device",
+                )
+            })?;
+            let path = dir.join(DEVICE_FILE);
+            // The builder reads back the identity this call keeps, so both
+            // see the same device.
+            device_name = Some(warren_sdk::kept_device_identity(&path).name);
+            builder = builder.device(path, platform, app_version);
+        }
         let inner = builder
             .build()
             .map_err(|e| err(WarrenErrorKind::Api, e.to_string()))?;
@@ -152,6 +202,7 @@ impl WarrenClientFrb {
         Ok(Self {
             inner: Arc::new(inner),
             address,
+            device_name: Mutex::new(device_name),
         })
     }
 
@@ -300,6 +351,88 @@ impl WarrenClientFrb {
         Ok(WarrenSessionFrb::new(handle))
     }
 
+    /// This install's device identifier (base64url), when the client was
+    /// built with an app version. Keep it out of every log.
+    pub fn device_id(&self) -> Option<String> {
+        self.inner.device_id().map(String::from)
+    }
+
+    /// The name this install's device registers under, as this client last
+    /// knew it, when the client was built with an app version. A rename
+    /// made from another device reaches it only through the next list.
+    pub fn device_name(&self) -> Option<String> {
+        self.device_name
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
+    }
+
+    /// Whether this install's device was revoked from another device of the
+    /// account, as the last credential refresh learned. Sticky. When it reads
+    /// `true` the app disconnects, says "This device was disconnected from
+    /// another device of your account", calls [`Self::forget_device`] and asks
+    /// for the recovery phrase again.
+    pub fn device_revoked(&self) -> bool {
+        self.inner.device_revoked()
+    }
+
+    /// Whether the last credential refresh found the account's device cap
+    /// reached: this install is not registered and is issued no session token
+    /// until another device is revoked. Not sticky.
+    pub fn device_limit_reached(&self) -> bool {
+        self.inner.device_limit_reached()
+    }
+
+    /// The account's devices, this install's marked `this_device`, and the
+    /// last day an older client of the account was superseded.
+    pub async fn list_devices(&self) -> Result<DeviceListDto, WarrenFfiError> {
+        self.inner
+            .list_devices()
+            .await
+            .map(device_list_to_dto)
+            .map_err(map_sdk_error)
+    }
+
+    /// Renames a device of the account. Renaming this install's own device
+    /// also keeps the name for its later registrations.
+    pub async fn rename_device(
+        &self,
+        device_id: String,
+        name: String,
+    ) -> Result<(), WarrenFfiError> {
+        let id = parse_device_id(device_id)?;
+        self.inner
+            .rename_device(id, &name)
+            .await
+            .map_err(map_sdk_error)?;
+        if self.inner.device_id() == Some(id) {
+            *self
+                .device_name
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = Some(name);
+        }
+        Ok(())
+    }
+
+    /// Revokes a device of the account. Revoking this install's own device is
+    /// a logout: the next refresh reads it revoked.
+    pub async fn revoke_device(&self, device_id: String) -> Result<(), WarrenFfiError> {
+        let id = parse_device_id(device_id)?;
+        self.inner.revoke_device(id).await.map_err(map_sdk_error)
+    }
+
+    /// Erases this install's kept device identity from the state directory,
+    /// once it was revoked or logged out: the next client draws a new one.
+    /// Does nothing for a client without a device.
+    pub fn forget_device(&self) -> Result<(), WarrenFfiError> {
+        self.inner.forget_device().map_err(|_| {
+            err(
+                WarrenErrorKind::Api,
+                "the device identity could not be erased",
+            )
+        })
+    }
+
     /// Permanently deletes the account bound to this identity (signed
     /// `DELETE /v1/account`). App stores require an in-app account-deletion path.
     pub async fn delete_account(&self) -> Result<(), WarrenFfiError> {
@@ -343,9 +476,15 @@ fn map_client_error(error: ClientError) -> WarrenFfiError {
         }),
         _ => None,
     };
+    let device = match &error {
+        ClientError::DeviceRevoked => Some(DeviceRefusalDto::Revoked),
+        ClientError::DeviceLimitReached => Some(DeviceRefusalDto::LimitReached),
+        _ => None,
+    };
     WarrenFfiError {
         ban,
         clock_skew,
+        device,
         ..err(WarrenErrorKind::Api, error.to_string())
     }
 }
@@ -372,9 +511,138 @@ mod tests {
     use warren_sdk::api::{BanReasonCode, ClientError};
     use warren_sdk::SdkError;
 
-    use super::{map_client_error, map_sdk_error};
+    use super::{map_client_error, map_sdk_error, WarrenClientFrb, DEVICE_FILE};
     use crate::api::datapath::BanReasonDto;
-    use crate::api::error::WarrenErrorKind;
+    use crate::api::error::{DeviceRefusalDto, WarrenErrorKind, WarrenFfiError};
+    use crate::api::identity::generate_mnemonic;
+
+    async fn client(
+        state_dir: Option<&std::path::Path>,
+        app_version: Option<&str>,
+    ) -> Result<WarrenClientFrb, WarrenFfiError> {
+        WarrenClientFrb::create(
+            generate_mnemonic(),
+            "https://api.example.test".to_owned(),
+            Vec::new(),
+            "00".repeat(32),
+            None,
+            false,
+            None,
+            false,
+            state_dir.map(|d| d.to_string_lossy().into_owned()),
+            app_version.map(str::to_owned),
+        )
+        .await
+    }
+
+    /// Unwraps a bridge result; the bridge error has no `Debug` on purpose.
+    fn ok<T>(result: Result<T, WarrenFfiError>) -> T {
+        match result {
+            Ok(value) => value,
+            Err(error) => panic!("unexpected bridge error: {}", error.message),
+        }
+    }
+
+    fn scratch_dir(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "warren-frb-test-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("clock after the epoch")
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).expect("scratch dir");
+        dir
+    }
+
+    #[tokio::test]
+    async fn a_client_given_an_app_version_keeps_its_device_in_the_state_dir() {
+        let dir = scratch_dir("kept");
+
+        let first = ok(client(Some(&dir), Some("1.2.0")).await);
+        let second = ok(client(Some(&dir), Some("1.2.0")).await);
+
+        let id = first.device_id().expect("a registered install has an id");
+        assert_eq!(second.device_id(), Some(id), "one install, one device");
+        assert!(dir.join(DEVICE_FILE).exists());
+        let kept = warren_sdk::kept_device_identity(&dir.join(DEVICE_FILE));
+        assert_eq!(first.device_name(), Some(kept.name));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[tokio::test]
+    async fn a_client_without_an_app_version_registers_no_device() {
+        let dir = scratch_dir("none");
+
+        let plain = ok(client(Some(&dir), None).await);
+
+        assert_eq!(plain.device_id(), None);
+        assert_eq!(plain.device_name(), None);
+        assert!(!dir.join(DEVICE_FILE).exists());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[tokio::test]
+    async fn a_device_without_a_state_directory_is_refused() {
+        let refused = client(None, Some("1.2.0")).await;
+
+        let Err(error) = refused else {
+            panic!("a device without a state directory was accepted");
+        };
+        assert!(matches!(error.kind, WarrenErrorKind::Api));
+        assert!(
+            error.message.contains("state directory"),
+            "{}",
+            error.message
+        );
+    }
+
+    #[tokio::test]
+    async fn a_forgotten_device_is_drawn_anew_by_the_next_client() {
+        let dir = scratch_dir("forget");
+        let revoked = ok(client(Some(&dir), Some("1.2.0")).await);
+        let old = revoked.device_id().expect("id");
+
+        ok(revoked.forget_device());
+        let next = ok(client(Some(&dir), Some("1.2.0")).await);
+
+        assert_ne!(next.device_id().expect("id"), old);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[tokio::test]
+    async fn a_malformed_device_id_is_refused_typed_before_any_call() {
+        let plain = ok(client(None, None).await);
+
+        let renamed = plain
+            .rename_device("not-a-device".to_owned(), "x".to_owned())
+            .await;
+        let revoked = plain.revoke_device("not-a-device".to_owned()).await;
+
+        for result in [renamed, revoked] {
+            let Err(error) = result else {
+                panic!("a malformed device id was accepted");
+            };
+            assert_eq!(error.device, Some(DeviceRefusalDto::InvalidId));
+        }
+    }
+
+    #[test]
+    fn a_device_revocation_crosses_the_bridge_typed() {
+        let mapped = map_sdk_error(SdkError::Api(ClientError::DeviceRevoked));
+
+        assert!(matches!(mapped.kind, WarrenErrorKind::Api));
+        assert_eq!(mapped.device, Some(DeviceRefusalDto::Revoked));
+        assert!(mapped.ban.is_none());
+    }
+
+    #[test]
+    fn the_device_cap_crosses_the_bridge_typed() {
+        let mapped = map_client_error(ClientError::DeviceLimitReached);
+
+        assert_eq!(mapped.device, Some(DeviceRefusalDto::LimitReached));
+    }
 
     #[test]
     fn a_ban_refusal_crosses_the_bridge_typed() {
@@ -435,5 +703,6 @@ mod tests {
         assert!(matches!(mapped.kind, WarrenErrorKind::Api));
         assert!(mapped.ban.is_none());
         assert!(mapped.clock_skew.is_none());
+        assert!(mapped.device.is_none());
     }
 }

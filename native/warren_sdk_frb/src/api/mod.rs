@@ -4,9 +4,11 @@
 //! - [`identity`]: stateless identity helpers.
 //! - [`client`]: the account API over a live engine client.
 //! - [`datapath`]: the proxy session and its connection-state stream.
+//! - [`device`]: the account's device registry.
 //! - [`error`]: the typed error mirrored to Dart.
 
 pub mod client;
 pub mod datapath;
+pub mod device;
 pub mod error;
 pub mod identity;

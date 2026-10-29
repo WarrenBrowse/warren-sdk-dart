@@ -75,6 +75,39 @@ http.addProxyCredentials(
 await session.disconnect();
 ```
 
+### The account's devices
+
+Created with an `appVersion` (and a `stateDir`, where the identity is kept), the
+client registers the install as a device of the account (warren-core doc 115),
+on the platform it runs on. The desktop daemon registers under the same
+identity, so an install is one device whichever datapath it uses.
+
+```dart
+final warren = await WarrenClient.create(
+  mnemonic: mnemonic,
+  apiBase: Uri.parse(warrenApiBase),
+  serverPubkeyPin: kWarrenServerPubkeyPin,
+  stateDir: stateDir,
+  appVersion: '1.2.0',
+);
+
+final list = await warren.devices.list(); // name, platform, version, days seen
+await warren.devices.rename(list.devices.first.deviceId, 'Work laptop');
+await warren.devices.revoke(otherDeviceId); // signs that device out
+
+// Revoked from another device: the session ends on its fatal cause, and the
+// client's flag turns true. Disconnect, forget, ask for the recovery phrase.
+session.states.listen((s) async {
+  if (s case ConnectionFailed(cause: WarrenFatalCause.deviceRevoked)) {
+    await session.disconnect();
+    await warren.devices.forgetThisDevice();
+  }
+});
+if (await warren.devices.limitReached()) {
+  // The account's device cap: open the device list.
+}
+```
+
 Apps add exactly one dependency, `warren_sdk`. Riverpod users may also add the
 optional `warren_sdk_riverpod`.
 
