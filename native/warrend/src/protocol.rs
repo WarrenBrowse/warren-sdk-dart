@@ -35,6 +35,15 @@ pub enum Request {
         // pre-lockdown wire behaviour.
         #[serde(default)]
         lockdown: bool,
+        /// The app's version. With the device's identifier and name, the
+        /// daemon registers the app's own device (warren-core doc 115); an
+        /// older client sends none and the daemon registers nothing.
+        #[serde(default, rename = "appVersion")]
+        app_version: Option<String>,
+        #[serde(default, rename = "deviceId")]
+        device_id: Option<String>,
+        #[serde(default, rename = "deviceName")]
+        device_name: Option<String>,
     },
     /// Bring up a system-VPN session to an exit (Ed25519 id from `listExits`).
     Connect {
@@ -52,7 +61,8 @@ const fn default_true() -> bool {
 }
 
 /// Renders only the variant and its switches: a configure request carries the
-/// mnemonic, and no identity material may reach a log line.
+/// mnemonic and the device's identity, and no identity material may reach a
+/// log line.
 impl fmt::Debug for Request {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -118,6 +128,10 @@ pub enum WireFatalCause {
     Banned,
     PolicyRefused,
     NoReachableEntry,
+    /// This install's device was revoked from another device of the account.
+    /// Not an engine `FatalCause`: the daemon reads it from the engine's
+    /// device registry state.
+    DeviceRevoked,
 }
 
 impl From<FatalCause> for WireFatalCause {
@@ -265,6 +279,51 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn configure_carries_the_device_to_register() {
+        let configure: Request = serde_json::from_str(
+            r#"{"type":"configure","mnemonic":"m","apiBase":"https://a",
+                "serverPubkeyPin":"p","appVersion":"1.2.0",
+                "deviceId":"CQkJCQkJCQkJCQkJCQkJCQ","deviceName":"quiet otter"}"#,
+        )
+        .expect("configure");
+        match configure {
+            Request::Configure {
+                app_version,
+                device_id,
+                device_name,
+                ..
+            } => {
+                assert_eq!(app_version.as_deref(), Some("1.2.0"));
+                assert_eq!(device_id.as_deref(), Some("CQkJCQkJCQkJCQkJCQkJCQ"));
+                assert_eq!(device_name.as_deref(), Some("quiet otter"));
+            }
+            _ => panic!("expected configure"),
+        }
+    }
+
+    #[test]
+    fn a_configure_request_never_prints_its_device() {
+        let configure: Request = serde_json::from_str(
+            r#"{"type":"configure","mnemonic":"m","apiBase":"https://a",
+                "serverPubkeyPin":"p","appVersion":"1.2.0",
+                "deviceId":"CQkJCQkJCQkJCQkJCQkJCQ","deviceName":"quiet otter"}"#,
+        )
+        .expect("configure");
+
+        let rendered = format!("{configure:?}");
+
+        assert!(!rendered.contains("CQkJ"), "{rendered}");
+        assert!(!rendered.contains("otter"), "{rendered}");
+    }
+
+    #[test]
+    fn a_revoked_device_crosses_under_its_own_name() {
+        let cause = serde_json::to_value(WireFatalCause::DeviceRevoked).expect("cause json");
+
+        assert_eq!(cause, "deviceRevoked");
     }
 
     #[test]

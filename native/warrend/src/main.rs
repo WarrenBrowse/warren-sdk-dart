@@ -27,6 +27,7 @@
 
 mod cmd;
 mod control_socket;
+mod device;
 mod netblock;
 mod posture;
 mod protocol;
@@ -38,7 +39,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::UnixStream;
 use warren_sdk::api::ClientError;
 use warren_sdk::discovery::VerifiedExit;
@@ -295,7 +296,10 @@ async fn run_daemon(socket_path: String) -> Result<()> {
         let socket = Arc::clone(&socket);
         let runner = Arc::clone(&runner);
         tokio::spawn(async move {
-            if let Err(error) = serve_connection(&mut stream, &tunnel, &runner, &lockdown).await {
+            let revocation = RevocationWatch::engine();
+            if let Err(error) =
+                serve_connection(&mut stream, &tunnel, &runner, &lockdown, &revocation).await
+            {
                 eprintln!("warrend: connection ended: {error}");
             }
             // The owner connection is gone. A clean disconnect already emptied
@@ -404,11 +408,47 @@ async fn shutdown_signal() {
     }
 }
 
-/// Per-connection state: the configured engine client. The tunnel itself lives in
-/// the shared slot so signals and connection close can both act on it.
+/// Per-connection state: the configured engine client, and the device file it
+/// registers from. The tunnel itself lives in the shared slot so signals and
+/// connection close can both act on it.
 #[derive(Default)]
 struct Session {
     client: Option<CpClient>,
+    /// Declared after `client`, so the client that may still write the file
+    /// is dropped before the file's directory goes.
+    device: Option<device::DeviceFile>,
+}
+
+/// How the serve loop learns that the configured client's device was revoked
+/// from another device of the account (warren-core doc 115).
+///
+/// The engine learns a revocation from its credential refresh, every 10
+/// minutes, and keeps it as a flag; the loop reads the flag every `every`
+/// and tells the app once, which disconnects, forgets the device and says why.
+struct RevocationWatch {
+    every: std::time::Duration,
+    revoked: fn(&CpClient) -> bool,
+}
+
+impl RevocationWatch {
+    /// The engine's own flag, read twice a minute.
+    fn engine() -> Self {
+        Self {
+            every: std::time::Duration::from_secs(30),
+            revoked: CpClient::device_revoked,
+        }
+    }
+}
+
+/// The event that tells the app its device was revoked: a definitive verdict,
+/// which the client reads as a terminal state.
+fn revoked_event() -> Event {
+    Event::Error {
+        kind: "api".to_owned(),
+        message: "this device was disconnected from another device of the account".to_owned(),
+        clock_skew: None,
+        fatal_cause: Some(WireFatalCause::DeviceRevoked),
+    }
 }
 
 async fn serve_connection(
@@ -416,34 +456,74 @@ async fn serve_connection(
     tunnel: &SharedTunnel,
     runner: &Arc<dyn CmdRunner>,
     lockdown: &Arc<AtomicBool>,
+    revocation: &RevocationWatch,
 ) -> Result<()> {
-    let mut session = Session::default();
-    while let Some(mut frame) = read_frame(stream).await? {
-        // A configure frame carries the raw mnemonic; wipe the buffer as soon as
-        // it is parsed so the seed does not linger on the heap of this root
-        // process (parsing has already copied any fields it keeps).
-        let parsed = serde_json::from_slice::<Request>(&frame);
-        frame.zeroize();
-        let request: Request = match parsed {
-            Ok(request) => request,
-            Err(_) => {
-                send(stream, &Event::error("tunnel", "malformed request")).await?;
-                continue;
+    let (mut reader, mut writer) = stream.split();
+    // Frames are read in their own loop and handed over a channel, because a
+    // frame read cut short by the revocation tick would lose its bytes.
+    let (frames_tx, mut frames) = tokio::sync::mpsc::channel::<Result<Option<Vec<u8>>>>(1);
+    let read_loop = async move {
+        loop {
+            let frame = read_frame(&mut reader).await;
+            let last = !matches!(frame, Ok(Some(_)));
+            if frames_tx.send(frame).await.is_err() || last {
+                break;
             }
-        };
-        // Teardown is not instantaneous (routing + pf revert): announce it so
-        // the client can hold a "draining, killswitch still up" state instead
-        // of reading the eventual Disconnected as already true.
-        if matches!(request, Request::Disconnect) {
-            send(stream, &Event::state(ConnState::Draining)).await?;
         }
-        match handle(&mut session, tunnel, runner, lockdown, request).await {
-            Ok(Some(event)) => send(stream, &event).await?,
-            Ok(None) => {}
-            Err(event) => send(stream, &event).await?,
+    };
+    let serve_loop = async {
+        let mut session = Session::default();
+        let mut tick = tokio::time::interval(revocation.every);
+        tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+        let mut revocation_told = false;
+        loop {
+            tokio::select! {
+                frame = frames.recv() => {
+                    let Some(mut frame) = frame.transpose()?.flatten() else {
+                        return Ok(());
+                    };
+                    // A configure frame carries the raw mnemonic; wipe the
+                    // buffer as soon as it is parsed so the seed does not
+                    // linger on the heap of this root process (parsing has
+                    // already copied any fields it keeps).
+                    let parsed = serde_json::from_slice::<Request>(&frame);
+                    frame.zeroize();
+                    let request: Request = match parsed {
+                        Ok(request) => request,
+                        Err(_) => {
+                            send(&mut writer, &Event::error("tunnel", "malformed request")).await?;
+                            continue;
+                        }
+                    };
+                    // Teardown is not instantaneous (routing + pf revert):
+                    // announce it so the client can hold a "draining,
+                    // killswitch still up" state instead of reading the
+                    // eventual Disconnected as already true.
+                    if matches!(request, Request::Disconnect) {
+                        send(&mut writer, &Event::state(ConnState::Draining)).await?;
+                    }
+                    match handle(&mut session, tunnel, runner, lockdown, request).await {
+                        Ok(Some(event)) | Err(event) => send(&mut writer, &event).await?,
+                        Ok(None) => {}
+                    }
+                }
+                _ = tick.tick(), if !revocation_told => {
+                    if session.client.as_ref().is_some_and(revocation.revoked) {
+                        revocation_told = true;
+                        send(&mut writer, &revoked_event()).await?;
+                    }
+                }
+            }
+        }
+    };
+    tokio::pin!(read_loop, serve_loop);
+    let mut reading = true;
+    loop {
+        tokio::select! {
+            result = &mut serve_loop => return result,
+            () = &mut read_loop, if reading => reading = false,
         }
     }
-    Ok(())
 }
 
 /// Runs one blocking netblock step off the async runtime.
@@ -624,6 +704,9 @@ async fn handle(
             daita_machine,
             request_ipv6,
             lockdown: lockdown_requested,
+            app_version,
+            device_id,
+            device_name,
         } => {
             let identity_result = WarrenIdentity::from_mnemonic(&mnemonic);
             // The engine keeps only the zeroized derived key; wipe our own copy
@@ -653,11 +736,38 @@ async fn handle(
             // warren-app's anti-DPI handshake. The SDK itself stays on upstream.
             builder = builder
                 .transport_config(warrenguard_transport_core::warren_transport_config_client());
+            let device = match (app_version, device_id, device_name) {
+                (None, None, None) => None,
+                (Some(app_version), Some(device_id), Some(name)) => Some(device::DeviceRequest {
+                    device_id,
+                    name,
+                    app_version,
+                }),
+                _ => {
+                    return Err(Event::error(
+                        "api",
+                        "a device needs its identifier, its name and the app version",
+                    ))
+                }
+            };
+            let device_file = match device {
+                Some(request) => {
+                    let platform = device::platform_for(std::env::consts::OS).ok_or_else(|| {
+                        Event::error("api", "this platform cannot register a device")
+                    })?;
+                    let file = device::DeviceFile::create(&std::env::temp_dir(), &request)
+                        .map_err(|e| Event::error("api", e.to_string()))?;
+                    builder = builder.device(file.path(), platform, request.app_version);
+                    Some(file)
+                }
+                None => None,
+            };
             let transport = build_cp_transport().map_err(|e| Event::error("api", e.to_string()))?;
             let client = builder
                 .build_with_transport(transport)
                 .map_err(|e| Event::error("api", e.to_string()))?;
             session.client = Some(client);
+            session.device = device_file;
             lockdown.store(lockdown_requested, Ordering::SeqCst);
             Ok(None)
         }
@@ -779,6 +889,10 @@ fn map_sdk_error(error: SdkError) -> Event {
             .retryability()
             .fatal_cause()
             .map(WireFatalCause::from),
+        // The engine names a tokenless dial after the device registry's
+        // verdict: neither a redial nor another exit helps.
+        SdkError::Api(ClientError::DeviceRevoked) => Some(WireFatalCause::DeviceRevoked),
+        SdkError::Api(ClientError::DeviceLimitReached) => Some(WireFatalCause::DeviceLimit),
         _ => None,
     };
     Event::Error {
@@ -803,7 +917,7 @@ fn error_chain(error: &dyn std::error::Error) -> String {
 }
 
 /// Reads one length-prefixed frame, or `None` at clean EOF.
-async fn read_frame(stream: &mut UnixStream) -> Result<Option<Vec<u8>>> {
+async fn read_frame(stream: &mut (impl AsyncRead + Unpin)) -> Result<Option<Vec<u8>>> {
     let mut len_buf = [0u8; 4];
     match stream.read_exact(&mut len_buf).await {
         Ok(_) => {}
@@ -817,7 +931,7 @@ async fn read_frame(stream: &mut UnixStream) -> Result<Option<Vec<u8>>> {
     Ok(Some(payload))
 }
 
-async fn send(stream: &mut UnixStream, event: &Event) -> Result<()> {
+async fn send(stream: &mut (impl AsyncWrite + Unpin), event: &Event) -> Result<()> {
     let payload = serde_json::to_vec(event)?;
     stream
         .write_all(&(payload.len() as u32).to_be_bytes())
@@ -834,14 +948,20 @@ mod tests {
 
     /// Reads one framed daemon event from `stream` as JSON.
     async fn read_event(stream: &mut UnixStream) -> serde_json::Value {
-        let mut len_buf = [0u8; 4];
-        stream.read_exact(&mut len_buf).await.expect("frame length");
-        let mut payload = vec![0u8; u32::from_be_bytes(len_buf) as usize];
-        stream
-            .read_exact(&mut payload)
-            .await
-            .expect("frame payload");
-        serde_json::from_slice(&payload).expect("event json")
+        // Bounded, so an event the daemon never sends fails the test rather
+        // than hanging it.
+        tokio::time::timeout(std::time::Duration::from_secs(10), async {
+            let mut len_buf = [0u8; 4];
+            stream.read_exact(&mut len_buf).await.expect("frame length");
+            let mut payload = vec![0u8; u32::from_be_bytes(len_buf) as usize];
+            stream
+                .read_exact(&mut payload)
+                .await
+                .expect("frame payload");
+            serde_json::from_slice(&payload).expect("event json")
+        })
+        .await
+        .expect("the daemon sent no event in time")
     }
 
     async fn send_frame(stream: &mut UnixStream, payload: &[u8]) {
@@ -860,13 +980,25 @@ mod tests {
         Arc<RecordingRunner>,
         tokio::task::JoinHandle<Result<()>>,
     ) {
+        spawn_serve_watching(lockdown_preset, RevocationWatch::engine())
+    }
+
+    /// [`spawn_serve`] with the revocation watch the loop reads.
+    fn spawn_serve_watching(
+        lockdown_preset: bool,
+        revocation: RevocationWatch,
+    ) -> (
+        UnixStream,
+        Arc<RecordingRunner>,
+        tokio::task::JoinHandle<Result<()>>,
+    ) {
         let (mut daemon_end, client_end) = UnixStream::pair().expect("socketpair");
         let tunnel: SharedTunnel = Arc::new(Mutex::new(None));
         let recording = Arc::new(RecordingRunner::default());
         let runner: Arc<dyn CmdRunner> = recording.clone();
         let lockdown = Arc::new(AtomicBool::new(lockdown_preset));
         let serve = tokio::spawn(async move {
-            serve_connection(&mut daemon_end, &tunnel, &runner, &lockdown).await
+            serve_connection(&mut daemon_end, &tunnel, &runner, &lockdown, &revocation).await
         });
         (client_end, recording, serve)
     }
@@ -887,6 +1019,132 @@ mod tests {
             (program == "nft" && args.iter().any(|a| a == netblock::ENGINE_NFT_TABLE))
                 || (program == "pfctl" && args.iter().any(|a| a == netblock::ENGINE_PF_ANCHOR))
         })
+    }
+
+    /// A watch that reads every configured client revoked, at once.
+    fn always_revoked() -> RevocationWatch {
+        RevocationWatch {
+            every: std::time::Duration::from_millis(10),
+            revoked: |_| true,
+        }
+    }
+
+    fn configure_frame(device: Option<(&str, &str, &str)>) -> Vec<u8> {
+        let (_, mnemonic) = WarrenIdentity::generate();
+        let mut request = serde_json::json!({
+            "type": "configure",
+            "mnemonic": mnemonic,
+            "apiBase": "https://api.example.test",
+            "serverPubkeyPin": "00".repeat(32),
+        });
+        if let Some((version, id, name)) = device {
+            request["appVersion"] = version.into();
+            request["deviceId"] = id.into();
+            request["deviceName"] = name.into();
+        }
+        serde_json::to_vec(&request).expect("configure json")
+    }
+
+    #[tokio::test]
+    async fn a_revoked_device_is_told_to_the_app_once() {
+        let (mut client, _runner, _serve) = spawn_serve_watching(false, always_revoked());
+
+        send_frame(&mut client, &configure_frame(None)).await;
+        let event = read_event(&mut client).await;
+        // Several ticks pass before the next request.
+        tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+        send_frame(&mut client, br#"{"type":"disconnect"}"#).await;
+        let next = read_event(&mut client).await;
+
+        assert_eq!(event["type"], "error");
+        assert_eq!(event["fatalCause"], "deviceRevoked");
+        assert_eq!(
+            next,
+            serde_json::json!({"type": "state", "state": "draining"}),
+            "the revocation is told once, not at every tick"
+        );
+    }
+
+    #[tokio::test]
+    async fn nothing_is_revoked_before_a_client_is_configured() {
+        let (mut client, _runner, _serve) = spawn_serve_watching(false, always_revoked());
+
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        send_frame(&mut client, br#"{"type":"disconnect"}"#).await;
+
+        assert_eq!(
+            read_event(&mut client).await,
+            serde_json::json!({"type": "state", "state": "draining"})
+        );
+    }
+
+    #[tokio::test]
+    async fn configure_registers_the_apps_own_device() {
+        let id = String::from(warren_sdk::api::DeviceId::from_bytes([9; 16]));
+        let request: Request =
+            serde_json::from_slice(&configure_frame(Some(("1.2.0", &id, "quiet otter"))))
+                .expect("configure");
+        let mut session = Session::default();
+
+        let answer = handle(
+            &mut session,
+            &Arc::new(Mutex::new(None)),
+            &(Arc::new(RecordingRunner::default()) as Arc<dyn CmdRunner>),
+            &Arc::new(AtomicBool::new(false)),
+            request,
+        )
+        .await;
+
+        assert!(matches!(answer, Ok(None)));
+        let client = session.client.as_ref().expect("configured");
+        assert_eq!(client.device_id().map(String::from), Some(id));
+        assert!(session.device.is_some());
+    }
+
+    #[tokio::test]
+    async fn a_configure_without_a_device_registers_none() {
+        let request: Request = serde_json::from_slice(&configure_frame(None)).expect("configure");
+        let mut session = Session::default();
+
+        let answer = handle(
+            &mut session,
+            &Arc::new(Mutex::new(None)),
+            &(Arc::new(RecordingRunner::default()) as Arc<dyn CmdRunner>),
+            &Arc::new(AtomicBool::new(false)),
+            request,
+        )
+        .await;
+
+        assert!(matches!(answer, Ok(None)));
+        assert_eq!(
+            session.client.as_ref().expect("configured").device_id(),
+            None
+        );
+        assert!(session.device.is_none());
+    }
+
+    #[tokio::test]
+    async fn a_configure_naming_half_a_device_is_refused() {
+        let mut frame: serde_json::Value =
+            serde_json::from_slice(&configure_frame(None)).expect("json");
+        frame["appVersion"] = "1.2.0".into();
+        let request: Request = serde_json::from_value(frame).expect("configure");
+        let mut session = Session::default();
+
+        let answer = handle(
+            &mut session,
+            &Arc::new(Mutex::new(None)),
+            &(Arc::new(RecordingRunner::default()) as Arc<dyn CmdRunner>),
+            &Arc::new(AtomicBool::new(false)),
+            request,
+        )
+        .await;
+
+        let Err(event) = answer else {
+            panic!("half a device was accepted");
+        };
+        assert_eq!(serde_json::to_value(&event).expect("json")["kind"], "api");
+        assert!(session.client.is_none());
     }
 
     #[tokio::test]
@@ -1387,6 +1645,23 @@ mod error_mapping_tests {
     use super::*;
     use warren_sdk::transport::MultihopError;
     use warren_sdk::NoSessionTokenCause;
+
+    #[test]
+    fn a_revocation_on_dial_crosses_the_ipc_as_its_cause() {
+        let event = map_sdk_error(SdkError::Api(ClientError::DeviceRevoked));
+
+        let json = serde_json::to_value(&event).expect("event json");
+        assert_eq!(json["kind"], "api");
+        assert_eq!(json["fatalCause"], "deviceRevoked");
+    }
+
+    #[test]
+    fn the_device_cap_on_dial_crosses_the_ipc_as_its_cause() {
+        let event = map_sdk_error(SdkError::Api(ClientError::DeviceLimitReached));
+
+        let json = serde_json::to_value(&event).expect("event json");
+        assert_eq!(json["fatalCause"], "deviceLimit");
+    }
 
     #[test]
     fn a_clock_refusal_crosses_the_ipc_typed_with_its_offset() {

@@ -46,7 +46,7 @@ App to daemon (requests):
 
 | `type` | Fields | Meaning |
 |---|---|---|
-| `configure` | `mnemonic`, `apiBase`, `serverPubkeyPin`, `multihopRootPin?`, `daita?`, `daitaMachine?`, `requestIpv6?` | Bind identity + account API and the client build options. The daemon derives and zeroizes the key; it never logs the mnemonic. |
+| `configure` | `mnemonic`, `apiBase`, `serverPubkeyPin`, `multihopRootPin?`, `daita?`, `daitaMachine?`, `requestIpv6?`, `lockdown?`, `appVersion?`, `deviceId?`, `deviceName?` | Bind identity + account API and the client build options. The daemon derives and zeroizes the key; it never logs the mnemonic. With all three device fields it registers the app's own device (warren-core doc 115), so the install is one device of its account; any other combination of them is refused. |
 | `connect` | `exitPubkeyHex`, `dnsOverTunnel` | Bring up a system-VPN session to the exit (Ed25519 id from `listExits`). |
 | `disconnect` | none | Tear the session down. |
 
@@ -54,8 +54,8 @@ Daemon to app (events):
 
 | `type` | Fields | Meaning |
 |---|---|---|
-| `state` | `state` (`connecting`/`connected`/`reconnecting`/`failed`/`disconnected`) | Connection-state transition. |
-| `error` | `kind` (`identity`/`api`/`discovery`/`tunnel`/`privilege`), `message` (redacted) | A failure; never carries key, address or IP. |
+| `state` | `state` (`connecting`/`connected`/`reconnecting`/`draining`/`failed`/`disconnected`) | Connection-state transition. |
+| `error` | `kind` (`identity`/`api`/`discovery`/`tunnel`/`privilege`), `message` (redacted), `clockSkew?`, `fatalCause?` | A failure; never carries key, address or IP. A `fatalCause` (`notAuthorized`, `deviceLimit`, `banned`, `policyRefused`, `noReachableEntry`, `deviceRevoked`) is definitive: the client reads it as a terminal failed state. `deviceRevoked` is also sent once, mid-session, when the configured device is revoked from another device of the account; the app then disconnects, forgets the device and asks for the recovery phrase. |
 
 ## Daemon responsibilities (the privileged, gated half)
 
