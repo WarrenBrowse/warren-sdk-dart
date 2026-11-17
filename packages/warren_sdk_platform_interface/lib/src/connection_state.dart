@@ -78,9 +78,10 @@ final class Disconnected extends _SingletonState {
 ///
 /// Present on a [ConnectionFailed] exactly when no redial and no other exit
 /// resolves it: the engine classified the failure as tied to the account, an
-/// opaque policy close, or a network that routes no entry relay. A [ConnectionFailed] whose [ConnectionFailed.cause] is
-/// `null` is mere retry exhaustion, a transient failure that never resolved. The
-/// engine owns this classification; the SDK maps it, it never re-decides.
+/// opaque policy close, a network that routes no entry relay, or a device
+/// clock two exits refused. A [ConnectionFailed] whose [ConnectionFailed.cause]
+/// is `null` is mere retry exhaustion, a transient failure that never resolved.
+/// The engine owns this classification; the SDK maps it, it never re-decides.
 enum WarrenFatalCause {
   /// No active subscription, or the identity is not in the exit allowlist. The
   /// user must provision or renew; retrying reproduces it.
@@ -102,6 +103,11 @@ enum WarrenFatalCause {
   /// account nor the fleet is at fault: the user changes network, or unpins
   /// an entry country the network cannot reach.
   noReachableEntry,
+
+  /// Two different exits refused this device's time for the session setup:
+  /// the device clock is wrong. The user sets the date and time to automatic;
+  /// renewing does not help.
+  clockSkew,
 
   /// This install's device was revoked from another device of the account
   /// (warren-core doc 115). The app disconnects, forgets the device identity
@@ -167,6 +173,7 @@ ConnectionFailed connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
         WarrenFatalCause.policyRefused => 'tunnel/policy-refused',
         WarrenFatalCause.banned => 'tunnel/banned',
         WarrenFatalCause.noReachableEntry => 'tunnel/no-reachable-entry',
+        WarrenFatalCause.clockSkew => 'tunnel/clock-skew',
         WarrenFatalCause.deviceRevoked => 'tunnel/device-revoked',
       },
       message: switch (cause) {
@@ -183,6 +190,9 @@ ConnectionFailed connectionFailed(WarrenFatalCause? cause) => ConnectionFailed(
           "no entry relay is reachable on this network's address families; "
               'change network, or unpin an entry country this network cannot '
               'reach',
+        WarrenFatalCause.clockSkew =>
+          "two servers refused this device's time; set the date and time to "
+              'automatic',
         WarrenFatalCause.deviceRevoked =>
           'this device was disconnected from another device of the account; '
               'sign in again with the recovery phrase',

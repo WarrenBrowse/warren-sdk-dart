@@ -104,6 +104,15 @@ void main() {
       expect(e.clockSkew, isNull);
     });
 
+    test('carries a device clock two exits refused by its name', () {
+      final e = parse({
+        'kind': 'tunnel',
+        'message': 'clock',
+        'fatalCause': 'clockSkew',
+      });
+      expect(e.fatalCause, WarrenFatalCause.clockSkew);
+    });
+
     test('reads a fatal cause this client does not know as a refusal', () {
       // Still definitive: read as retryable, it would loop a fatal forever.
       final e = parse({

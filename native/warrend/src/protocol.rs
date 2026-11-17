@@ -128,6 +128,9 @@ pub enum WireFatalCause {
     Banned,
     PolicyRefused,
     NoReachableEntry,
+    /// Two different exits refused this device's time: the device clock is
+    /// wrong, and the user sets the date and time to automatic.
+    ClockSkew,
     /// This install's device was revoked from another device of the account.
     /// Not an engine `FatalCause`: the daemon reads it from the engine's
     /// device registry state.
@@ -142,6 +145,7 @@ impl From<FatalCause> for WireFatalCause {
             FatalCause::Banned => WireFatalCause::Banned,
             FatalCause::PolicyRefused => WireFatalCause::PolicyRefused,
             FatalCause::NoReachableEntry => WireFatalCause::NoReachableEntry,
+            FatalCause::ClockSkew => WireFatalCause::ClockSkew,
             // `FatalCause` is `#[non_exhaustive]`: a cause this daemon does not
             // name yet still crosses as a definitive refusal, never as a
             // retryable failure.
@@ -376,6 +380,14 @@ mod tests {
             .expect("cause json");
 
         assert_eq!(cause, "noReachableEntry");
+    }
+
+    #[test]
+    fn a_device_clock_two_exits_refused_crosses_under_its_own_name() {
+        let cause = serde_json::to_value(WireFatalCause::from(FatalCause::ClockSkew))
+            .expect("cause json");
+
+        assert_eq!(cause, "clockSkew");
     }
 
     #[test]

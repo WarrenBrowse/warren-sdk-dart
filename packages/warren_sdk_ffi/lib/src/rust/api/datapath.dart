@@ -8,7 +8,7 @@ import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `ban_reason_dto`, `fatal_to_dto`, `migration_to_dto`, `new`, `new`, `outcome_to_dto`, `to_dto`, `to_engine`, `to_engine`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `eq`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `eq`, `fmt`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WarrenForwardedPortFrb>>
 abstract class WarrenForwardedPortFrb implements RustOpaqueInterface {
@@ -323,5 +323,10 @@ enum WarrenFatalCauseDto {
   /// account nor the fleet is at fault: the user changes network, or unpins
   /// an entry country the network cannot reach.
   noReachableEntry,
+
+  /// Two different exits refused this device's time for the session
+  /// setup: the device clock is wrong. The user sets the date and time to
+  /// automatic; renewing does not help.
+  clockSkew,
   ;
 }

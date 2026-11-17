@@ -64,6 +64,10 @@ pub enum WarrenFatalCauseDto {
     /// account nor the fleet is at fault: the user changes network, or unpins
     /// an entry country the network cannot reach.
     NoReachableEntry,
+    /// Two different exits refused this device's time for the session
+    /// setup: the device clock is wrong. The user sets the date and time to
+    /// automatic; renewing does not help.
+    ClockSkew,
 }
 
 fn fatal_to_dto(cause: FatalCause) -> WarrenFatalCauseDto {
@@ -73,6 +77,7 @@ fn fatal_to_dto(cause: FatalCause) -> WarrenFatalCauseDto {
         FatalCause::PolicyRefused => WarrenFatalCauseDto::PolicyRefused,
         FatalCause::Banned => WarrenFatalCauseDto::Banned,
         FatalCause::NoReachableEntry => WarrenFatalCauseDto::NoReachableEntry,
+        FatalCause::ClockSkew => WarrenFatalCauseDto::ClockSkew,
         // `FatalCause` is `#[non_exhaustive]`. A future fatal kind is still a
         // definitive refusal (never retryable), so surface it as the opaque
         // `PolicyRefused` rather than dropping the "stop" signal.
@@ -635,6 +640,11 @@ mod tests {
         assert_eq!(
             fatal_to_dto(FatalCause::NoReachableEntry),
             WarrenFatalCauseDto::NoReachableEntry
+        );
+        // A wrong device clock is the device's to fix, never the account's.
+        assert_eq!(
+            fatal_to_dto(FatalCause::ClockSkew),
+            WarrenFatalCauseDto::ClockSkew
         );
         // The taxonomy must not collapse to one kind: a subscription rejection
         // has to stay distinguishable from a device-limit one for the client.

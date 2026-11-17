@@ -81,6 +81,7 @@ WarrenFatalCause? mapFatalCause(WarrenFatalCauseDto? cause) => switch (cause) {
       WarrenFatalCauseDto.policyRefused => WarrenFatalCause.policyRefused,
       WarrenFatalCauseDto.banned => WarrenFatalCause.banned,
       WarrenFatalCauseDto.noReachableEntry => WarrenFatalCause.noReachableEntry,
+      WarrenFatalCauseDto.clockSkew => WarrenFatalCause.clockSkew,
     };
 
 /// Maps an engine exit DTO to the public [ExitInfo].

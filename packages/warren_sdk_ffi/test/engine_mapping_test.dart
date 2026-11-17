@@ -379,6 +379,10 @@ void main() {
         mapFatalCause(WarrenFatalCauseDto.noReachableEntry),
         WarrenFatalCause.noReachableEntry,
       );
+      expect(
+        mapFatalCause(WarrenFatalCauseDto.clockSkew),
+        WarrenFatalCause.clockSkew,
+      );
       // Every engine kind reaches its own public kind: no two collapse.
       final mapped = WarrenFatalCauseDto.values.map(mapFatalCause).toList();
       expect(mapped.toSet().length, WarrenFatalCauseDto.values.length);
@@ -418,6 +422,17 @@ void main() {
         failed.message,
         "no entry relay is reachable on this network's address families; "
         'change network, or unpin an entry country this network cannot reach',
+      );
+    });
+
+    test('a device clock two exits refused says to set it to automatic', () {
+      final failed = connectionFailed(WarrenFatalCause.clockSkew);
+
+      expect(failed.code, 'tunnel/clock-skew');
+      expect(
+        failed.message,
+        "two servers refused this device's time; set the date and time to "
+        'automatic',
       );
     });
 
