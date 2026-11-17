@@ -477,7 +477,7 @@ fn map_client_error(error: ClientError) -> WarrenFfiError {
         _ => None,
     };
     let device = match &error {
-        ClientError::DeviceRevoked => Some(DeviceRefusalDto::Revoked),
+        ClientError::DeviceRevoked { .. } => Some(DeviceRefusalDto::Revoked),
         ClientError::DeviceLimitReached => Some(DeviceRefusalDto::LimitReached),
         _ => None,
     };
@@ -630,7 +630,9 @@ mod tests {
 
     #[test]
     fn a_device_revocation_crosses_the_bridge_typed() {
-        let mapped = map_sdk_error(SdkError::Api(ClientError::DeviceRevoked));
+        let mapped = map_sdk_error(SdkError::Api(ClientError::DeviceRevoked {
+            revocation: None,
+        }));
 
         assert!(matches!(mapped.kind, WarrenErrorKind::Api));
         assert_eq!(mapped.device, Some(DeviceRefusalDto::Revoked));

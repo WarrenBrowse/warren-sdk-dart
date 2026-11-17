@@ -891,7 +891,7 @@ fn map_sdk_error(error: SdkError) -> Event {
             .map(WireFatalCause::from),
         // The engine names a tokenless dial after the device registry's
         // verdict: neither a redial nor another exit helps.
-        SdkError::Api(ClientError::DeviceRevoked) => Some(WireFatalCause::DeviceRevoked),
+        SdkError::Api(ClientError::DeviceRevoked { .. }) => Some(WireFatalCause::DeviceRevoked),
         SdkError::Api(ClientError::DeviceLimitReached) => Some(WireFatalCause::DeviceLimit),
         _ => None,
     };
@@ -1648,7 +1648,9 @@ mod error_mapping_tests {
 
     #[test]
     fn a_revocation_on_dial_crosses_the_ipc_as_its_cause() {
-        let event = map_sdk_error(SdkError::Api(ClientError::DeviceRevoked));
+        let event = map_sdk_error(SdkError::Api(ClientError::DeviceRevoked {
+            revocation: None,
+        }));
 
         let json = serde_json::to_value(&event).expect("event json");
         assert_eq!(json["kind"], "api");

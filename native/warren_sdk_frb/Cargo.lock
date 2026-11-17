@@ -3207,7 +3207,7 @@ dependencies = [
 [[package]]
 name = "warren-api"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "crypto-bigint",
  "data-encoding",
@@ -3253,7 +3253,7 @@ dependencies = [
 [[package]]
 name = "warren-daita"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "warrenguard-daita",
 ]
@@ -3261,7 +3261,7 @@ dependencies = [
 [[package]]
 name = "warren-discovery"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "ed25519-dalek",
  "hex",
@@ -3291,7 +3291,7 @@ dependencies = [
 [[package]]
 name = "warren-identity"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "bip39",
  "ed25519-dalek",
@@ -3304,7 +3304,7 @@ dependencies = [
 [[package]]
 name = "warren-multihop"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "warrenguard-multihop",
 ]
@@ -3312,7 +3312,7 @@ dependencies = [
 [[package]]
 name = "warren-net"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "bytes",
  "data-encoding",
@@ -3393,7 +3393,7 @@ dependencies = [
 [[package]]
 name = "warren-sdk"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "bytes",
  "if-addrs",
@@ -3419,7 +3419,7 @@ dependencies = [
 [[package]]
 name = "warren-transport"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "bytes",
  "ed25519-dalek",
@@ -3446,7 +3446,7 @@ dependencies = [
 [[package]]
 name = "warren-tun-core"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "warrenguard-tun-core",
 ]
@@ -3454,7 +3454,7 @@ dependencies = [
 [[package]]
 name = "warren-wire"
 version = "0.0.1"
-source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=05506a08203a1215a525455b6d4c76496251b78f#05506a08203a1215a525455b6d4c76496251b78f"
+source = "git+https://github.com/WarrenBrowse/warren-sdk-rs.git?rev=673e7d0e00d5462f98b744ebae3acb58857f746d#673e7d0e00d5462f98b744ebae3acb58857f746d"
 dependencies = [
  "serde",
  "warrenguard-multihop",

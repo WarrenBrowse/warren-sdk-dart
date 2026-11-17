@@ -384,8 +384,8 @@ mod tests {
 
     #[test]
     fn a_device_clock_two_exits_refused_crosses_under_its_own_name() {
-        let cause = serde_json::to_value(WireFatalCause::from(FatalCause::ClockSkew))
-            .expect("cause json");
+        let cause =
+            serde_json::to_value(WireFatalCause::from(FatalCause::ClockSkew)).expect("cause json");
 
         assert_eq!(cause, "clockSkew");
     }
